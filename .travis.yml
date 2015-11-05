@@ -1,4 +1,12 @@
 language: node_js
+sudo: false
+addons:
+  apt:
+    packages:
+    - g++-4.8
+    - libnetcdf-dev
+env:
+  - CXX=g++-4.8
 node_js:
   - "4.1"
   - "4.0"
@@ -8,6 +16,3 @@ node_js:
   - "0.8"
   - "0.6"
   - "iojs"
-before_install:
-  - sudo apt-get update -qq
-  - sudo apt-get install -y libnetcdf-dev
