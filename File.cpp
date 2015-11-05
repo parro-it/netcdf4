@@ -53,8 +53,10 @@ namespace netcdf4js {
             FileMode mode = READ; // TODO support other modes
             File* obj = new File(*filename, mode);
             obj->Wrap(args.This());
-            args.This()->Set(v8::String::NewFromUtf8(isolate, "root"), obj->root->handle());
-            args.GetReturnValue().Set(args.This());
+            if (obj->root) {
+                args.This()->Set(v8::String::NewFromUtf8(isolate, "root"), obj->root->handle());
+                args.GetReturnValue().Set(args.This());
+            }
         } else {
             const int argc = 1;
             v8::Local<v8::Value> argv[argc] = { args[0] };
