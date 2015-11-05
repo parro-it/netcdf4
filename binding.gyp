@@ -5,11 +5,11 @@
         "-lnetcdf"
       ],
       "sources": [
-        "Exceptions.cpp",
-        "Group.cpp",
-        "File.cpp",
-        "Variable.cpp",
-        "netcdf4js.cpp"
+        "lib/Exceptions.cpp",
+        "lib/Group.cpp",
+        "lib/File.cpp",
+        "lib/Variable.cpp",
+        "lib/netcdf4js.cpp"
       ],
       "target_name": "netcdf4"
     }
