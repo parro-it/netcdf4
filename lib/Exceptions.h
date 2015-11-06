@@ -11,6 +11,11 @@ namespace netcdf4js {
         return; \
     }
 
+#define call_netcdf_bool(retval) if (const char* s = get_error_message(retval)) { \
+        v8::Isolate::GetCurrent()->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(v8::Isolate::GetCurrent(), s))); \
+        return false; \
+    }
+
 }
 
 #endif

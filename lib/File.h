@@ -3,7 +3,6 @@
 
 #include <node.h>
 #include <node_object_wrap.h>
-#include <memory>
 
 namespace netcdf4js {
     class Group;
@@ -14,15 +13,18 @@ namespace netcdf4js {
 
     private:
         enum FileMode {
-            READ
+            READ,
+            WRITE,
+            CREATE,
+            REPLACE
         };
-        explicit File(const char* filename, const FileMode& mode);
+        explicit File();
         ~File();
 
+        bool open(const char* filename, const FileMode& mode);
         static void New(const v8::FunctionCallbackInfo<v8::Value>& args);
         static v8::Persistent<v8::Function> constructor;
 
-        std::unique_ptr<Group> root;
         int id;
     };
 }

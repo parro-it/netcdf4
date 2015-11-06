@@ -1,5 +1,7 @@
 #include "Variable.h"
 #include "Exceptions.h"
+#include "Dimension.h"
+#include "Attribute.h"
 #include <vector>
 
 namespace netcdf4js {
@@ -15,22 +17,17 @@ namespace netcdf4js {
         1, // NC_UBYTE
         2, // NC_USHORT
         4, // NC_UINT
-        8, // NC_INT64 // js has no int64
-        8 // NC_UINT64 // js has no int64
+        8, // NC_INT64 // no TypedArray for this type
+        8 // NC_UINT64 // no TypedArray for this type
     };
+
     v8::Persistent<v8::Function> Variable::constructor;
 
     Variable::Variable(const int& id_, const int& parent_id_)
         : id(id_), parent_id(parent_id_) {
-        char name_[NC_MAX_NAME+1];
-        int ndims;
-        int nattrs;
-        call_netcdf(nc_inq_var(parent_id, id, name_, &type, &ndims, nullptr, &nattrs));
-        name = std::string(name_);
-        // TODO
+        call_netcdf(nc_inq_vartype(parent_id, id, &type));
         v8::Isolate* isolate = v8::Isolate::GetCurrent();
         v8::Local<v8::Object> obj = v8::Local<v8::Function>::New(isolate, constructor)->NewInstance();
-        obj->Set(v8::String::NewFromUtf8(isolate, "name"), v8::String::NewFromUtf8(isolate, name.c_str()));
         Wrap(obj);
     }
 
@@ -42,8 +39,16 @@ namespace netcdf4js {
         tpl->InstanceTemplate()->SetInternalFieldCount(1);
 
         NODE_SET_PROTOTYPE_METHOD(tpl, "readSlice", ReadSlice);
+        tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "dimensions"), Variable::GetDimensions);
+        tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "attributes"), Variable::GetAttributes);
+        tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "name"), Variable::GetName, Variable::SetName);
 
         constructor.Reset(isolate, tpl->GetFunction());
+    }
+
+    bool Variable::get_name(char* name) const {
+        call_netcdf_bool(nc_inq_varname(parent_id, id, name));
+        return true;
     }
 
     void Variable::ReadSlice(const v8::FunctionCallbackInfo<v8::Value>& args) {
@@ -77,8 +82,6 @@ namespace netcdf4js {
 
         switch (obj->type) {
         case NC_BYTE:
-            result = v8::Int8Array::New(buffer, 0, total_size);
-            break;
         case NC_CHAR:
             result = v8::Int8Array::New(buffer, 0, total_size);
             break;
@@ -105,5 +108,55 @@ namespace netcdf4js {
             break;
         }
         args.GetReturnValue().Set(result);
+    }
+
+    void Variable::GetDimensions(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
+        v8::Isolate* isolate = info.GetIsolate();
+        Variable* obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
+        int ndims;
+        call_netcdf(nc_inq_varndims(obj->parent_id, obj->id, &ndims));
+        std::vector<int> dim_ids(ndims);
+        call_netcdf(nc_inq_vardimid(obj->parent_id, obj->id, &dim_ids[0]));
+        v8::Local<v8::Object> result = v8::Object::New(isolate);
+        char name[NC_MAX_NAME+1];
+        for (int dim_id : dim_ids) {
+           Dimension* d = new Dimension(dim_id, obj->parent_id);
+           if (d->get_name(name)) {
+               result->Set(v8::String::NewFromUtf8(isolate, name), d->handle());
+           } else {
+               return;
+           }
+        }
+        info.GetReturnValue().Set(result);
+    }
+
+    void Variable::GetAttributes(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
+        v8::Isolate* isolate = info.GetIsolate();
+        Variable* obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
+        int natts;
+        call_netcdf(nc_inq_varnatts(obj->parent_id, obj->id, &natts));
+        v8::Local<v8::Object> result = v8::Object::New(isolate);
+        char name[NC_MAX_NAME+1];
+        for (int i = 0; i < natts; i++) {
+            call_netcdf(nc_inq_attname(obj->id, obj->id, i, name));
+            Attribute* a = new Attribute(name, obj->id, obj->parent_id);
+            result->Set(v8::String::NewFromUtf8(isolate, name), a->handle());
+        }
+        info.GetReturnValue().Set(result);
+    }
+
+    void Variable::GetName(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value> &info) {
+        v8::Isolate* isolate = info.GetIsolate();
+        Variable* obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
+        char name[NC_MAX_NAME+1];
+        if (obj->get_name(name)) {
+            info.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, name));
+        }
+    }
+
+    void Variable::SetName(v8::Local<v8::String> property, v8::Local<v8::Value> val, const v8::PropertyCallbackInfo<void>& info) {
+        Variable* obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
+        v8::String::Utf8Value new_name_(val->ToString());
+        call_netcdf(nc_rename_var(obj->parent_id, obj->id, *new_name_));
     }
 }
