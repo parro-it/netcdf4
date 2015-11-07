@@ -3,7 +3,7 @@
 namespace netcdf4js {
     const char* get_error_message(int retval) {
         switch(retval) {
-        case NC_NOERR           : return nullptr;
+        case NC_NOERR           : return NULL;
         case NC_EBADID          : return "Not a netcdf id";
         case NC_ENFILE          : return "Too many netcdfs open";
         case NC_EEXIST          : return "netcdf file exists && NC_NOCLOBBER";
