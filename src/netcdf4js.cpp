@@ -6,10 +6,7 @@
 #include "Attribute.h"
 
 namespace netcdf4js {
-    using v8::Local;
-    using v8::Object;
-
-    void InitAll(Local<Object> exports) {
+    void InitAll(v8::Local<v8::Object> exports) {
         File::Init(exports);
         Variable::Init(exports);
         Group::Init(exports);

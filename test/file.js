@@ -6,7 +6,7 @@ describe('File', function() {
         it('should throw an error when file not found', function() {
             expect(function() {
                 var file = new netcdf4.File("DOESNOTEXIST", "r");
-            }).to.throw("Unknown error");
+            }).to.throw("Operation not permitted");
         });
 
         it('should throw an error for wrong file mode', function() {

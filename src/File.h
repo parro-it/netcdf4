@@ -12,20 +12,17 @@ namespace netcdf4js {
         static void Init(v8::Local<v8::Object> exports);
 
     private:
-        enum FileMode {
-            READ,
-            WRITE,
-            CREATE,
-            REPLACE
-        };
-        explicit File();
+        explicit File(const int& id_);
         ~File();
 
-        bool open(const char* filename, const FileMode& mode);
+        bool open(const char* filename, const int& mode, const int& format);
         static void New(const v8::FunctionCallbackInfo<v8::Value>& args);
+        static void Close(const v8::FunctionCallbackInfo<v8::Value>& args);
+        static void Sync(const v8::FunctionCallbackInfo<v8::Value>& args);
         static v8::Persistent<v8::Function> constructor;
 
         int id;
+        bool closed;
     };
 }
 

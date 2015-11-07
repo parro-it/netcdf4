@@ -1,5 +1,5 @@
+#include "netcdf4js.h"
 #include "Attribute.h"
-#include "Exceptions.h"
 #include <inttypes.h>
 #include <netcdf.h>
 #include <iostream>
@@ -19,6 +19,7 @@ namespace netcdf4js {
         v8::Local<v8::FunctionTemplate> tpl = v8::FunctionTemplate::New(isolate);
         tpl->SetClassName(v8::String::NewFromUtf8(isolate, "Attribute"));
         tpl->InstanceTemplate()->SetInternalFieldCount(1);
+        NODE_SET_PROTOTYPE_METHOD(tpl, "delete", Attribute::Delete);
         tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "name"), Attribute::GetName, Attribute::SetName);
         tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "value"), Attribute::GetValue, Attribute::SetValue);
         constructor.Reset(isolate, tpl->GetFunction());
@@ -151,26 +152,33 @@ namespace netcdf4js {
     }
 
     void Attribute::SetValue(v8::Local<v8::String> property, v8::Local<v8::Value> val, const v8::PropertyCallbackInfo<void>& info) {
-        v8::Isolate* isolate = info.GetIsolate();
         Attribute* obj = node::ObjectWrap::Unwrap<Attribute>(info.Holder());
+        obj->set_value(val);
+    }
 
-        if ((obj->type < NC_BYTE || obj->type > NC_UINT) && obj->type != NC_STRING) {
-            isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Variable type not supported yet")));
+    void Attribute::set_value(const v8::Local<v8::Value>& val) {
+        if ((type < NC_BYTE || type > NC_UINT) && type != NC_STRING) {
+            v8::Isolate::GetCurrent()->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(v8::Isolate::GetCurrent(), "Variable type not supported yet")));
             return;
         }
 
         if (val->IsUint32()) {
             uint32_t v = val->Uint32Value();
-            call_netcdf(nc_put_att(obj->parent_id, obj->var_id, obj->name.c_str(), NC_UINT, 1, &v));
+            call_netcdf(nc_put_att(parent_id, var_id, name.c_str(), NC_UINT, 1, &v));
         } else if (val->IsInt32()) {
             int32_t v = val->Int32Value();
-            call_netcdf(nc_put_att(obj->parent_id, obj->var_id, obj->name.c_str(), NC_INT, 1, &v));
+            call_netcdf(nc_put_att(parent_id, var_id, name.c_str(), NC_INT, 1, &v));
         } else if (val->IsNumber()) {
             double v = val->NumberValue();
-            call_netcdf(nc_put_att(obj->parent_id, obj->var_id, obj->name.c_str(), NC_DOUBLE, 1, &v));
+            call_netcdf(nc_put_att(parent_id, var_id, name.c_str(), NC_DOUBLE, 1, &v));
         } else {
             std::string v(*v8::String::Utf8Value(val->ToString()));
-            call_netcdf(nc_put_att_text(obj->parent_id, obj->var_id, obj->name.c_str(), NC_CHAR, v.c_str()));
+            call_netcdf(nc_put_att_text(parent_id, var_id, name.c_str(), NC_CHAR, v.c_str()));
         }
+    }
+
+    void Attribute::Delete(const v8::FunctionCallbackInfo<v8::Value>& args) {
+        Attribute* obj = node::ObjectWrap::Unwrap<Attribute>(args.Holder());
+        call_netcdf(nc_del_att(obj->parent_id, obj->var_id, obj->name.c_str()));
     }
 }
