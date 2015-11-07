@@ -1,14 +1,14 @@
 {
   "name": "netcdf4",
   "version": "0.1.0",
-  "description": "Reads NetCDF4 files",
+  "description": "Read and write NetCDF4 files",
   "main": "./build/Release/netcdf4.node",
   "scripts": {
     "install": "node-gyp rebuild",
     "test": "node_modules/mocha/bin/mocha"
   },
   "bugs": {
-    "url": "https://github.com/owner/project/issues"
+    "url": "https://github.com/swillner/netcdf4-js/issues"
   },
   "author": {
     "name": "Sven Willner",
@@ -20,7 +20,7 @@
     "url": "https://github.com/swillner/netcdf4-js.git"
   },
   "engines": {
-    "node": ">=0.12"
+    "node": ">=4.0"
   },
   "license": "ISC",
   "gypfile": true,
