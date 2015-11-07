@@ -25,7 +25,7 @@ namespace netcdf4js {
         tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "dimensions"), Group::GetDimensions);
         tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "attributes"), Group::GetAttributes);
         tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "subgroups"), Group::GetSubgroups);
-        tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "name"), Group::GetName, Group::SetName);
+        tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "name"), Group::GetName);
 
         constructor.Reset(isolate, tpl->GetFunction());
     }
@@ -118,11 +118,5 @@ namespace netcdf4js {
         if (obj->get_name(name)) {
             info.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, name));
         }
-    }
-
-    void Group::SetName(v8::Local<v8::String> property, v8::Local<v8::Value> val, const v8::PropertyCallbackInfo<void>& info) {
-        Group* obj = node::ObjectWrap::Unwrap<Group>(info.Holder());
-        v8::String::Utf8Value new_name_(val->ToString());
-        call_netcdf(nc_rename_grp(obj->id, *new_name_));
     }
 }
