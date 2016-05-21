@@ -24,10 +24,15 @@ Open files with
 ```
 var netcdf4 = require("netcdf4");
 
-var file = new netcdf4.File("filename.nc", "r");
+var file = new netcdf4.File("test/testrh.nc", "r");
 ```
 File modes are `"r"` for "reading", `"w"` for "writing", `"c"` for
 "creation", and `"c!"` for "overwriting".
+
+Then you can read variables using `read` or `readSlice`. The following example reads values at positions 5 to 15:
+```
+console.log(file.root.variables['var1'].readSlice(5, 10));
+```
 
 ### Classes
 
@@ -101,18 +106,23 @@ Properties:
 * `compressionlevel` : Compression level (1-9) (r/w)
 
 Methods:
+* `read(pos....)` : Reads and returns a single value at positions
+  given as for `write`.
+* `readSlice(pos....)` : Reads and returns an array of values (cf.
+  ["Specify a Hyperslab"](https://www.unidata.ucar.edu/software/netcdf/docs/programming_notes.html#specify_hyperslab))
+  at positions and sizes given for each dimension, `readSlice(pos1,
+  size1, pos2, size2, ...)` e.g. `readSlice(2, 3, 4, 2)` gives an
+  array of the values at position 2 for 3 steps along the first
+  dimension and position 4 for 2 step along the second one.
 * `write(pos..., value)` : Write `value` at positions given,
   e.g. `write(2, 3, "a")` writes `"a"` at position 2 along the first
   dimension and position 3 along the second one.
 * `writeSlice(pos/size..., valuearray)` : Write values in `valuearray`
-  (must be a typed array) at positions and sizes given alternating,
-  e.g. `writeSlice(2, 3, 4, 2, new Int32Array([0, 1, 2, 3, 4, 5]))`
-  writes the array at position 2 for 3 steps along the first dimension
-  and position 4 for 2 step along the second one
-  (cf. ["Specify a Hyperslab"](https://www.unidata.ucar.edu/software/netcdf/docs/programming_notes.html#specify_hyperslab)).
-* `read(pos....)` : Reads and returns a single value at positions
-  given as for `write`.
-* `readSlice(pos....)` : Reads and returns an array of values at
-  positions and sizes as for `writeSlice`.
+  (must be a typed array) at positions and sizes given for each
+  dimension, e.g. `writeSlice(2, 3, 4, 2, new
+  Int32Array([0, 1, 2, 3, 4, 5]))` writes the array at position 2 for
+  3 steps along the first dimension and position 4 for 2 step along
+  the second one (cf.
+  ["Specify a Hyperslab"](https://www.unidata.ucar.edu/software/netcdf/docs/programming_notes.html#specify_hyperslab)).
 * `addAttribute(name, value)` : Adds and sets new attribute. Returns
-new attribute.
+  new attribute.
