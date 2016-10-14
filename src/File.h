@@ -5,25 +5,27 @@
 #include <node_object_wrap.h>
 
 namespace netcdf4js {
-    class Group;
 
-    class File : public node::ObjectWrap {
-    public:
-        static void Init(v8::Local<v8::Object> exports);
+class Group;
 
-    private:
-        explicit File(const int& id_);
-        ~File();
+class File : public node::ObjectWrap {
+   public:
+    static void Init(v8::Local<v8::Object> exports);
 
-        bool open(const char* filename, const int& mode, const int& format);
-        static void New(const v8::FunctionCallbackInfo<v8::Value>& args);
-        static void Close(const v8::FunctionCallbackInfo<v8::Value>& args);
-        static void Sync(const v8::FunctionCallbackInfo<v8::Value>& args);
-        static v8::Persistent<v8::Function> constructor;
+   private:
+    explicit File(const int& id_);
+    ~File();
 
-        int id;
-        bool closed;
-    };
+    bool open(const char* filename, const int& mode, const int& format);
+    static void New(const v8::FunctionCallbackInfo<v8::Value>& args);
+    static void Close(const v8::FunctionCallbackInfo<v8::Value>& args);
+    static void Sync(const v8::FunctionCallbackInfo<v8::Value>& args);
+    static void Inspect(const v8::FunctionCallbackInfo<v8::Value>& args);
+    static v8::Persistent<v8::Function> constructor;
+
+    int id;
+    bool closed;
+};
 }
 
 #endif
