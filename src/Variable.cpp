@@ -359,7 +359,7 @@ void Variable::GetAttributes(v8::Local<v8::String> property, const v8::PropertyC
     v8::Local<v8::Object> result = v8::Object::New(isolate);
     char name[NC_MAX_NAME + 1];
     for (int i = 0; i < natts; i++) {
-        call_netcdf(nc_inq_attname(obj->id, obj->id, i, name));
+        call_netcdf(nc_inq_attname(obj->parent_id, obj->id, i, name));
         Attribute* a = new Attribute(name, obj->id, obj->parent_id);
         result->Set(v8::String::NewFromUtf8(isolate, name), a->handle());
     }
