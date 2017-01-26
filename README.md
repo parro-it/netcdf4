@@ -1,6 +1,7 @@
 # netcdf4-js
 
-[![Build Status](https://travis-ci.org/swillner/netcdf4-js.svg)](https://travis-ci.org/swillner/netcdf4-js)
+[![Build Status](https://img.shields.io/travis/swillner/netcdf4-js.svg)](https://travis-ci.org/swillner/netcdf4-js)
+&nbsp;&nbsp;[![NPM Version](https://img.shields.io/npm/v/netcdf4.svg)](https://npmjs.org/package/netcdf4)
 
 NodeJS addon for reading and writing the files in the
 [Network Common Data Form (NetCDF)](https://www.unidata.ucar.edu/software/netcdf/)
@@ -14,7 +15,7 @@ built upon the C-library for netcdf.
 You will need `libnetcdf` >= 4.x installed. Either build from
 [https://www.unidata.ucar.edu/downloads/netcdf/index.jsp](sources) or
 use your package manager (e.g., the package is called ` libnetcdf-dev`
-in Ubuntu).
+in Ubuntu/Debian).
 
 Then install using `npm install netcdf4`.
 
