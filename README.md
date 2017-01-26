@@ -1,7 +1,8 @@
 # netcdf4-js
 
 [![Build Status](https://img.shields.io/travis/swillner/netcdf4-js.svg)](https://travis-ci.org/swillner/netcdf4-js)
-&nbsp;&nbsp;[![NPM Version](https://img.shields.io/npm/v/netcdf4.svg)](https://npmjs.org/package/netcdf4)
+[![NPM Version](https://img.shields.io/npm/v/netcdf4.svg)](https://npmjs.org/package/netcdf4)
+
 
 NodeJS addon for reading and writing the files in the
 [Network Common Data Form (NetCDF)](https://www.unidata.ucar.edu/software/netcdf/)
