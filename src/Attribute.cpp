@@ -84,7 +84,7 @@ void Attribute::GetValue(v8::Local<v8::String> property, const v8::PropertyCallb
             float v[len];
             call_netcdf(nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), v));
             if (len == 1) {
-                info.GetReturnValue().Set(v8::Integer::New(isolate, v[0]));
+                info.GetReturnValue().Set(v8::Number::New(isolate, v[0]));
             } else {
                 info.GetReturnValue().Set(v8::Float32Array::New(v8::ArrayBuffer::New(isolate, v, len * 4), 0, len));
             }
@@ -93,7 +93,7 @@ void Attribute::GetValue(v8::Local<v8::String> property, const v8::PropertyCallb
             double v[len];
             call_netcdf(nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), v));
             if (len == 1) {
-                info.GetReturnValue().Set(v8::Integer::New(isolate, v[0]));
+                info.GetReturnValue().Set(v8::Number::New(isolate, v[0]));
             } else {
                 info.GetReturnValue().Set(v8::Float64Array::New(v8::ArrayBuffer::New(isolate, v, len * 8), 0, len));
             }

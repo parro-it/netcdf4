@@ -1,6 +1,6 @@
 {
   "name": "netcdf4",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Read and write NetCDF4 files",
   "main": "./build/Release/netcdf4.node",
   "scripts": {
