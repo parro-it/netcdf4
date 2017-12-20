@@ -110,21 +110,35 @@ Properties:
 Methods:
 * `read(pos....)` : Reads and returns a single value at positions
   given as for `write`.
-* `readSlice(pos....)` : Reads and returns an array of values (cf.
+* `readSlice(pos, size....)` : Reads and returns an array of values (cf.
   ["Specify a Hyperslab"](https://www.unidata.ucar.edu/software/netcdf/docs/programming_notes.html#specify_hyperslab))
   at positions and sizes given for each dimension, `readSlice(pos1,
   size1, pos2, size2, ...)` e.g. `readSlice(2, 3, 4, 2)` gives an
   array of the values at position 2 for 3 steps along the first
-  dimension and position 4 for 2 step along the second one.
+  dimension and position 4 for 2 steps along the second one.
+* `readStridedSlice(pos, size, stride....)` : Similar to `readSlice()`, but it
+  adds a *stride* (interval between indices) parameter to each dimension. If stride is 4,
+  the function will take 1 value, discard 3, take 1 again, etc.
+  So for instance `readStridedSlice(2, 3, 2, 4, 2, 1)` gives an
+  array of the values at position 2 for 3 steps with stride 2 (i.e.
+  every other value) along the first dimension and position 4 for 2 steps
+  with stride 1 (i.e. with no dropping) along the second dimension.
 * `write(pos..., value)` : Write `value` at positions given,
   e.g. `write(2, 3, "a")` writes `"a"` at position 2 along the first
   dimension and position 3 along the second one.
-* `writeSlice(pos/size..., valuearray)` : Write values in `valuearray`
+* `writeSlice(pos, size..., valuearray)` : Write values in `valuearray`
   (must be a typed array) at positions and sizes given for each
   dimension, e.g. `writeSlice(2, 3, 4, 2, new
   Int32Array([0, 1, 2, 3, 4, 5]))` writes the array at position 2 for
   3 steps along the first dimension and position 4 for 2 step along
   the second one (cf.
   ["Specify a Hyperslab"](https://www.unidata.ucar.edu/software/netcdf/docs/programming_notes.html#specify_hyperslab)).
+* `writeStridedSlice(pos, size, stride..., valuearray)` : Similar to
+  `writeSlice()`, but it adds a *stride* parameter to each dimension.
+  So for instance `writeStridedSlice(2, 3, 2, 4, 2, 1), new
+  Int32Array([0, 1, 2, 3, 4, 5])` writes the array
+  at position 2 for 3 steps with stride 2 (i.e.
+  every other value) along the first dimension and position 4 for 2 steps
+  with stride 1 (i.e. with no dropping) along the second dimension.
 * `addAttribute(name, value)` : Adds and sets new attribute. Returns
   new attribute.
