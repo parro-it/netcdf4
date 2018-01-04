@@ -16,8 +16,10 @@ class Variable : public node::ObjectWrap {
    private:
     static void Read(const v8::FunctionCallbackInfo<v8::Value>& args);
     static void ReadSlice(const v8::FunctionCallbackInfo<v8::Value>& args);
+    static void ReadStridedSlice(const v8::FunctionCallbackInfo<v8::Value>& args);
     static void Write(const v8::FunctionCallbackInfo<v8::Value>& args);
     static void WriteSlice(const v8::FunctionCallbackInfo<v8::Value>& args);
+    static void WriteStridedSlice(const v8::FunctionCallbackInfo<v8::Value>& args);
     static void AddAttribute(const v8::FunctionCallbackInfo<v8::Value>& args);
     static void GetId(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info);
     static void GetType(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info);

@@ -48,8 +48,10 @@ void Variable::Init(v8::Local<v8::Object> exports) {
     tpl->InstanceTemplate()->SetInternalFieldCount(1);
     NODE_SET_PROTOTYPE_METHOD(tpl, "read", Variable::Read);
     NODE_SET_PROTOTYPE_METHOD(tpl, "readSlice", Variable::ReadSlice);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "readStridedSlice", Variable::ReadStridedSlice);
     NODE_SET_PROTOTYPE_METHOD(tpl, "write", Variable::Write);
     NODE_SET_PROTOTYPE_METHOD(tpl, "writeSlice", Variable::WriteSlice);
+    NODE_SET_PROTOTYPE_METHOD(tpl, "writeStridedSlice", Variable::WriteStridedSlice);
     NODE_SET_PROTOTYPE_METHOD(tpl, "addAttribute", Variable::AddAttribute);
     NODE_SET_PROTOTYPE_METHOD(tpl, "inspect", Variable::Inspect);
     tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "id"), Variable::GetId);
@@ -193,6 +195,72 @@ void Variable::WriteSlice(const v8::FunctionCallbackInfo<v8::Value>& args) {
     call_netcdf(nc_put_vara(obj->parent_id, obj->id, pos, size, val->Buffer()->GetContents().Data()));
 }
 
+void Variable::WriteStridedSlice(const v8::FunctionCallbackInfo<v8::Value>& args) {
+    v8::Isolate* isolate = args.GetIsolate();
+    Variable* obj = node::ObjectWrap::Unwrap<Variable>(args.Holder());
+    if (args.Length() != 3 * obj->ndims + 1) {
+        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Wrong number of arguments")));
+        return;
+    }
+    if (!args[3 * obj->ndims]->IsTypedArray()) {
+        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Expecting a typed array")));
+        return;
+    }
+    size_t pos[obj->ndims];
+    size_t size[obj->ndims];
+    ptrdiff_t stride[obj->ndims];
+    size_t total_size = 1;
+    for (int i = 0; i < obj->ndims; i++) {
+        pos[i] = args[3 * i]->IntegerValue();
+        size_t s = args[3 * i + 1]->IntegerValue();
+        size[i] = s;
+        total_size *= s;
+        stride[i] = args[3 * i + 2]->IntegerValue();
+    }
+    v8::Local<v8::TypedArray> val = v8::Local<v8::TypedArray>::Cast(args[3 * obj->ndims]);
+    if (val->Length() != total_size) {
+        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Wrong size of array")));
+        return;
+    }
+
+    bool correct_type;
+    switch (obj->type) {
+        case NC_BYTE:
+        case NC_CHAR:
+            correct_type = val->IsInt8Array();
+            break;
+        case NC_SHORT:
+            correct_type = val->IsInt16Array();
+            break;
+        case NC_INT:
+            correct_type = val->IsInt32Array();
+            break;
+        case NC_FLOAT:
+            correct_type = val->IsFloat32Array();
+            break;
+        case NC_DOUBLE:
+            correct_type = val->IsFloat64Array();
+            break;
+        case NC_UBYTE:
+            correct_type = val->IsUint8Array();
+            break;
+        case NC_USHORT:
+            correct_type = val->IsUint16Array();
+            break;
+        case NC_UINT:
+            correct_type = val->IsUint32Array();
+            break;
+        default:
+            isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Variable type not supported yet")));
+            return;
+    }
+    if (!correct_type) {
+        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Wrong array type")));
+        return;
+    }
+    call_netcdf(nc_put_vars(obj->parent_id, obj->id, pos, size, stride, val->Buffer()->GetContents().Data()));
+}
+
 void Variable::Read(const v8::FunctionCallbackInfo<v8::Value>& args) {
     v8::Isolate* isolate = args.GetIsolate();
     Variable* obj = node::ObjectWrap::Unwrap<Variable>(args.Holder());
@@ -288,6 +356,63 @@ void Variable::ReadSlice(const v8::FunctionCallbackInfo<v8::Value>& args) {
     }
     v8::Local<v8::ArrayBuffer> buffer = v8::ArrayBuffer::New(isolate, total_size * type_sizes[obj->type]);
     call_netcdf(nc_get_vara(obj->parent_id, obj->id, pos, size, buffer->GetContents().Data()));
+    v8::Local<v8::Object> result;
+
+    switch (obj->type) {
+        case NC_BYTE:
+        case NC_CHAR:
+            result = v8::Int8Array::New(buffer, 0, total_size);
+            break;
+        case NC_SHORT:
+            result = v8::Int16Array::New(buffer, 0, total_size);
+            break;
+        case NC_INT:
+            result = v8::Int32Array::New(buffer, 0, total_size);
+            break;
+        case NC_FLOAT:
+            result = v8::Float32Array::New(buffer, 0, total_size);
+            break;
+        case NC_DOUBLE:
+            result = v8::Float64Array::New(buffer, 0, total_size);
+            break;
+        case NC_UBYTE:
+            result = v8::Uint8Array::New(buffer, 0, total_size);
+            break;
+        case NC_USHORT:
+            result = v8::Uint16Array::New(buffer, 0, total_size);
+            break;
+        case NC_UINT:
+            result = v8::Uint32Array::New(buffer, 0, total_size);
+            break;
+    }
+    args.GetReturnValue().Set(result);
+}
+
+void Variable::ReadStridedSlice(const v8::FunctionCallbackInfo<v8::Value>& args) {
+    v8::Isolate* isolate = args.GetIsolate();
+    Variable* obj = node::ObjectWrap::Unwrap<Variable>(args.Holder());
+    if (args.Length() != 3 * obj->ndims) {
+        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Wrong number of arguments")));
+        return;
+    }
+    if (obj->type < NC_BYTE || obj->type > NC_UINT) {
+        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Variable type not supported yet")));
+        return;
+    }
+
+    size_t pos[obj->ndims];
+    size_t size[obj->ndims];
+    ptrdiff_t stride[obj->ndims];
+    size_t total_size = 1;
+    for (int i = 0; i < obj->ndims; i++) {
+        pos[i] = args[3 * i]->IntegerValue();
+        size_t s = args[3 * i + 1]->IntegerValue();
+        size[i] = s;
+        total_size *= s;
+        stride[i] = args[3 * i + 2]->IntegerValue();
+    }
+    v8::Local<v8::ArrayBuffer> buffer = v8::ArrayBuffer::New(isolate, total_size * type_sizes[obj->type]);
+    call_netcdf(nc_get_vars(obj->parent_id, obj->id, pos, size, stride, buffer->GetContents().Data()));
     v8::Local<v8::Object> result;
 
     switch (obj->type) {
