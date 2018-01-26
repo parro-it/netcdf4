@@ -70,7 +70,7 @@ Methods:
 * `addDimension(name, length)` : Add new dimension of length `length`
   (can be `"unlimited"` for unlimited dimension). Returns new dimension.
 * `addSubgroup(name)` : Add subgroup. Returns new subgroup.
-* `addAttribute(name, value)` : Add and set new attribute. Returns new attribute.
+* `addAttribute(name, type, value)` : Add and set new attribute. Returns new attribute.
 
 ### Dimension
 
@@ -140,5 +140,5 @@ Methods:
   at position 2 for 3 steps with stride 2 (i.e.
   every other value) along the first dimension and position 4 for 2 steps
   with stride 1 (i.e. with no dropping) along the second dimension.
-* `addAttribute(name, value)` : Adds and sets new attribute. Returns
+* `addAttribute(name, type, value)` : Adds and sets new attribute. Returns
   new attribute.
