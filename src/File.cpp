@@ -1,9 +1,9 @@
-#include "netcdf4js.h"
 #include "File.h"
-#include "Group.h"
-#include "Variable.h"
 #include <netcdf.h>
 #include <string>
+#include "Group.h"
+#include "Variable.h"
+#include "netcdf4js.h"
 
 namespace netcdf4js {
 
@@ -96,4 +96,4 @@ void File::Inspect(const v8::FunctionCallbackInfo<v8::Value>& args) {
     v8::Isolate* isolate = args.GetIsolate();
     args.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, "[object File]"));
 }
-}
+}  // namespace netcdf4js

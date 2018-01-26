@@ -9,12 +9,12 @@ namespace netcdf4js {
 class Variable;
 
 class Group : public node::ObjectWrap {
-   public:
+  public:
     Group(const int& id);
     static void Init(v8::Local<v8::Object> exports);
     bool get_name(char* name) const;
 
-   private:
+  private:
     static v8::Persistent<v8::Function> constructor;
     static void GetId(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info);
     static void GetVariables(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info);
@@ -31,6 +31,6 @@ class Group : public node::ObjectWrap {
     static void Inspect(const v8::FunctionCallbackInfo<v8::Value>& args);
     int id;
 };
-}
+}  // namespace netcdf4js
 
 #endif

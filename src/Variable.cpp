@@ -1,7 +1,7 @@
-#include "netcdf4js.h"
 #include "Variable.h"
-#include "Dimension.h"
 #include "Attribute.h"
+#include "Dimension.h"
+#include "netcdf4js.h"
 
 namespace netcdf4js {
 
@@ -863,4 +863,4 @@ void Variable::Inspect(const v8::FunctionCallbackInfo<v8::Value>& args) {
     v8::Isolate* isolate = args.GetIsolate();
     args.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, "[object Variable]"));
 }
-}
+}  // namespace netcdf4js

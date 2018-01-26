@@ -8,12 +8,12 @@
 namespace netcdf4js {
 
 class Variable : public node::ObjectWrap {
-   public:
+  public:
     static void Init(v8::Local<v8::Object> exports);
     Variable(const int& id_, const int& parent_id_);
     bool get_name(char* name) const;
 
-   private:
+  private:
     static void Read(const v8::FunctionCallbackInfo<v8::Value>& args);
     static void ReadSlice(const v8::FunctionCallbackInfo<v8::Value>& args);
     static void ReadStridedSlice(const v8::FunctionCallbackInfo<v8::Value>& args);
@@ -54,6 +54,6 @@ class Variable : public node::ObjectWrap {
     nc_type type;
     int ndims;
 };
-}
+}  // namespace netcdf4js
 
 #endif

@@ -7,12 +7,12 @@
 namespace netcdf4js {
 
 class Dimension : public node::ObjectWrap {
-   public:
+  public:
     static void Init(v8::Local<v8::Object> exports);
     Dimension(const int& id_, const int& parent_id_);
     bool get_name(char* name) const;
 
-   private:
+  private:
     static v8::Persistent<v8::Function> constructor;
     static void GetId(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info);
     static void GetLength(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info);
@@ -22,6 +22,6 @@ class Dimension : public node::ObjectWrap {
     int id;
     int parent_id;
 };
-}
+}  // namespace netcdf4js
 
 #endif

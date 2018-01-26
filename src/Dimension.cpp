@@ -1,6 +1,6 @@
-#include "netcdf4js.h"
 #include "Dimension.h"
 #include <netcdf.h>
+#include "netcdf4js.h"
 
 namespace netcdf4js {
 
@@ -62,4 +62,4 @@ void Dimension::Inspect(const v8::FunctionCallbackInfo<v8::Value>& args) {
     v8::Isolate* isolate = args.GetIsolate();
     args.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, "[object Dimension]"));
 }
-}
+}  // namespace netcdf4js

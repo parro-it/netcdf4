@@ -1,14 +1,14 @@
-#include "netcdf4js.h"
 #include "Attribute.h"
 #include <inttypes.h>
 #include <netcdf.h>
 #include <iostream>
+#include "netcdf4js.h"
 
 namespace netcdf4js {
 
 v8::Persistent<v8::Function> Attribute::constructor;
 
-Attribute::Attribute(const char* name_, const int& var_id_, const int& parent_id_) : name(name_), var_id(var_id_), parent_id(parent_id_) {
+Attribute::Attribute(const char* name_, int var_id_, int parent_id_) : name(name_), var_id(var_id_), parent_id(parent_id_) {
     call_netcdf(nc_inq_atttype(parent_id, var_id_, name_, &type));
     v8::Isolate* isolate = v8::Isolate::GetCurrent();
     v8::Local<v8::Object> obj = v8::Local<v8::Function>::New(isolate, constructor)->NewInstance();
@@ -189,4 +189,4 @@ void Attribute::Inspect(const v8::FunctionCallbackInfo<v8::Value>& args) {
     v8::Isolate* isolate = args.GetIsolate();
     args.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, "[object Attribute]"));
 }
-}
+}  // namespace netcdf4js

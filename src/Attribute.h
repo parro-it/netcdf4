@@ -8,12 +8,12 @@
 namespace netcdf4js {
 
 class Attribute : public node::ObjectWrap {
-   public:
+  public:
     static void Init(v8::Local<v8::Object> exports);
-    Attribute(const char* name_, const int& var_id_, const int& parent_id_);
+    Attribute(const char* name_, int var_id_, int parent_id_);
     void set_value(const v8::Local<v8::Value>& val);
 
-   private:
+  private:
     static v8::Persistent<v8::Function> constructor;
     static void Delete(const v8::FunctionCallbackInfo<v8::Value>& args);
     static void GetName(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info);
@@ -26,6 +26,6 @@ class Attribute : public node::ObjectWrap {
     int parent_id;
     int type;
 };
-}
+}  // namespace netcdf4js
 
 #endif

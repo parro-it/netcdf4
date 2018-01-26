@@ -9,10 +9,10 @@ namespace netcdf4js {
 class Group;
 
 class File : public node::ObjectWrap {
-   public:
+  public:
     static void Init(v8::Local<v8::Object> exports);
 
-   private:
+  private:
     explicit File(const int& id_);
     ~File();
 
@@ -26,6 +26,6 @@ class File : public node::ObjectWrap {
     int id;
     bool closed;
 };
-}
+}  // namespace netcdf4js
 
 #endif
