@@ -11,6 +11,7 @@ class Attribute : public node::ObjectWrap {
   public:
     static void Init(v8::Local<v8::Object> exports);
     Attribute(const char* name_, int var_id_, int parent_id_);
+    Attribute(const char* name_, int var_id_, int parent_id_, int type_);
     void set_value(const v8::Local<v8::Value>& val);
 
   private:

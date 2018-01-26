@@ -448,12 +448,18 @@ void Variable::ReadStridedSlice(const v8::FunctionCallbackInfo<v8::Value>& args)
 void Variable::AddAttribute(const v8::FunctionCallbackInfo<v8::Value>& args) {
     v8::Isolate* isolate = args.GetIsolate();
     Variable* obj = node::ObjectWrap::Unwrap<Variable>(args.Holder());
-    if (args.Length() < 2) {
+    if (args.Length() < 3) {
         isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Wrong number of arguments")));
         return;
     }
-    Attribute* res = new Attribute(*v8::String::Utf8Value(args[0]), obj->id, obj->parent_id);
-    res->set_value(args[1]);
+    std::string type_str = *v8::String::Utf8Value(args[1]);
+    int type = get_type(type_str);
+    if (type == NC2_ERR) {
+        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Unknown variable type")));
+        return;
+    }
+    Attribute* res = new Attribute(*v8::String::Utf8Value(args[0]), obj->id, obj->parent_id, type);
+    res->set_value(args[2]);
     args.GetReturnValue().Set(res->handle());
 }
 

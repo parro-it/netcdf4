@@ -44,12 +44,18 @@ bool Group::get_name(char* name) const {
 void Group::AddAttribute(const v8::FunctionCallbackInfo<v8::Value>& args) {
     v8::Isolate* isolate = args.GetIsolate();
     Group* obj = node::ObjectWrap::Unwrap<Group>(args.Holder());
-    if (args.Length() < 2) {
+    if (args.Length() < 3) {
         isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Wrong number of arguments")));
         return;
     }
-    Attribute* res = new Attribute(*v8::String::Utf8Value(args[0]), NC_GLOBAL, obj->id);
-    res->set_value(args[1]);
+    std::string type_str = *v8::String::Utf8Value(args[1]);
+    int type = get_type(type_str);
+    if (type == NC2_ERR) {
+        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Unknown variable type")));
+        return;
+    }
+    Attribute* res = new Attribute(*v8::String::Utf8Value(args[0]), NC_GLOBAL, obj->id, type);
+    res->set_value(args[2]);
     args.GetReturnValue().Set(res->handle());
 }
 
@@ -97,27 +103,13 @@ void Group::AddVariable(const v8::FunctionCallbackInfo<v8::Value>& args) {
         return;
     }
     std::string type_str = *v8::String::Utf8Value(args[1]);
-    int type;
-    if (type_str == "byte") {
-        type = NC_BYTE;
-    } else if (type_str == "char") {
-        type = NC_CHAR;
-    } else if (type_str == "short") {
-        type = NC_SHORT;
-    } else if (type_str == "int") {
-        type = NC_INT;
-    } else if (type_str == "float") {
-        type = NC_FLOAT;
-    } else if (type_str == "double") {
-        type = NC_DOUBLE;
-    } else if (type_str == "ubyte") {
-        type = NC_UBYTE;
-    } else if (type_str == "ushort") {
-        type = NC_USHORT;
-    } else if (type_str == "uint") {
-        type = NC_UINT;
-    } else {
+    int type = get_type(type_str);
+    if (type == NC2_ERR) {
         isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Unknown variable type")));
+        return;
+    }
+    if (type == NC_STRING) {
+        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Unsupported variable type")));
         return;
     }
     if (!args[2]->IsArray()) {

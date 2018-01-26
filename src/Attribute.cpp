@@ -15,6 +15,12 @@ Attribute::Attribute(const char* name_, int var_id_, int parent_id_) : name(name
     Wrap(obj);
 }
 
+Attribute::Attribute(const char* name_, int var_id_, int parent_id_, int type_) : name(name_), var_id(var_id_), parent_id(parent_id_), type(type_) {
+    v8::Isolate* isolate = v8::Isolate::GetCurrent();
+    v8::Local<v8::Object> obj = v8::Local<v8::Function>::New(isolate, constructor)->NewInstance();
+    Wrap(obj);
+}
+
 void Attribute::Init(v8::Local<v8::Object> exports) {
     v8::Isolate* isolate = exports->GetIsolate();
     v8::Local<v8::FunctionTemplate> tpl = v8::FunctionTemplate::New(isolate);
@@ -176,7 +182,7 @@ void Attribute::set_value(const v8::Local<v8::Value>& val) {
         call_netcdf(nc_put_att(parent_id, var_id, name.c_str(), NC_DOUBLE, 1, &v));
     } else {
         std::string v(*v8::String::Utf8Value(val->ToString()));
-        call_netcdf(nc_put_att_text(parent_id, var_id, name.c_str(), NC_CHAR, v.c_str()));
+        call_netcdf(nc_put_att_text(parent_id, var_id, name.c_str(), v.length(), v.c_str()));
     }
 }
 
