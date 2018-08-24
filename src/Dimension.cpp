@@ -8,7 +8,7 @@ v8::Persistent<v8::Function> Dimension::constructor;
 
 Dimension::Dimension(const int& id_, const int& parent_id_) : id(id_), parent_id(parent_id_) {
     v8::Isolate* isolate = v8::Isolate::GetCurrent();
-    v8::Local<v8::Object> obj = v8::Local<v8::Function>::New(isolate, constructor)->NewInstance();
+    v8::Local<v8::Object> obj = v8::Local<v8::Function>::New(isolate, constructor)->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
     Wrap(obj);
 }
 
@@ -54,7 +54,7 @@ void Dimension::GetName(v8::Local<v8::String> property, const v8::PropertyCallba
 
 void Dimension::SetName(v8::Local<v8::String> property, v8::Local<v8::Value> val, const v8::PropertyCallbackInfo<void>& info) {
     Dimension* obj = node::ObjectWrap::Unwrap<Dimension>(info.Holder());
-    v8::String::Utf8Value new_name_(val->ToString());
+    v8::String::Utf8Value new_name_(v8::Isolate::GetCurrent(), val->ToString());
     call_netcdf(nc_rename_dim(obj->parent_id, obj->id, *new_name_));
 }
 

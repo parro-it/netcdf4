@@ -38,12 +38,12 @@ void File::New(const v8::FunctionCallbackInfo<v8::Value>& args) {
     }
 
     if (args.IsConstructCall()) {
-        std::string filename = *v8::String::Utf8Value(args[0]->ToString());
-        std::string mode_arg = *v8::String::Utf8Value(args[1]->ToString());
+        std::string filename = *v8::String::Utf8Value(isolate, args[0]->ToString());
+        std::string mode_arg = *v8::String::Utf8Value(isolate, args[1]->ToString());
         int format = NC_NETCDF4;
         int id;
         if (args.Length() > 2) {
-            std::string format_arg = *v8::String::Utf8Value(args[2]->ToString());
+            std::string format_arg = *v8::String::Utf8Value(isolate, args[2]->ToString());
             if (format_arg == "classic") {
                 format = 0;
             } else if (format_arg == "classic64") {
@@ -77,7 +77,7 @@ void File::New(const v8::FunctionCallbackInfo<v8::Value>& args) {
         const int argc = 1;
         v8::Local<v8::Value> argv[argc] = {args[0]};
         v8::Local<v8::Function> cons = v8::Local<v8::Function>::New(isolate, constructor);
-        args.GetReturnValue().Set(cons->NewInstance(argc, argv));
+        args.GetReturnValue().Set(cons->NewInstance(isolate->GetCurrentContext(), argc, argv).ToLocalChecked());
     }
 }
 
