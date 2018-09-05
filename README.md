@@ -1,4 +1,4 @@
-# netcdf4-js
+prerequisits# netcdf4-js
 
 [![Build Status](https://img.shields.io/travis/swillner/netcdf4-js.svg)](https://travis-ci.org/swillner/netcdf4-js)
 [![NPM Version](https://img.shields.io/npm/v/netcdf4.svg)](https://npmjs.org/package/netcdf4)
@@ -13,10 +13,10 @@ built upon the C-library for netcdf.
 
 `netcdf4-js` is built with `nodejs` >= 4.x
 
-Please make sure you have [https://github.com/nodejs/node-gyp](node-gyp) and all of its prerequisites.
+Please make sure you have [node-gyp](https://github.com/nodejs/node-gyp) and all of its prerequisites.
 
 You will also need `libnetcdf` >= 4.x installed. Either build from
-[https://www.unidata.ucar.edu/downloads/netcdf/index.jsp](source) or
+[source](https://www.unidata.ucar.edu/downloads/netcdf/index.jsp) or
 use your package manager (e.g., the package is called ` libnetcdf-dev`
 in Ubuntu/Debian).
 
