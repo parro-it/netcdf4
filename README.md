@@ -13,8 +13,10 @@ built upon the C-library for netcdf.
 
 `netcdf4-js` is built with `nodejs` >= 4.x
 
-You will need `libnetcdf` >= 4.x installed. Either build from
-[https://www.unidata.ucar.edu/downloads/netcdf/index.jsp](sources) or
+Please make sure you have [https://github.com/nodejs/node-gyp](node-gyp) and all of its prerequisites.
+
+You will also need `libnetcdf` >= 4.x installed. Either build from
+[https://www.unidata.ucar.edu/downloads/netcdf/index.jsp](source) or
 use your package manager (e.g., the package is called ` libnetcdf-dev`
 in Ubuntu/Debian).
 
