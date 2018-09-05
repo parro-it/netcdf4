@@ -42,7 +42,11 @@ void Attribute::GetName(v8::Local<v8::String> property, const v8::PropertyCallba
 void Attribute::SetName(v8::Local<v8::String> property, v8::Local<v8::Value> val, const v8::PropertyCallbackInfo<void>& info) {
     v8::Isolate* isolate = v8::Isolate::GetCurrent();
     Attribute* obj = node::ObjectWrap::Unwrap<Attribute>(info.Holder());
-    v8::String::Utf8Value new_name_(isolate, val->ToString());
+    v8::String::Utf8Value new_name_(
+#if NODE_MAJOR_VERSION >= 8
+        isolate,
+#endif
+        val->ToString());
     call_netcdf(nc_rename_att(obj->parent_id, obj->var_id, obj->name.c_str(), *new_name_));
     obj->name = *new_name_;
 }
@@ -182,7 +186,11 @@ void Attribute::set_value(const v8::Local<v8::Value>& val) {
         double v = val->NumberValue();
         call_netcdf(nc_put_att(parent_id, var_id, name.c_str(), NC_DOUBLE, 1, &v));
     } else {
-        std::string v(*v8::String::Utf8Value(v8::Isolate::GetCurrent(), val->ToString()));
+        std::string v(*v8::String::Utf8Value(
+#if NODE_MAJOR_VERSION >= 8
+            v8::Isolate::GetCurrent(),
+#endif
+            val->ToString()));
         call_netcdf(nc_put_att_text(parent_id, var_id, name.c_str(), v.length(), v.c_str()));
     }
 }

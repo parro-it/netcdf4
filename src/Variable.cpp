@@ -452,13 +452,22 @@ void Variable::AddAttribute(const v8::FunctionCallbackInfo<v8::Value>& args) {
         isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Wrong number of arguments")));
         return;
     }
-    std::string type_str = *v8::String::Utf8Value(isolate, args[1]);
+    std::string type_str = *v8::String::Utf8Value(
+#if NODE_MAJOR_VERSION >= 8
+        isolate,
+#endif
+        args[1]);
     int type = get_type(type_str);
     if (type == NC2_ERR) {
         isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Unknown variable type")));
         return;
     }
-    Attribute* res = new Attribute(*v8::String::Utf8Value(isolate, args[0]), obj->id, obj->parent_id, type);
+    Attribute* res = new Attribute(*v8::String::Utf8Value(
+#if NODE_MAJOR_VERSION >= 8
+                                       isolate,
+#endif
+                                       args[0]),
+                                   obj->id, obj->parent_id, type);
     res->set_value(args[2]);
     args.GetReturnValue().Set(res->handle());
 }
@@ -520,7 +529,11 @@ void Variable::GetName(v8::Local<v8::String> property, const v8::PropertyCallbac
 
 void Variable::SetName(v8::Local<v8::String> property, v8::Local<v8::Value> val, const v8::PropertyCallbackInfo<void>& info) {
     Variable* obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
-    v8::String::Utf8Value new_name_(info.GetIsolate(), val->ToString());
+    v8::String::Utf8Value new_name_(
+#if NODE_MAJOR_VERSION >= 8
+        info.GetIsolate(),
+#endif
+        val->ToString());
     call_netcdf(nc_rename_var(obj->parent_id, obj->id, *new_name_));
 }
 
@@ -550,7 +563,11 @@ void Variable::GetEndianness(v8::Local<v8::String> property, const v8::PropertyC
 void Variable::SetEndianness(v8::Local<v8::String> property, v8::Local<v8::Value> val, const v8::PropertyCallbackInfo<void>& info) {
     v8::Isolate* isolate = info.GetIsolate();
     Variable* obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
-    std::string arg = *v8::String::Utf8Value(isolate, val->ToString());
+    std::string arg = *v8::String::Utf8Value(
+#if NODE_MAJOR_VERSION >= 8
+        isolate,
+#endif
+        val->ToString());
     int v;
     if (arg == "little") {
         v = NC_ENDIAN_LITTLE;
@@ -588,7 +605,11 @@ void Variable::GetChecksumMode(v8::Local<v8::String> property, const v8::Propert
 void Variable::SetChecksumMode(v8::Local<v8::String> property, v8::Local<v8::Value> val, const v8::PropertyCallbackInfo<void>& info) {
     v8::Isolate* isolate = info.GetIsolate();
     Variable* obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
-    std::string arg = *v8::String::Utf8Value(isolate, val->ToString());
+    std::string arg = *v8::String::Utf8Value(
+#if NODE_MAJOR_VERSION >= 8
+        isolate,
+#endif
+        val->ToString());
     int v;
     if (arg == "none") {
         v = NC_NOCHECKSUM;
@@ -624,7 +645,11 @@ void Variable::GetChunkMode(v8::Local<v8::String> property, const v8::PropertyCa
 void Variable::SetChunkMode(v8::Local<v8::String> property, v8::Local<v8::Value> val, const v8::PropertyCallbackInfo<void>& info) {
     v8::Isolate* isolate = info.GetIsolate();
     Variable* obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
-    std::string arg = *v8::String::Utf8Value(info.GetIsolate(), val->ToString());
+    std::string arg = *v8::String::Utf8Value(
+#if NODE_MAJOR_VERSION >= 8
+        info.GetIsolate(),
+#endif
+        val->ToString());
     int v;
     if (arg == "contiguous") {
         v = NC_CONTIGUOUS;

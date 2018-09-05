@@ -48,13 +48,22 @@ void Group::AddAttribute(const v8::FunctionCallbackInfo<v8::Value>& args) {
         isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Wrong number of arguments")));
         return;
     }
-    std::string type_str = *v8::String::Utf8Value(isolate, args[1]);
+    std::string type_str = *v8::String::Utf8Value(
+#if NODE_MAJOR_VERSION >= 8
+        isolate,
+#endif
+        args[1]);
     int type = get_type(type_str);
     if (type == NC2_ERR) {
         isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Unknown variable type")));
         return;
     }
-    Attribute* res = new Attribute(*v8::String::Utf8Value(isolate, args[0]), NC_GLOBAL, obj->id, type);
+    Attribute* res = new Attribute(*v8::String::Utf8Value(
+#if NODE_MAJOR_VERSION >= 8
+                                       isolate,
+#endif
+                                       args[0]),
+                                   NC_GLOBAL, obj->id, type);
     res->set_value(args[2]);
     args.GetReturnValue().Set(res->handle());
 }
@@ -67,7 +76,13 @@ void Group::AddSubgroup(const v8::FunctionCallbackInfo<v8::Value>& args) {
         return;
     }
     int new_id;
-    call_netcdf(nc_def_grp(obj->id, *v8::String::Utf8Value(isolate, args[0]), &new_id));
+    call_netcdf(nc_def_grp(obj->id,
+                           *v8::String::Utf8Value(
+#if NODE_MAJOR_VERSION >= 8
+                               isolate,
+#endif
+                               args[0]),
+                           &new_id));
     Group* res = new Group(new_id);
     args.GetReturnValue().Set(res->handle());
 }
@@ -80,7 +95,12 @@ void Group::AddDimension(const v8::FunctionCallbackInfo<v8::Value>& args) {
         return;
     }
     int len;
-    if (std::string(*v8::String::Utf8Value(isolate, args[1])) == "unlimited") {
+    if (std::string(*v8::String::Utf8Value(
+#if NODE_MAJOR_VERSION >= 8
+            isolate,
+#endif
+            args[1]))
+        == "unlimited") {
         len = NC_UNLIMITED;
     } else {
         if (!args[1]->IsUint32()) {
@@ -90,7 +110,13 @@ void Group::AddDimension(const v8::FunctionCallbackInfo<v8::Value>& args) {
         len = args[1]->Uint32Value();
     }
     int new_id;
-    call_netcdf(nc_def_dim(obj->id, *v8::String::Utf8Value(isolate, args[0]), len, &new_id));
+    call_netcdf(nc_def_dim(obj->id,
+                           *v8::String::Utf8Value(
+#if NODE_MAJOR_VERSION >= 8
+                               isolate,
+#endif
+                               args[0]),
+                           len, &new_id));
     Dimension* res = new Dimension(new_id, obj->id);
     args.GetReturnValue().Set(res->handle());
 }
@@ -102,7 +128,11 @@ void Group::AddVariable(const v8::FunctionCallbackInfo<v8::Value>& args) {
         isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Wrong number of arguments")));
         return;
     }
-    std::string type_str = *v8::String::Utf8Value(isolate, args[1]);
+    std::string type_str = *v8::String::Utf8Value(
+#if NODE_MAJOR_VERSION >= 8
+        isolate,
+#endif
+        args[1]);
     int type = get_type(type_str);
     if (type == NC2_ERR) {
         isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Unknown variable type")));
@@ -123,7 +153,13 @@ void Group::AddVariable(const v8::FunctionCallbackInfo<v8::Value>& args) {
         dimids[i] = array->Get(i)->Int32Value();
     }
     int new_id;
-    call_netcdf(nc_def_var(obj->id, *v8::String::Utf8Value(isolate, args[0]), type, ndims, dimids, &new_id));
+    call_netcdf(nc_def_var(obj->id,
+                           *v8::String::Utf8Value(
+#if NODE_MAJOR_VERSION >= 8
+                               isolate,
+#endif
+                               args[0]),
+                           type, ndims, dimids, &new_id));
     Variable* res = new Variable(new_id, obj->id);
     args.GetReturnValue().Set(res->handle());
 }

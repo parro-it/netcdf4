@@ -54,7 +54,11 @@ void Dimension::GetName(v8::Local<v8::String> property, const v8::PropertyCallba
 
 void Dimension::SetName(v8::Local<v8::String> property, v8::Local<v8::Value> val, const v8::PropertyCallbackInfo<void>& info) {
     Dimension* obj = node::ObjectWrap::Unwrap<Dimension>(info.Holder());
-    v8::String::Utf8Value new_name_(v8::Isolate::GetCurrent(), val->ToString());
+    v8::String::Utf8Value new_name_(
+#if NODE_MAJOR_VERSION >= 8
+        v8::Isolate::GetCurrent(),
+#endif
+        val->ToString());
     call_netcdf(nc_rename_dim(obj->parent_id, obj->id, *new_name_));
 }
 
