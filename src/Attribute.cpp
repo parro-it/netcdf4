@@ -11,13 +11,13 @@ v8::Persistent<v8::Function> Attribute::constructor;
 Attribute::Attribute(const char* name_, int var_id_, int parent_id_) : name(name_), var_id(var_id_), parent_id(parent_id_) {
     call_netcdf(nc_inq_atttype(parent_id, var_id_, name_, &type));
     v8::Isolate* isolate = v8::Isolate::GetCurrent();
-    v8::Local<v8::Object> obj = v8::Local<v8::Function>::New(isolate, constructor)->NewInstance();
+    v8::Local<v8::Object> obj = v8::Local<v8::Function>::New(isolate, constructor)->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
     Wrap(obj);
 }
 
 Attribute::Attribute(const char* name_, int var_id_, int parent_id_, int type_) : name(name_), var_id(var_id_), parent_id(parent_id_), type(type_) {
     v8::Isolate* isolate = v8::Isolate::GetCurrent();
-    v8::Local<v8::Object> obj = v8::Local<v8::Function>::New(isolate, constructor)->NewInstance();
+    v8::Local<v8::Object> obj = v8::Local<v8::Function>::New(isolate, constructor)->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
     Wrap(obj);
 }
 
@@ -40,8 +40,9 @@ void Attribute::GetName(v8::Local<v8::String> property, const v8::PropertyCallba
 }
 
 void Attribute::SetName(v8::Local<v8::String> property, v8::Local<v8::Value> val, const v8::PropertyCallbackInfo<void>& info) {
+    v8::Isolate* isolate = v8::Isolate::GetCurrent();
     Attribute* obj = node::ObjectWrap::Unwrap<Attribute>(info.Holder());
-    v8::String::Utf8Value new_name_(val->ToString());
+    v8::String::Utf8Value new_name_(isolate, val->ToString());
     call_netcdf(nc_rename_att(obj->parent_id, obj->var_id, obj->name.c_str(), *new_name_));
     obj->name = *new_name_;
 }
@@ -181,7 +182,7 @@ void Attribute::set_value(const v8::Local<v8::Value>& val) {
         double v = val->NumberValue();
         call_netcdf(nc_put_att(parent_id, var_id, name.c_str(), NC_DOUBLE, 1, &v));
     } else {
-        std::string v(*v8::String::Utf8Value(val->ToString()));
+        std::string v(*v8::String::Utf8Value(v8::Isolate::GetCurrent(), val->ToString()));
         call_netcdf(nc_put_att_text(parent_id, var_id, name.c_str(), v.length(), v.c_str()));
     }
 }
