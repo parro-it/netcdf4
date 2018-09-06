@@ -37,7 +37,11 @@ void Group::Init(v8::Local<v8::Object> exports) {
 }
 
 bool Group::get_name(char* name) const {
-    call_netcdf_bool(nc_inq_grpname(id, name));
+    int retval = nc_inq_grpname(id, name);
+    if (retval != NC_NOERR) {
+        throw_netcdf_error(v8::Isolate::GetCurrent(), retval);
+        return false;
+    }
     return true;
 }
 
@@ -76,13 +80,17 @@ void Group::AddSubgroup(const v8::FunctionCallbackInfo<v8::Value>& args) {
         return;
     }
     int new_id;
-    call_netcdf(nc_def_grp(obj->id,
-                           *v8::String::Utf8Value(
+    int retval = nc_def_grp(obj->id,
+                            *v8::String::Utf8Value(
 #if NODE_MAJOR_VERSION >= 8
-                               isolate,
+                                isolate,
 #endif
-                               args[0]),
-                           &new_id));
+                                args[0]),
+                            &new_id);
+    if (retval != NC_NOERR) {
+        throw_netcdf_error(isolate, retval);
+        return;
+    }
     Group* res = new Group(new_id);
     args.GetReturnValue().Set(res->handle());
 }
@@ -110,13 +118,17 @@ void Group::AddDimension(const v8::FunctionCallbackInfo<v8::Value>& args) {
         len = args[1]->Uint32Value();
     }
     int new_id;
-    call_netcdf(nc_def_dim(obj->id,
-                           *v8::String::Utf8Value(
+    int retval = nc_def_dim(obj->id,
+                            *v8::String::Utf8Value(
 #if NODE_MAJOR_VERSION >= 8
-                               isolate,
+                                isolate,
 #endif
-                               args[0]),
-                           len, &new_id));
+                                args[0]),
+                            len, &new_id);
+    if (retval != NC_NOERR) {
+        throw_netcdf_error(isolate, retval);
+        return;
+    }
     Dimension* res = new Dimension(new_id, obj->id);
     args.GetReturnValue().Set(res->handle());
 }
@@ -148,20 +160,26 @@ void Group::AddVariable(const v8::FunctionCallbackInfo<v8::Value>& args) {
     }
     v8::Local<v8::Object> array = args[2]->ToObject();
     size_t ndims = array->Get(v8::String::NewFromUtf8(isolate, "length"))->Uint32Value();
-    int dimids[ndims];
+    int* dimids = new int[ndims];
     for (size_t i = 0; i < ndims; i++) {
         dimids[i] = array->Get(i)->Int32Value();
     }
     int new_id;
-    call_netcdf(nc_def_var(obj->id,
-                           *v8::String::Utf8Value(
+    int retval = nc_def_var(obj->id,
+                            *v8::String::Utf8Value(
 #if NODE_MAJOR_VERSION >= 8
-                               isolate,
+                                isolate,
 #endif
-                               args[0]),
-                           type, ndims, dimids, &new_id));
+                                args[0]),
+                            type, ndims, dimids, &new_id);
+    if (retval != NC_NOERR) {
+        throw_netcdf_error(isolate, retval);
+        delete[] dimids;
+        return;
+    }
     Variable* res = new Variable(new_id, obj->id);
     args.GetReturnValue().Set(res->handle());
+    delete[] dimids;
 }
 
 void Group::GetId(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
@@ -174,71 +192,112 @@ void Group::GetVariables(v8::Local<v8::String> property, const v8::PropertyCallb
     v8::Isolate* isolate = info.GetIsolate();
     Group* obj = node::ObjectWrap::Unwrap<Group>(info.Holder());
     int nvars;
-    call_netcdf(nc_inq_varids(obj->id, &nvars, NULL));
-    int var_ids[nvars];
-    call_netcdf(nc_inq_varids(obj->id, NULL, var_ids));
+    int retval = nc_inq_varids(obj->id, &nvars, NULL);
+    if (retval != NC_NOERR) {
+        throw_netcdf_error(isolate, retval);
+        return;
+    }
+    int* var_ids = new int[nvars];
+    retval = nc_inq_varids(obj->id, NULL, var_ids);
+    if (retval != NC_NOERR) {
+        throw_netcdf_error(isolate, retval);
+        delete[] var_ids;
+        return;
+    }
     v8::Local<v8::Object> result = v8::Object::New(isolate);
     char name[NC_MAX_NAME + 1];
-    for (int var_id : var_ids) {
-        Variable* v = new Variable(var_id, obj->id);
+    for (int i = 0; i < nvars; ++i) {
+        Variable* v = new Variable(var_ids[i], obj->id);
         if (v->get_name(name)) {
             result->Set(v8::String::NewFromUtf8(isolate, name), v->handle());
         } else {
+            delete[] var_ids;
             return;
         }
     }
     info.GetReturnValue().Set(result);
+    delete[] var_ids;
 }
 
 void Group::GetDimensions(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
     v8::Isolate* isolate = info.GetIsolate();
     Group* obj = node::ObjectWrap::Unwrap<Group>(info.Holder());
     int ndims;
-    call_netcdf(nc_inq_dimids(obj->id, &ndims, NULL, 0));
-    int dim_ids[ndims];
-    call_netcdf(nc_inq_dimids(obj->id, NULL, dim_ids, 0));
+    int retval = nc_inq_dimids(obj->id, &ndims, NULL, 0);
+    if (retval != NC_NOERR) {
+        throw_netcdf_error(isolate, retval);
+        return;
+    }
+    int* dim_ids = new int[ndims];
+    retval = nc_inq_dimids(obj->id, NULL, dim_ids, 0);
+    if (retval != NC_NOERR) {
+        throw_netcdf_error(isolate, retval);
+        delete[] dim_ids;
+        return;
+    }
     v8::Local<v8::Object> result = v8::Object::New(isolate);
     char name[NC_MAX_NAME + 1];
-    for (int dim_id : dim_ids) {
-        Dimension* d = new Dimension(dim_id, obj->id);
+    for (int i = 0; i < ndims; ++i) {
+        Dimension* d = new Dimension(dim_ids[i], obj->id);
         if (d->get_name(name)) {
             result->Set(v8::String::NewFromUtf8(isolate, name), d->handle());
         } else {
+            delete[] dim_ids;
             return;
         }
     }
     info.GetReturnValue().Set(result);
+    delete[] dim_ids;
 }
 
 void Group::GetUnlimited(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
     v8::Isolate* isolate = info.GetIsolate();
     Group* obj = node::ObjectWrap::Unwrap<Group>(info.Holder());
     int ndims;
-    call_netcdf(nc_inq_unlimdims(obj->id, &ndims, NULL));
-    int dim_ids[ndims];
-    call_netcdf(nc_inq_unlimdims(obj->id, NULL, dim_ids));
+    int retval = nc_inq_unlimdims(obj->id, &ndims, NULL);
+    if (retval != NC_NOERR) {
+        throw_netcdf_error(isolate, retval);
+        return;
+    }
+    int* dim_ids = new int[ndims];
+    retval = nc_inq_unlimdims(obj->id, NULL, dim_ids);
+    if (retval != NC_NOERR) {
+        throw_netcdf_error(isolate, retval);
+        delete[] dim_ids;
+        return;
+    }
     v8::Local<v8::Object> result = v8::Object::New(isolate);
     char name[NC_MAX_NAME + 1];
-    for (int dim_id : dim_ids) {
-        Dimension* d = new Dimension(dim_id, obj->id);
+    for (int i = 0; i < ndims; ++i) {
+        Dimension* d = new Dimension(dim_ids[i], obj->id);
         if (d->get_name(name)) {
             result->Set(v8::String::NewFromUtf8(isolate, name), d->handle());
         } else {
+            delete[] dim_ids;
             return;
         }
     }
     info.GetReturnValue().Set(result);
+    delete[] dim_ids;
 }
 
 void Group::GetAttributes(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
     v8::Isolate* isolate = info.GetIsolate();
     Group* obj = node::ObjectWrap::Unwrap<Group>(info.Holder());
     int natts;
-    call_netcdf(nc_inq_natts(obj->id, &natts));
+    int retval = nc_inq_natts(obj->id, &natts);
+    if (retval != NC_NOERR) {
+        throw_netcdf_error(isolate, retval);
+        return;
+    }
     v8::Local<v8::Object> result = v8::Object::New(isolate);
     char name[NC_MAX_NAME + 1];
     for (int i = 0; i < natts; i++) {
-        call_netcdf(nc_inq_attname(obj->id, NC_GLOBAL, i, name));
+        retval = nc_inq_attname(obj->id, NC_GLOBAL, i, name);
+        if (retval != NC_NOERR) {
+            throw_netcdf_error(isolate, retval);
+            return;
+        }
         Attribute* a = new Attribute(name, NC_GLOBAL, obj->id);
         result->Set(v8::String::NewFromUtf8(isolate, name), a->handle());
     }
@@ -249,20 +308,31 @@ void Group::GetSubgroups(v8::Local<v8::String> property, const v8::PropertyCallb
     v8::Isolate* isolate = info.GetIsolate();
     Group* obj = node::ObjectWrap::Unwrap<Group>(info.Holder());
     int ngrps;
-    call_netcdf(nc_inq_grps(obj->id, &ngrps, NULL));
-    int grp_ids[ngrps];
-    call_netcdf(nc_inq_grps(obj->id, NULL, grp_ids));
+    int retval = nc_inq_grps(obj->id, &ngrps, NULL);
+    if (retval != NC_NOERR) {
+        throw_netcdf_error(isolate, retval);
+        return;
+    }
+    int* grp_ids = new int[ngrps];
+    retval = nc_inq_grps(obj->id, NULL, grp_ids);
+    if (retval != NC_NOERR) {
+        throw_netcdf_error(isolate, retval);
+        delete[] grp_ids;
+        return;
+    }
     v8::Local<v8::Object> result = v8::Object::New(isolate);
     char name[NC_MAX_NAME + 1];
-    for (int grp_id : grp_ids) {
-        Group* g = new Group(grp_id);
+    for (int i = 0; i < ngrps; ++i) {
+        Group* g = new Group(grp_ids[i]);
         if (g->get_name(name)) {
             result->Set(v8::String::NewFromUtf8(isolate, name), g->handle());
         } else {
+            delete[] grp_ids;
             return;
         }
     }
     info.GetReturnValue().Set(result);
+    delete[] grp_ids;
 }
 
 void Group::GetName(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
@@ -278,11 +348,21 @@ void Group::GetFullname(v8::Local<v8::String> property, const v8::PropertyCallba
     v8::Isolate* isolate = info.GetIsolate();
     Group* obj = node::ObjectWrap::Unwrap<Group>(info.Holder());
     size_t len;
-    call_netcdf(nc_inq_grpname_len(obj->id, &len));
-    char name[len + 1];
+    int retval = nc_inq_grpname_len(obj->id, &len);
+    if (retval != NC_NOERR) {
+        throw_netcdf_error(isolate, retval);
+        return;
+    }
+    char* name = new char[len + 1];
     name[len] = 0;
-    call_netcdf(nc_inq_grpname_full(obj->id, NULL, name));
+    retval = nc_inq_grpname_full(obj->id, NULL, name);
+    if (retval != NC_NOERR) {
+        throw_netcdf_error(isolate, retval);
+        delete[] name;
+        return;
+    }
     info.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, name));
+    delete[] name;
 }
 
 void Group::Inspect(const v8::FunctionCallbackInfo<v8::Value>& args) {

@@ -13,7 +13,10 @@ File::File(const int& id_) : id(id_), closed(false) {}
 
 File::~File() {
     if (!closed) {
-        call_netcdf(nc_close(id));
+        int retval = nc_close(id);
+        if (retval != NC_NOERR) {
+            throw_netcdf_error(v8::Isolate::GetCurrent(), retval);
+        }
     }
 }
 
@@ -69,16 +72,21 @@ void File::New(const v8::FunctionCallbackInfo<v8::Value>& args) {
                 return;
             }
         }
+        int retval;
         if (mode_arg == "r") {
-            call_netcdf(nc_open(filename.c_str(), NC_NOWRITE, &id));
+            retval = nc_open(filename.c_str(), NC_NOWRITE, &id);
         } else if (mode_arg == "w") {
-            call_netcdf(nc_open(filename.c_str(), NC_WRITE, &id));
+            retval = nc_open(filename.c_str(), NC_WRITE, &id);
         } else if (mode_arg == "c") {
-            call_netcdf(nc_create(filename.c_str(), format | NC_NOCLOBBER, &id));
+            retval = nc_create(filename.c_str(), format | NC_NOCLOBBER, &id);
         } else if (mode_arg == "c!") {
-            call_netcdf(nc_create(filename.c_str(), format | NC_CLOBBER, &id));
+            retval = nc_create(filename.c_str(), format | NC_CLOBBER, &id);
         } else {
             isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Unknown file mode")));
+            return;
+        }
+        if (retval != NC_NOERR) {
+            throw_netcdf_error(isolate, retval);
             return;
         }
         File* obj = new File(id);
@@ -95,12 +103,18 @@ void File::New(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
 void File::Sync(const v8::FunctionCallbackInfo<v8::Value>& args) {
     File* obj = node::ObjectWrap::Unwrap<File>(args.Holder());
-    call_netcdf(nc_sync(obj->id));
+    int retval = nc_sync(obj->id);
+    if (retval != NC_NOERR) {
+        throw_netcdf_error(args.GetIsolate(), retval);
+    }
 }
 
 void File::Close(const v8::FunctionCallbackInfo<v8::Value>& args) {
     File* obj = node::ObjectWrap::Unwrap<File>(args.Holder());
-    call_netcdf(nc_close(obj->id));
+    int retval = nc_close(obj->id);
+    if (retval != NC_NOERR) {
+        throw_netcdf_error(args.GetIsolate(), retval);
+    }
     obj->closed = true;
 }
 

@@ -13,14 +13,35 @@ built upon the C-library for netcdf.
 
 `netcdf4-js` is built with `nodejs` >= 4.x
 
-Please make sure you have [node-gyp](https://github.com/nodejs/node-gyp) and all of its prerequisites.
+Install using `npm`:
 
-You will also need `libnetcdf` >= 4.x installed. Either build from
-[source](https://www.unidata.ucar.edu/downloads/netcdf/index.jsp) or
-use your package manager (e.g., the package is called ` libnetcdf-dev`
-in Ubuntu/Debian).
+```
+$ npm install netcdf4
+```
 
-Then install using `npm install netcdf4`.
+Prerequisites:
+
+You will need `libnetcdf` >= 4.x installed.
+
+### On Linux/Unix/OSX
+
+* Install NetCDF4 using your package manager, e.g., on Ubuntu/Debian:
+```
+$ sudo apt-get install libnetcdf-dev
+```
+or download it [here](https://www.unidata.ucar.edu/downloads/netcdf/index.jsp)
+* Make sure your system fulfills all the prerequisites of [node-gyp](https://github.com/nodejs/node-gyp#on-unix)
+
+### On Windows:
+
+* Install NetCDF4 from [here](https://www.unidata.ucar.edu/downloads/netcdf/index.jsp)
+* Make sure to select at least "dependencies", "headers" and "libraries" to install in the NetCDF installation wizard
+* Install the build tools as described [here](https://github.com/nodejs/node-gyp#on-windows)
+* Set the environment variable `NETCDF_DIR` to your NetCDF installation, e.g.,
+``` bash
+C:\> set NETCDF_DIR=C:\Program Files\netCDF 4.6.1
+```
+
 
 ## Usage
 

@@ -25,7 +25,11 @@ void Dimension::Init(v8::Local<v8::Object> exports) {
 }
 
 bool Dimension::get_name(char* name) const {
-    call_netcdf_bool(nc_inq_dimname(parent_id, id, name));
+    int retval = nc_inq_dimname(parent_id, id, name);
+    if (retval != NC_NOERR) {
+        throw_netcdf_error(v8::Isolate::GetCurrent(), retval);
+        return false;
+    }
     return true;
 }
 
@@ -39,7 +43,11 @@ void Dimension::GetLength(v8::Local<v8::String> property, const v8::PropertyCall
     v8::Isolate* isolate = info.GetIsolate();
     Dimension* obj = node::ObjectWrap::Unwrap<Dimension>(info.Holder());
     size_t len;
-    call_netcdf(nc_inq_dimlen(obj->parent_id, obj->id, &len));
+    int retval = nc_inq_dimlen(obj->parent_id, obj->id, &len);
+    if (retval != NC_NOERR) {
+        throw_netcdf_error(isolate, retval);
+        return;
+    }
     info.GetReturnValue().Set(v8::Integer::New(isolate, len));
 }
 
@@ -53,13 +61,18 @@ void Dimension::GetName(v8::Local<v8::String> property, const v8::PropertyCallba
 }
 
 void Dimension::SetName(v8::Local<v8::String> property, v8::Local<v8::Value> val, const v8::PropertyCallbackInfo<void>& info) {
+    v8::Isolate* isolate = info.GetIsolate();
     Dimension* obj = node::ObjectWrap::Unwrap<Dimension>(info.Holder());
     v8::String::Utf8Value new_name_(
 #if NODE_MAJOR_VERSION >= 8
-        v8::Isolate::GetCurrent(),
+        isolate,
 #endif
         val->ToString());
-    call_netcdf(nc_rename_dim(obj->parent_id, obj->id, *new_name_));
+    int retval = nc_rename_dim(obj->parent_id, obj->id, *new_name_);
+    if (retval != NC_NOERR) {
+        throw_netcdf_error(isolate, retval);
+        return;
+    }
 }
 
 void Dimension::Inspect(const v8::FunctionCallbackInfo<v8::Value>& args) {
