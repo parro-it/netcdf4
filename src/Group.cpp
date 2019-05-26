@@ -18,22 +18,22 @@ Group::Group(const int& id_) : id(id_) {
 void Group::Init(v8::Local<v8::Object> exports) {
     v8::Isolate* isolate = exports->GetIsolate();
     v8::Local<v8::FunctionTemplate> tpl = v8::FunctionTemplate::New(isolate);
-    tpl->SetClassName(v8::String::NewFromUtf8(isolate, "Group"));
+    tpl->SetClassName(v8::String::NewFromUtf8(isolate, "Group", v8::NewStringType::kNormal).ToLocalChecked());
     tpl->InstanceTemplate()->SetInternalFieldCount(1);
     NODE_SET_PROTOTYPE_METHOD(tpl, "addVariable", Group::AddVariable);
     NODE_SET_PROTOTYPE_METHOD(tpl, "addDimension", Group::AddDimension);
     NODE_SET_PROTOTYPE_METHOD(tpl, "addSubgroup", Group::AddSubgroup);
     NODE_SET_PROTOTYPE_METHOD(tpl, "addAttribute", Group::AddAttribute);
     NODE_SET_PROTOTYPE_METHOD(tpl, "inspect", Group::Inspect);
-    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "id"), Group::GetId);
-    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "variables"), Group::GetVariables);
-    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "dimensions"), Group::GetDimensions);
-    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "unlimited"), Group::GetUnlimited);
-    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "attributes"), Group::GetAttributes);
-    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "subgroups"), Group::GetSubgroups);
-    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "name"), Group::GetName);
-    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "fullname"), Group::GetFullname);
-    constructor.Reset(isolate, tpl->GetFunction());
+    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "id", v8::NewStringType::kNormal).ToLocalChecked(), Group::GetId);
+    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "variables", v8::NewStringType::kNormal).ToLocalChecked(), Group::GetVariables);
+    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "dimensions", v8::NewStringType::kNormal).ToLocalChecked(), Group::GetDimensions);
+    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "unlimited", v8::NewStringType::kNormal).ToLocalChecked(), Group::GetUnlimited);
+    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "attributes", v8::NewStringType::kNormal).ToLocalChecked(), Group::GetAttributes);
+    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "subgroups", v8::NewStringType::kNormal).ToLocalChecked(), Group::GetSubgroups);
+    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "name", v8::NewStringType::kNormal).ToLocalChecked(), Group::GetName);
+    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "fullname", v8::NewStringType::kNormal).ToLocalChecked(), Group::GetFullname);
+    constructor.Reset(isolate, tpl->GetFunction(isolate->GetCurrentContext()).ToLocalChecked());
 }
 
 bool Group::get_name(char* name) const {
@@ -49,7 +49,7 @@ void Group::AddAttribute(const v8::FunctionCallbackInfo<v8::Value>& args) {
     v8::Isolate* isolate = args.GetIsolate();
     Group* obj = node::ObjectWrap::Unwrap<Group>(args.Holder());
     if (args.Length() < 3) {
-        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Wrong number of arguments")));
+        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Wrong number of arguments", v8::NewStringType::kNormal).ToLocalChecked()));
         return;
     }
     std::string type_str = *v8::String::Utf8Value(
@@ -59,7 +59,7 @@ void Group::AddAttribute(const v8::FunctionCallbackInfo<v8::Value>& args) {
         args[1]);
     int type = get_type(type_str);
     if (type == NC2_ERR) {
-        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Unknown variable type")));
+        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Unknown variable type", v8::NewStringType::kNormal).ToLocalChecked()));
         return;
     }
     Attribute* res = new Attribute(*v8::String::Utf8Value(
@@ -76,7 +76,7 @@ void Group::AddSubgroup(const v8::FunctionCallbackInfo<v8::Value>& args) {
     v8::Isolate* isolate = args.GetIsolate();
     Group* obj = node::ObjectWrap::Unwrap<Group>(args.Holder());
     if (args.Length() < 1) {
-        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Wrong number of arguments")));
+        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Wrong number of arguments", v8::NewStringType::kNormal).ToLocalChecked()));
         return;
     }
     int new_id;
@@ -99,7 +99,7 @@ void Group::AddDimension(const v8::FunctionCallbackInfo<v8::Value>& args) {
     v8::Isolate* isolate = args.GetIsolate();
     Group* obj = node::ObjectWrap::Unwrap<Group>(args.Holder());
     if (args.Length() < 2) {
-        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Wrong number of arguments")));
+        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Wrong number of arguments", v8::NewStringType::kNormal).ToLocalChecked()));
         return;
     }
     int len;
@@ -112,10 +112,10 @@ void Group::AddDimension(const v8::FunctionCallbackInfo<v8::Value>& args) {
         len = NC_UNLIMITED;
     } else {
         if (!args[1]->IsUint32()) {
-            isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Expecting a positive integer")));
+            isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Expecting a positive integer", v8::NewStringType::kNormal).ToLocalChecked()));
             return;
         }
-        len = args[1]->Uint32Value();
+        len = args[1]->Uint32Value(isolate->GetCurrentContext()).ToChecked();
     }
     int new_id;
     int retval = nc_def_dim(obj->id,
@@ -137,7 +137,7 @@ void Group::AddVariable(const v8::FunctionCallbackInfo<v8::Value>& args) {
     v8::Isolate* isolate = args.GetIsolate();
     Group* obj = node::ObjectWrap::Unwrap<Group>(args.Holder());
     if (args.Length() < 3) {
-        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Wrong number of arguments")));
+        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Wrong number of arguments", v8::NewStringType::kNormal).ToLocalChecked()));
         return;
     }
     std::string type_str = *v8::String::Utf8Value(
@@ -147,22 +147,22 @@ void Group::AddVariable(const v8::FunctionCallbackInfo<v8::Value>& args) {
         args[1]);
     int type = get_type(type_str);
     if (type == NC2_ERR) {
-        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Unknown variable type")));
+        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Unknown variable type", v8::NewStringType::kNormal).ToLocalChecked()));
         return;
     }
     if (type == NC_STRING) {
-        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Unsupported variable type")));
+        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Unsupported variable type", v8::NewStringType::kNormal).ToLocalChecked()));
         return;
     }
     if (!args[2]->IsArray()) {
-        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Expecting an array")));
+        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Expecting an array", v8::NewStringType::kNormal).ToLocalChecked()));
         return;
     }
-    v8::Local<v8::Object> array = args[2]->ToObject();
-    size_t ndims = array->Get(v8::String::NewFromUtf8(isolate, "length"))->Uint32Value();
+    v8::Local<v8::Object> array = args[2]->ToObject(isolate->GetCurrentContext()).ToLocalChecked();
+    size_t ndims = array->Get(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "length", v8::NewStringType::kNormal).ToLocalChecked()).ToLocalChecked()->Uint32Value(isolate->GetCurrentContext()).ToChecked();
     int* dimids = new int[ndims];
     for (size_t i = 0; i < ndims; i++) {
-        dimids[i] = array->Get(i)->Int32Value();
+        dimids[i] = array->Get(isolate->GetCurrentContext(), i).ToLocalChecked()->Int32Value(isolate->GetCurrentContext()).ToChecked();
     }
     int new_id;
     int retval = nc_def_var(obj->id,
@@ -209,7 +209,7 @@ void Group::GetVariables(v8::Local<v8::String> property, const v8::PropertyCallb
     for (int i = 0; i < nvars; ++i) {
         Variable* v = new Variable(var_ids[i], obj->id);
         if (v->get_name(name)) {
-            result->Set(v8::String::NewFromUtf8(isolate, name), v->handle());
+            result->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, name, v8::NewStringType::kNormal).ToLocalChecked(), v->handle());
         } else {
             delete[] var_ids;
             return;
@@ -240,7 +240,7 @@ void Group::GetDimensions(v8::Local<v8::String> property, const v8::PropertyCall
     for (int i = 0; i < ndims; ++i) {
         Dimension* d = new Dimension(dim_ids[i], obj->id);
         if (d->get_name(name)) {
-            result->Set(v8::String::NewFromUtf8(isolate, name), d->handle());
+            result->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, name, v8::NewStringType::kNormal).ToLocalChecked(), d->handle());
         } else {
             delete[] dim_ids;
             return;
@@ -271,7 +271,7 @@ void Group::GetUnlimited(v8::Local<v8::String> property, const v8::PropertyCallb
     for (int i = 0; i < ndims; ++i) {
         Dimension* d = new Dimension(dim_ids[i], obj->id);
         if (d->get_name(name)) {
-            result->Set(v8::String::NewFromUtf8(isolate, name), d->handle());
+            result->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, name, v8::NewStringType::kNormal).ToLocalChecked(), d->handle());
         } else {
             delete[] dim_ids;
             return;
@@ -299,7 +299,7 @@ void Group::GetAttributes(v8::Local<v8::String> property, const v8::PropertyCall
             return;
         }
         Attribute* a = new Attribute(name, NC_GLOBAL, obj->id);
-        result->Set(v8::String::NewFromUtf8(isolate, name), a->handle());
+        result->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, name, v8::NewStringType::kNormal).ToLocalChecked(), a->handle());
     }
     info.GetReturnValue().Set(result);
 }
@@ -325,7 +325,7 @@ void Group::GetSubgroups(v8::Local<v8::String> property, const v8::PropertyCallb
     for (int i = 0; i < ngrps; ++i) {
         Group* g = new Group(grp_ids[i]);
         if (g->get_name(name)) {
-            result->Set(v8::String::NewFromUtf8(isolate, name), g->handle());
+            result->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, name, v8::NewStringType::kNormal).ToLocalChecked(), g->handle());
         } else {
             delete[] grp_ids;
             return;
@@ -340,7 +340,7 @@ void Group::GetName(v8::Local<v8::String> property, const v8::PropertyCallbackIn
     Group* obj = node::ObjectWrap::Unwrap<Group>(info.Holder());
     char name[NC_MAX_NAME + 1];
     if (obj->get_name(name)) {
-        info.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, name));
+        info.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, name, v8::NewStringType::kNormal).ToLocalChecked());
     }
 }
 
@@ -361,12 +361,12 @@ void Group::GetFullname(v8::Local<v8::String> property, const v8::PropertyCallba
         delete[] name;
         return;
     }
-    info.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, name));
+    info.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, name, v8::NewStringType::kNormal).ToLocalChecked());
     delete[] name;
 }
 
 void Group::Inspect(const v8::FunctionCallbackInfo<v8::Value>& args) {
     v8::Isolate* isolate = args.GetIsolate();
-    args.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, "[object Group]"));
+    args.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, "[object Group]", v8::NewStringType::kNormal).ToLocalChecked());
 }
 }  // namespace netcdf4js
