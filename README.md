@@ -1,3 +1,5 @@
+**Looking for a new maintainer! Unfortunately, I don't have the resources anymore to continue maintaining this project. Please open an issue or send a mail if you would be willing to to take over. Thank you!**
+
 # netcdf4-js
 
 [![Build Status](https://img.shields.io/travis/swillner/netcdf4-js.svg)](https://travis-ci.org/swillner/netcdf4-js)
