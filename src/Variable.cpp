@@ -1009,7 +1009,11 @@ void Variable::SetCompressionShuffle(v8::Local<v8::String> property, v8::Local<v
         isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Expecting a boolean", v8::NewStringType::kNormal).ToLocalChecked()));
         return;
     }
+#if NODE_MAJOR_VERSION > 11
     int v = val->BooleanValue(isolate) ? 1 : 0;
+#else
+    int v = val->BooleanValue() ? 1 : 0;
+#endif
     int v1, v2;
     int retval = nc_inq_var_deflate(obj->parent_id, obj->id, NULL, &v1, &v2);
     if (retval != NC_NOERR) {
@@ -1041,7 +1045,11 @@ void Variable::SetCompressionDeflate(v8::Local<v8::String> property, v8::Local<v
         isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Expecting a boolean", v8::NewStringType::kNormal).ToLocalChecked()));
         return;
     }
+#if NODE_MAJOR_VERSION > 11
     int v = val->BooleanValue(isolate) ? 1 : 0;
+#else
+    int v = val->BooleanValue() ? 1 : 0;
+#endif
     int v1, v2;
     int retval = nc_inq_var_deflate(obj->parent_id, obj->id, &v1, NULL, &v2);
     if (retval != NC_NOERR) {
