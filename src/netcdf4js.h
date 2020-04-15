@@ -8,7 +8,7 @@
 namespace netcdf4js {
 
 inline void throw_netcdf_error(v8::Isolate* isolate, int retval) {
-    isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, nc_strerror(retval))));
+    isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, nc_strerror(retval), v8::NewStringType::kNormal).ToLocalChecked()));
 }
 
 inline int get_type(const std::string& type_str) {
