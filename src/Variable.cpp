@@ -852,7 +852,11 @@ void Variable::SetFillMode(v8::Local<v8::String> property, v8::Local<v8::Value> 
         isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Expecting a boolean", v8::NewStringType::kNormal).ToLocalChecked()));
         return;
     }
+#if NODE_MAJOR_VERSION > 11
     int v = val->BooleanValue(isolate) ? 1 : 0;
+#else
+    int v = val->BooleanValue() ? 1 : 0;
+#endif
     if (obj->type < NC_BYTE || obj->type > NC_UINT) {
         isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Variable type not supported yet", v8::NewStringType::kNormal).ToLocalChecked()));
         return;
