@@ -5,20 +5,18 @@
   "main": "./build/Release/netcdf4.node",
   "scripts": {
     "install": "node-gyp rebuild",
-    "test": "node_modules/mocha/bin/mocha"
-  },
-  "bugs": {
-    "url": "https://github.com/swillner/netcdf4-js/issues"
+    "test": "mocha"
   },
   "author": {
     "name": "Sven Willner",
     "email": "sven.willner@gmail.com",
     "url": "http://svenwillner.net"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/swillner/netcdf4-js.git"
-  },
+  "contributors": [
+    "Sven Willner <sven.willner@gmail.com> (http://svenwillner.net/)",
+    "Andrea Parodi <andrea@parro.it> (http://www.parro.it/)"
+  ],
+  "repository": "parro-it/netcdf4",
   "engines": {
     "node": ">=4.0"
   },
