@@ -13,7 +13,6 @@
     "url": "http://svenwillner.net"
   },
   "contributors": [
-    "Sven Willner <sven.willner@gmail.com> (http://svenwillner.net/)",
     "Andrea Parodi <andrea@parro.it> (http://www.parro.it/)"
   ],
   "repository": "parro-it/netcdf4",
