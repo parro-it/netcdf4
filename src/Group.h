@@ -1,35 +1,41 @@
 #ifndef NETCDF4JS_GROUP_H
 #define NETCDF4JS_GROUP_H
 
-#include <node.h>
-#include <node_object_wrap.h>
+#include "napi-utils.h"
 
 namespace netcdf4js {
 
 class Variable;
 
-class Group : public node::ObjectWrap {
+class Group {
   public:
     Group(const int& id);
-    static void Init(v8::Local<v8::Object> exports);
+    static void Destructor(napi_env env, void* nativeObject, void* finalize_hint);
+    static napi_value Init(napi_env env, napi_value exports);
+    static napi_value Build(napi_env env, napi_value jsthis, int id);
     bool get_name(char* name) const;
 
   private:
-    static v8::Persistent<v8::Function> constructor;
-    static void GetId(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info);
-    static void GetVariables(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info);
-    static void GetDimensions(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info);
-    static void GetUnlimited(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info);
-    static void GetAttributes(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info);
-    static void GetSubgroups(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info);
-    static void GetName(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info);
-    static void GetFullname(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info);
-    static void AddAttribute(const v8::FunctionCallbackInfo<v8::Value>& args);
-    static void AddDimension(const v8::FunctionCallbackInfo<v8::Value>& args);
-    static void AddSubgroup(const v8::FunctionCallbackInfo<v8::Value>& args);
-    static void AddVariable(const v8::FunctionCallbackInfo<v8::Value>& args);
-    static void Inspect(const v8::FunctionCallbackInfo<v8::Value>& args);
+    ~Group();
+    static napi_value New(napi_env env, napi_callback_info info);
+    static napi_value GetId(napi_env env, napi_callback_info info);
+    static napi_value GetVariables(napi_env env, napi_callback_info info);
+    static napi_value GetDimensions(napi_env env, napi_callback_info info);
+    static napi_value GetUnlimited(napi_env env, napi_callback_info info);
+    static napi_value GetAttributes(napi_env env, napi_callback_info info);
+    static napi_value GetSubgroups(napi_env env, napi_callback_info info);
+    static napi_value GetName(napi_env env, napi_callback_info info);
+    static napi_value GetFullname(napi_env env, napi_callback_info info);
+    static napi_value AddAttribute(napi_env env, napi_callback_info info);
+    static napi_value AddDimension(napi_env env, napi_callback_info info);
+    static napi_value AddSubgroup(napi_env env, napi_callback_info info);
+    static napi_value AddVariable(napi_env env, napi_callback_info info);
+    static napi_value Inspect(napi_env env, napi_callback_info info);
     int id;
+    static napi_ref constructor;
+    napi_ref wrapper_;
+    napi_env env_;
+
 };
 }  // namespace netcdf4js
 

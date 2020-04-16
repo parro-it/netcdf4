@@ -2,62 +2,106 @@
 #include <inttypes.h>
 #include <netcdf.h>
 #include <iostream>
-#include "netcdf4js.h"
+#include "napi-utils.h"
 
 namespace netcdf4js {
 
-v8::Persistent<v8::Function> Attribute::constructor;
+napi_ref Attribute::constructor;
+
+napi_value Attribute::New(napi_env env, napi_callback_info info) {
+    ARGS(4, STR(_name), I32(_var_id), I32(_parent_id), I32(_type))
+
+    napi_value target;
+    NAPI_CALL(napi_get_new_target(env, info, &target));
+
+    Attribute* obj = new Attribute(_name, _var_id, _parent_id, _type);
+    obj->env_ = env;
+    NAPI_CALL(napi_wrap(env,
+        jsthis,
+        reinterpret_cast<void*>(obj),
+        Attribute::Destructor,
+        nullptr,  // finalize_hint
+        &obj->wrapper_
+    ));
+
+    return jsthis;
+}
+
+
+napi_value Attribute::Inspect(napi_env env, napi_callback_info info) {
+    ARGS(0)
+    RETURN_STR((char*)"[object Attribute]");
+}
+
+Attribute::~Attribute() { napi_delete_reference(env_, wrapper_); }
+
+void Attribute::Destructor(napi_env env, void* nativeObject, void* finalize_hint) {
+  reinterpret_cast<Attribute*>(nativeObject)->~Attribute();
+}
 
 Attribute::Attribute(const char* name_, int var_id_, int parent_id_) : name(name_), var_id(var_id_), parent_id(parent_id_) {
-    v8::Isolate* isolate = v8::Isolate::GetCurrent();
-    v8::Local<v8::Object> obj = v8::Local<v8::Function>::New(isolate, constructor)->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
-    Wrap(obj);
-    int retval = nc_inq_atttype(parent_id, var_id_, name_, &type);
-    if (retval != NC_NOERR) {
-        throw_netcdf_error(isolate, retval);
-    }
+
 }
 
 Attribute::Attribute(const char* name_, int var_id_, int parent_id_, int type_) : name(name_), var_id(var_id_), parent_id(parent_id_), type(type_) {
-    v8::Isolate* isolate = v8::Isolate::GetCurrent();
-    v8::Local<v8::Object> obj = v8::Local<v8::Function>::New(isolate, constructor)->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
-    Wrap(obj);
+
 }
 
-void Attribute::Init(v8::Local<v8::Object> exports) {
-    v8::Isolate* isolate = exports->GetIsolate();
-    v8::Local<v8::FunctionTemplate> tpl = v8::FunctionTemplate::New(isolate);
-    tpl->SetClassName(v8::String::NewFromUtf8(isolate, "Attribute", v8::NewStringType::kNormal).ToLocalChecked());
-    tpl->InstanceTemplate()->SetInternalFieldCount(1);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "delete", Attribute::Delete);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "inspect", Attribute::Inspect);
-    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "name", v8::NewStringType::kNormal).ToLocalChecked(), Attribute::GetName, Attribute::SetName);
-    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "value", v8::NewStringType::kNormal).ToLocalChecked(), Attribute::GetValue, Attribute::SetValue);
-    constructor.Reset(isolate, tpl->GetFunction(isolate->GetCurrentContext()).ToLocalChecked());
-}
-
-void Attribute::GetName(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
-    v8::Isolate* isolate = info.GetIsolate();
-    Attribute* obj = node::ObjectWrap::Unwrap<Attribute>(info.Holder());
-    info.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, obj->name.c_str(), v8::NewStringType::kNormal).ToLocalChecked());
-}
-
-void Attribute::SetName(v8::Local<v8::String> property, v8::Local<v8::Value> val, const v8::PropertyCallbackInfo<void>& info) {
-    v8::Isolate* isolate = v8::Isolate::GetCurrent();
-    Attribute* obj = node::ObjectWrap::Unwrap<Attribute>(info.Holder());
-    v8::String::Utf8Value new_name_(
-#if NODE_MAJOR_VERSION >= 8
-        isolate,
-#endif
-        val->ToString(isolate->GetCurrentContext()).ToLocalChecked());
-    int retval = nc_rename_att(obj->parent_id, obj->var_id, obj->name.c_str(), *new_name_);
-    if (retval != NC_NOERR) {
-        throw_netcdf_error(isolate, retval);
-        return;
+extern "C" {
+    napi_value Attribute_Init(napi_env env, napi_value exports) {
+        return Attribute::Init(env, exports);
     }
-    obj->name = *new_name_;
 }
 
+napi_value Attribute::Init(napi_env env, napi_value exports) {
+    napi_property_descriptor properties[] = {
+      //{ "value", 0, 0, GetValue, SetValue, 0, napi_default, 0 },
+      { "name", 0, 0, GetName, SetName, 0, napi_default, 0 },
+      //DECLARE_NAPI_METHOD("delete", Delete),
+      DECLARE_NAPI_METHOD("inspect", Inspect),
+    };
+
+    napi_value constructor;
+    NAPI_CALL(napi_define_class(
+        env,
+        "Attribute", NAPI_AUTO_LENGTH,
+        Attribute::New,
+        nullptr,
+        2,
+        properties,
+        &constructor
+    ));
+    NAPI_CALL(napi_set_named_property(
+        env,
+        exports,
+        "Attribute",
+        constructor
+    ));
+    return nullptr;
+}
+
+napi_value Attribute::GetName(napi_env env, napi_callback_info info) {
+    ARGS(0)
+    Attribute* self;
+    NAPI_CALL(napi_unwrap(env, jsthis, reinterpret_cast<void**>(&self)));
+
+    RETURN_STR((char*)self->name.c_str());
+}
+
+napi_value Attribute::SetName(napi_env env, napi_callback_info info) {
+    ARGS(1, STR(new_name))
+    Attribute* self;
+    NAPI_CALL(napi_unwrap(env, jsthis, reinterpret_cast<void**>(&self)));
+
+    NC_CALL(nc_rename_att(self->parent_id, self->var_id, self->name.c_str(), new_name));
+    self->name = new_name;
+
+    return NULL;
+}
+
+} // end namespace
+
+/*
 void Attribute::GetValue(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
     v8::Isolate* isolate = info.GetIsolate();
     Attribute* obj = node::ObjectWrap::Unwrap<Attribute>(info.Holder());
@@ -237,3 +281,4 @@ void Attribute::Inspect(const v8::FunctionCallbackInfo<v8::Value>& args) {
     args.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, "[object Attribute]", v8::NewStringType::kNormal).ToLocalChecked());
 }
 }  // namespace netcdf4js
+*/

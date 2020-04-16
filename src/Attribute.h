@@ -1,31 +1,36 @@
 #ifndef NETCDF4JS_ATTRIBUTE_H
 #define NETCDF4JS_ATTRIBUTE_H
 
-#include <node.h>
-#include <node_object_wrap.h>
+#include "napi-utils.h"
 #include <string>
 
 namespace netcdf4js {
 
-class Attribute : public node::ObjectWrap {
+class Attribute {
   public:
-    static void Init(v8::Local<v8::Object> exports);
+    static void Destructor(napi_env env, void* nativeObject, void* finalize_hint);
+    static napi_value Init(napi_env env, napi_value exports);
     Attribute(const char* name_, int var_id_, int parent_id_);
     Attribute(const char* name_, int var_id_, int parent_id_, int type_);
-    void set_value(const v8::Local<v8::Value>& val);
+    void set_value(napi_value val);
+
 
   private:
-    static v8::Persistent<v8::Function> constructor;
-    static void Delete(const v8::FunctionCallbackInfo<v8::Value>& args);
-    static void GetName(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info);
-    static void SetName(v8::Local<v8::String> property, v8::Local<v8::Value> val, const v8::PropertyCallbackInfo<void>& info);
-    static void GetValue(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info);
-    static void SetValue(v8::Local<v8::String> property, v8::Local<v8::Value> val, const v8::PropertyCallbackInfo<void>& info);
-    static void Inspect(const v8::FunctionCallbackInfo<v8::Value>& args);
+    static napi_ref constructor;
+    ~Attribute();
+    static napi_value New(napi_env env, napi_callback_info info);
+    //static napi_value Delete(napi_env env, napi_callback_info info);
+    static napi_value GetName(napi_env env, napi_callback_info info);
+    static napi_value SetName(napi_env env, napi_callback_info info);
+    //static napi_value GetValue(napi_env env, napi_callback_info info);
+    //static napi_value SetValue(napi_env env, napi_callback_info info);
+    static napi_value Inspect(napi_env env, napi_callback_info info);
     std::string name;
     int var_id;
     int parent_id;
     int type;
+    napi_ref wrapper_;
+    napi_env env_;
 };
 }  // namespace netcdf4js
 

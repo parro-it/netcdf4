@@ -5,8 +5,13 @@
         "-lnetcdf"
       ],
       "sources": [
-        "src/Group.cpp",
         "src/File.cpp",
+        "src/Attribute.cpp",
+        "src/Group.cpp",
+        "src/module.c",
+        "src/napi-utils.c"
+      ],
+      "cpp": [
         "src/Variable.cpp",
         "src/Dimension.cpp",
         "src/Attribute.cpp",
