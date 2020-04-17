@@ -188,6 +188,9 @@ napi_value create_napi_error(napi_env env, const napi_extended_error_info *napi_
 
 	napi_value error;
 	status = napi_create_error(env, err_code, err_msg, &error);
+	if (status != napi_ok) {
+		printf("Cannot create error: orig code: %d, original napi error: %s\n", napi_err->error_code, napi_err->error_message);
+	}
 	assert(status == napi_ok);
 
 	return error;

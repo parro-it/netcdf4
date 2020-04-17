@@ -61,7 +61,7 @@ napi_value Attribute::Init(napi_env env, napi_value exports) {
       DECLARE_NAPI_METHOD("inspect", Inspect),
     };
 
-    napi_value constructor;
+    napi_value cons;
     NAPI_CALL(napi_define_class(
         env,
         "Attribute", NAPI_AUTO_LENGTH,
@@ -69,14 +69,23 @@ napi_value Attribute::Init(napi_env env, napi_value exports) {
         nullptr,
         2,
         properties,
-        &constructor
+        &cons
     ));
+
     NAPI_CALL(napi_set_named_property(
         env,
         exports,
         "Attribute",
-        constructor
+        cons
     ));
+
+    NAPI_CALL(napi_create_reference(
+        env,
+        cons,
+        0,
+        &Attribute::constructor
+    ));
+
     return nullptr;
 }
 

@@ -12,7 +12,7 @@ class Group {
     Group(const int& id);
     static void Destructor(napi_env env, void* nativeObject, void* finalize_hint);
     static napi_value Init(napi_env env, napi_value exports);
-    static napi_value Build(napi_env env, napi_value jsthis, int id);
+    static napi_value Build(napi_env env, int id);
     bool get_name(char* name) const;
 
   private:

@@ -9,12 +9,11 @@
         "src/Attribute.cpp",
         "src/Group.cpp",
         "src/module.c",
+        "src/Variable.cpp",
         "src/napi-utils.c"
       ],
       "cpp": [
-        "src/Variable.cpp",
         "src/Dimension.cpp",
-        "src/Attribute.cpp",
         "src/netcdf4js.cpp"
       ],
       "target_name": "netcdf4",

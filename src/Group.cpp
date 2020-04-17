@@ -2,7 +2,7 @@
 #include <netcdf.h>
 #include "Attribute.h"
 //#include "Dimension.h"
-//#include "Variable.h"
+#include "Variable.h"
 #include "napi-utils.h"
 
 namespace netcdf4js {
@@ -42,7 +42,7 @@ napi_value Group::Init(napi_env env, napi_value exports) {
         DECLARE_NAPI_PROP("fullname", Group::GetFullname, nullptr),
     };
 
-    napi_value constructor;
+    napi_value cons;
 
     NAPI_CALL(napi_define_class(
         env,
@@ -51,28 +51,47 @@ napi_value Group::Init(napi_env env, napi_value exports) {
         nullptr,
         13,
         properties,
-        &constructor
+        &cons
     ));
 
     NAPI_CALL(napi_set_named_property(
         env,
         exports,
         "Group",
-        constructor
+        cons
+    ));
+
+    NAPI_CALL(napi_create_reference(
+        env,
+        cons,
+        0,
+        &constructor
     ));
 
     return nullptr;
 }
 
-napi_value Group::Build(napi_env env, napi_value jsthis, int id) {
+napi_value Group::Build(napi_env env, int id) {
+    napi_value group_js;
+    char* nuts_error = NULL;
+
+    VAR_JS_FROM_I32(id_js, id);
+
+    napi_value cons;
+
+    NAPI_CALL(napi_get_reference_value(env, constructor, &cons));
+    NAPI_CALL(napi_new_instance(env, cons, 1, &id_js ,&group_js));
+
+    return group_js;
+}
+
+napi_value Group::New(napi_env env, napi_callback_info info) {
+    ARGS(1, I32(id))
     Group* group = new Group(id);
     group->env_ = env;
 
-    if (jsthis == nullptr) {
-        NAPI_CALL(napi_create_object(env, &jsthis));
-    }
-
-    NAPI_CALL(napi_wrap(env,
+    NAPI_CALL(napi_wrap(
+        env,
         jsthis,
         reinterpret_cast<void*>(group),
         Group::Destructor,
@@ -80,18 +99,14 @@ napi_value Group::Build(napi_env env, napi_value jsthis, int id) {
         &group->wrapper_
     ));
 
+    printf("root js %p\n", jsthis);
     return jsthis;
-}
 
-napi_value Group::New(napi_env env, napi_callback_info info) {
-    ARGS(1, I32(id))
-    return Build(env, jsthis, id);
 }
 
 bool Group::get_name(char* name) const {
     int retval = nc_inq_grpname(id, name);
     if (retval != NC_NOERR) {
-        napi_throw_error(env_, NULL, nc_strerror(retval));
         return false;
     }
     return true;
@@ -238,36 +253,31 @@ napi_value Group::GetId(napi_env env, napi_callback_info info) {
 }
 
 napi_value Group::GetVariables(napi_env env, napi_callback_info info) {
-    /*
-    v8::Isolate* isolate = info.GetIsolate();
-    Group* obj = node::ObjectWrap::Unwrap<Group>(info.Holder());
+    ARGS(0);
+    printf("array start\n");
+    Group* self;
+    NAPI_CALL(napi_unwrap(env, jsthis, reinterpret_cast<void**>(&self)));
+
     int nvars;
-    int retval = nc_inq_varids(obj->id, &nvars, NULL);
-    if (retval != NC_NOERR) {
-        throw_netcdf_error(isolate, retval);
-        return;
+    NC_CALL(nc_inq_varids(self->id, &nvars, NULL));
+
+    int var_ids[nvars];
+    NC_CALL(nc_inq_varids(self->id, NULL, var_ids));
+
+    napi_value array;
+    NAPI_CALL(napi_create_array_with_length(env, nvars, &array));
+
+    for (int i = 0; i < nvars; i++) {
+        napi_value var = Variable::Build(env, var_ids[i], self->id);
+        NAPI_CALL(napi_set_element(env, array, i, var));
+
+        char name[NC_MAX_NAME + 1];
+        NC_CALL(nc_inq_varname(self->id, var_ids[i], name));
+
+        NAPI_CALL(napi_set_named_property(env, array, name, var));
     }
-    int* var_ids = new int[nvars];
-    retval = nc_inq_varids(obj->id, NULL, var_ids);
-    if (retval != NC_NOERR) {
-        throw_netcdf_error(isolate, retval);
-        delete[] var_ids;
-        return;
-    }
-    v8::Local<v8::Object> result = v8::Object::New(isolate);
-    char name[NC_MAX_NAME + 1];
-    for (int i = 0; i < nvars; ++i) {
-        Variable* v = new Variable(var_ids[i], obj->id);
-        if (v->get_name(name)) {
-            result->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, name, v8::NewStringType::kNormal).ToLocalChecked(), v->handle());
-        } else {
-            delete[] var_ids;
-            return;
-        }
-    }
-    info.GetReturnValue().Set(result);
-    delete[] var_ids;
-    */return NULL;
+    printf("array %p\n", array);
+    return array;
 }
 
 napi_value Group::GetDimensions(napi_env env, napi_callback_info info) {
@@ -429,9 +439,7 @@ napi_value Group::GetFullname(napi_env env, napi_callback_info info) {
 }
 
 napi_value Group::Inspect(napi_env env, napi_callback_info info) {
-    /*
-    v8::Isolate* isolate = args.GetIsolate();
-    args.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, "[object Group]", v8::NewStringType::kNormal).ToLocalChecked());
-    */return NULL;
+    ARGS(0)
+    RETURN_STR((char*)"[object Group]");
 }
 }  // namespace netcdf4js

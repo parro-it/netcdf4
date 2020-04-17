@@ -31,7 +31,7 @@ extern "C" {  // only need to export C interface if
   { name, 0, func, 0, 0, 0, napi_default, 0 }
 
 #define DECLARE_NAPI_PROP(name, getter, setter)                          \
-{ #name, 0, 0, getter, setter, 0, napi_default, 0 }
+{ name, 0, 0, getter, setter, 0, napi_default, 0 }
 
 
 // call a napi function and if status is not ok,
@@ -125,6 +125,16 @@ extern "C" {  // only need to export C interface if
 	    VAR_NAME= value_to_utf8(env, VALUE_JS, &nuts_error); 							\
 	    _CHECK_NUTS_ERROR																\
 	}
+
+
+#define VAR_JS_FROM_I32(VAR_NAME, VALUE) 											\
+	napi_value VAR_NAME = i32_to_value(env, VALUE, &nuts_error); 					\
+	_CHECK_NUTS_ERROR
+
+
+#define VAR_JS_FROM_STR(VAR_NAME, VALUE) 											\
+	napi_value VAR_NAME = utf8_to_value(env, VALUE, &nuts_error); 					\
+	_CHECK_NUTS_ERROR
 
 #define I32(ARG_NAME) VAR_I32_FROM_JS(ARG_NAME, ((arg_idx < argc) ? (argv[arg_idx]) : nullptr))
 #define STR(ARG_NAME) VAR_STR_FROM_JS(ARG_NAME, ((arg_idx < argc) ? (argv[arg_idx]) : nullptr))

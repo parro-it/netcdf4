@@ -56,6 +56,13 @@ napi_value File::Init(napi_env env, napi_value exports) {
         constructor
     ));
 
+    NAPI_CALL(napi_create_reference(
+        env,
+        constructor,
+        0,
+        &File::constructor
+    ));
+
     return nullptr;
 
 }
@@ -111,7 +118,7 @@ napi_value File::New(napi_env env, napi_callback_info info) {
         env,
         jsthis,
         "root",
-        Group::Build(env, nullptr, id)
+        Group::Build(env, id)
     ));
 
 

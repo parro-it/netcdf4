@@ -1,7 +1,8 @@
 #include "Variable.h"
 #include "Attribute.h"
-#include "Dimension.h"
-#include "netcdf4js.h"
+// #include "Dimension.h"
+#include "napi-utils.h"
+
 
 namespace netcdf4js {
 
@@ -31,61 +32,130 @@ const char* Variable::type_names[] = {
     "uint"      // NC_UINT
 };
 
-v8::Persistent<v8::Function> Variable::constructor;
+napi_ref Variable::constructor;
 
 Variable::Variable(const int& id_, const int& parent_id_) : id(id_), parent_id(parent_id_) {
-    v8::Isolate* isolate = v8::Isolate::GetCurrent();
-    v8::Local<v8::Object> obj = v8::Local<v8::Function>::New(isolate, constructor)->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
-    Wrap(obj);
-    int retval = nc_inq_var(parent_id, id, NULL, &type, &ndims, NULL, NULL);
-    if (retval != NC_NOERR) {
-        throw_netcdf_error(isolate, retval);
+
+}
+
+Variable::~Variable() {
+    napi_delete_reference(env_, wrapper_);
+}
+
+extern "C" {
+    napi_value Variable_Init(napi_env env, napi_value exports) {
+        return Variable::Init(env, exports);
     }
 }
 
-void Variable::Init(v8::Local<v8::Object> exports) {
-    v8::Isolate* isolate = exports->GetIsolate();
+void Variable::Destructor(napi_env env, void* nativeObject, void* finalize_hint) {
+    reinterpret_cast<Variable*>(nativeObject)->~Variable();
+}
 
-    v8::Local<v8::FunctionTemplate> tpl = v8::FunctionTemplate::New(isolate);
-    tpl->SetClassName(v8::String::NewFromUtf8(isolate, "Variable", v8::NewStringType::kNormal).ToLocalChecked());
-    tpl->InstanceTemplate()->SetInternalFieldCount(1);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "read", Variable::Read);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "readSlice", Variable::ReadSlice);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "readStridedSlice", Variable::ReadStridedSlice);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "write", Variable::Write);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "writeSlice", Variable::WriteSlice);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "writeStridedSlice", Variable::WriteStridedSlice);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "addAttribute", Variable::AddAttribute);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "inspect", Variable::Inspect);
-    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "id", v8::NewStringType::kNormal).ToLocalChecked(), Variable::GetId);
-    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "type", v8::NewStringType::kNormal).ToLocalChecked(), Variable::GetType);
-    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "dimensions", v8::NewStringType::kNormal).ToLocalChecked(), Variable::GetDimensions);
-    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "attributes", v8::NewStringType::kNormal).ToLocalChecked(), Variable::GetAttributes);
-    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "name", v8::NewStringType::kNormal).ToLocalChecked(), Variable::GetName, Variable::SetName);
-    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "endianness", v8::NewStringType::kNormal).ToLocalChecked(), Variable::GetEndianness, Variable::SetEndianness);
-    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "checksummode", v8::NewStringType::kNormal).ToLocalChecked(), Variable::GetChecksumMode, Variable::SetChecksumMode);
-    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "chunkmode", v8::NewStringType::kNormal).ToLocalChecked(), Variable::GetChunkMode, Variable::SetChunkMode);
-    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "chunksizes", v8::NewStringType::kNormal).ToLocalChecked(), Variable::GetChunkSizes, Variable::SetChunkSizes);
-    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "fillmode", v8::NewStringType::kNormal).ToLocalChecked(), Variable::GetFillMode, Variable::SetFillMode);
-    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "fillvalue", v8::NewStringType::kNormal).ToLocalChecked(), Variable::GetFillValue, Variable::SetFillValue);
-    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "compressionshuffle", v8::NewStringType::kNormal).ToLocalChecked(), Variable::GetCompressionShuffle,
-                                         Variable::SetCompressionShuffle);
-    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "compressiondeflate", v8::NewStringType::kNormal).ToLocalChecked(), Variable::GetCompressionDeflate,
-                                         Variable::SetCompressionDeflate);
-    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "compressionlevel", v8::NewStringType::kNormal).ToLocalChecked(), Variable::GetCompressionLevel, Variable::SetCompressionLevel);
-    constructor.Reset(isolate, tpl->GetFunction(isolate->GetCurrentContext()).ToLocalChecked());
+napi_value Variable::Init(napi_env env, napi_value exports) {
+    napi_property_descriptor properties[] = {
+        DECLARE_NAPI_METHOD("read", Read),
+        DECLARE_NAPI_METHOD("readSlice", ReadSlice),
+        DECLARE_NAPI_METHOD("readStridedSlice", ReadStridedSlice),
+        DECLARE_NAPI_METHOD("write", Write),
+        DECLARE_NAPI_METHOD("writeSlice", WriteSlice),
+        DECLARE_NAPI_METHOD("writeStridedSlice", WriteStridedSlice),
+        DECLARE_NAPI_METHOD("addAttribute", AddAttribute),
+        DECLARE_NAPI_METHOD("inspect", Inspect),
+
+        DECLARE_NAPI_PROP("id", Variable::GetId, nullptr),
+        DECLARE_NAPI_PROP("type", Variable::GetType, nullptr),
+        DECLARE_NAPI_PROP("dimensions", Variable::GetDimensions, nullptr),
+        DECLARE_NAPI_PROP("attributes", Variable::GetAttributes, nullptr),
+        DECLARE_NAPI_PROP("name", Variable::GetName, Variable::SetName),
+        DECLARE_NAPI_PROP("endianness", Variable::GetEndianness, Variable::SetEndianness),
+        DECLARE_NAPI_PROP("checksummode", Variable::GetChecksumMode, Variable::SetChecksumMode),
+        DECLARE_NAPI_PROP("chunkmode", Variable::GetChunkMode, Variable::SetChunkMode),
+        DECLARE_NAPI_PROP("chunksizes", Variable::GetChunkSizes, Variable::SetChunkSizes),
+        DECLARE_NAPI_PROP("fillmode", Variable::GetFillMode, Variable::SetFillMode),
+        DECLARE_NAPI_PROP("fillvalue", Variable::GetFillValue, Variable::SetFillValue),
+        DECLARE_NAPI_PROP("compressionshuffle", Variable::GetCompressionShuffle, Variable::SetCompressionShuffle),
+        DECLARE_NAPI_PROP("compressiondeflate", Variable::GetCompressionDeflate, Variable::SetCompressionDeflate),
+        DECLARE_NAPI_PROP("compressionlevel", Variable::GetCompressionLevel, Variable::SetCompressionLevel),
+    };
+
+    napi_value cons;
+
+    NAPI_CALL(napi_define_class(
+        env,
+        "Variable", NAPI_AUTO_LENGTH,
+        Variable::New,
+        nullptr,
+        22,
+        properties,
+        &cons
+    ));
+
+    NAPI_CALL(napi_set_named_property(
+        env,
+        exports,
+        "Variable",
+        cons
+    ));
+
+    NAPI_CALL(napi_create_reference(
+        env,
+        cons,
+        0,
+        &constructor
+    ));
+
+    return nullptr;
+}
+
+
+napi_value Variable::Build(napi_env env, int id, int parent_id) {
+    napi_value var_js;
+    char* nuts_error = NULL;
+
+    VAR_JS_FROM_I32(id_js, id);
+    VAR_JS_FROM_I32(parent_id_js, parent_id);
+
+    napi_value cons;
+
+    NAPI_CALL(napi_get_reference_value(env, constructor, &cons));
+    napi_value args[] = {id_js, parent_id_js};
+    NAPI_CALL(napi_new_instance(env, cons, 2, args ,&var_js));
+
+    return var_js;
+}
+
+napi_value Variable::New(napi_env env, napi_callback_info info) {
+    ARGS(2, I32(id), I32(parent_id))
+    Variable* var = new Variable(id, parent_id);
+    var->env_ = env;
+
+    NAPI_CALL(napi_wrap(
+        env,
+        jsthis,
+        reinterpret_cast<void*>(var),
+        Variable::Destructor,
+        nullptr,  // finalize_hint
+        &var->wrapper_
+    ));
+
+    NC_CALL(nc_inq_var(parent_id, id, NULL, &var->type, &var->ndims, NULL, NULL));
+
+    return jsthis;
 }
 
 bool Variable::get_name(char* name) const {
     int retval = nc_inq_varname(parent_id, id, name);
     if (retval != NC_NOERR) {
-        throw_netcdf_error(v8::Isolate::GetCurrent(), retval);
+        // throw_netcdf_error(v8::Isolate::GetCurrent(), retval);
         return false;
     }
     return true;
 }
 
-void Variable::Write(const v8::FunctionCallbackInfo<v8::Value>& args) {
+napi_value Variable::Write(napi_env env, napi_callback_info info) {
+    /*
+
     v8::Isolate* isolate = args.GetIsolate();
     Variable* obj = node::ObjectWrap::Unwrap<Variable>(args.Holder());
     if (args.Length() != obj->ndims + 1) {
@@ -144,9 +214,11 @@ void Variable::Write(const v8::FunctionCallbackInfo<v8::Value>& args) {
     }
     delete[] pos;
     delete[] size;
+    */ return NULL;
 }
 
-void Variable::WriteSlice(const v8::FunctionCallbackInfo<v8::Value>& args) {
+napi_value Variable::WriteSlice(napi_env env, napi_callback_info info) {
+    /*
     v8::Isolate* isolate = args.GetIsolate();
     Variable* obj = node::ObjectWrap::Unwrap<Variable>(args.Holder());
     if (args.Length() != 2 * obj->ndims + 1) {
@@ -219,9 +291,11 @@ void Variable::WriteSlice(const v8::FunctionCallbackInfo<v8::Value>& args) {
     }
     delete[] pos;
     delete[] size;
+    */ return NULL;
 }
 
-void Variable::WriteStridedSlice(const v8::FunctionCallbackInfo<v8::Value>& args) {
+napi_value Variable::WriteStridedSlice(napi_env env, napi_callback_info info) {
+    /*
     v8::Isolate* isolate = args.GetIsolate();
     Variable* obj = node::ObjectWrap::Unwrap<Variable>(args.Holder());
     if (args.Length() != 3 * obj->ndims + 1) {
@@ -299,10 +373,11 @@ void Variable::WriteStridedSlice(const v8::FunctionCallbackInfo<v8::Value>& args
     }
     delete[] pos;
     delete[] size;
-    delete[] stride;
+    delete[] stride;*/ return NULL;
 }
 
-void Variable::Read(const v8::FunctionCallbackInfo<v8::Value>& args) {
+napi_value Variable::Read(napi_env env, napi_callback_info info) {
+    /*
     v8::Isolate* isolate = args.GetIsolate();
     Variable* obj = node::ObjectWrap::Unwrap<Variable>(args.Holder());
     if (args.Length() != obj->ndims) {
@@ -375,10 +450,124 @@ void Variable::Read(const v8::FunctionCallbackInfo<v8::Value>& args) {
         args.GetReturnValue().Set(result);
     }
     delete[] pos;
-    delete[] size;
+    delete[] size;*/ return NULL;
 }
 
-void Variable::ReadSlice(const v8::FunctionCallbackInfo<v8::Value>& args) {
+napi_value Variable::ReadSlice(napi_env env, napi_callback_info info) {
+    napi_value argv[256];
+    size_t argc = 256;
+    char* nuts_error = NULL;
+    napi_value jsthis;
+
+    NAPI_CALL(napi_get_cb_info(env, info, &argc, argv, &jsthis, NULL));
+
+    Variable* self;
+    NAPI_CALL(napi_unwrap(env, jsthis, reinterpret_cast<void**>(&self)));
+
+    printf("len sizes %lu\n", argc);
+    printf("ndims %d\n", self->ndims);
+
+	if ((int)argc != self->ndims * 2) {
+        printf("argc %ld, ndims %i\n", argc, self->ndims * 2);
+		napi_throw_error(env, NULL, "Wrong number of arguments");
+		return NULL;
+	}
+
+    if (self->type < NC_BYTE || self->type > NC_UINT) {
+        napi_throw_error(env, NULL, "Variable type not supported yet");
+        return NULL;
+    }
+
+    size_t pos[self->ndims];
+    size_t size[self->ndims];
+    size_t total_size = 1;
+
+    for (int i = 0; i < self->ndims; i++) {
+        VAR_I32_FROM_JS(pos_i, argv[2* i]);
+        VAR_I32_FROM_JS(size_i, argv[2* i + 1]);
+
+        printf("pos %d: %d\n", i, pos_i);
+        pos[i] = pos_i;
+        size[i] = size_i;
+        total_size *= size_i;
+    }
+
+
+    printf("total_size %ld\n", total_size);
+
+    void* buffer_data = NULL;
+    napi_value buffer;
+
+    NAPI_CALL(napi_create_arraybuffer(
+        env,
+        total_size * type_sizes[self->type],
+        &buffer_data,
+        &buffer
+    ));
+
+    printf("napi_create_arraybuffer %p\n", buffer);
+
+    NC_CALL(nc_get_vara(
+        self->parent_id,
+        self->id,
+        pos,
+        size,
+        buffer_data
+    ));
+
+    printf("nc_get_vara done\n");
+
+    napi_typedarray_type type;
+    switch (self->type) {
+        case NC_BYTE:
+        case NC_CHAR:
+            type = napi_int8_array;
+            break;
+        case NC_SHORT:
+            type = napi_int16_array;
+            break;
+        case NC_INT:
+            type = napi_int32_array;
+            break;
+        case NC_FLOAT:
+            type = napi_float32_array;
+            break;
+        case NC_DOUBLE:
+            type = napi_float64_array;
+            break;
+        case NC_UBYTE:
+            type = napi_uint8_array;
+            break;
+        case NC_USHORT:
+            type = napi_uint16_array;
+            break;
+        case NC_UINT:
+            type = napi_uint32_array;
+            break;
+        default:
+            napi_throw_error(env, NULL, "Variable type not supported yet");
+            return NULL;
+    }
+
+    printf("type %d total_size %ld\n", type, total_size);
+
+    napi_value result;
+
+    NAPI_CALL(napi_create_typedarray(
+        env,
+        type,
+        total_size,
+        buffer,
+        0,
+        &result
+    ));
+
+    printf("napi_create_typedarray %p\n", result);
+
+    return result;
+
+
+    /*
     v8::Isolate* isolate = args.GetIsolate();
     Variable* obj = node::ObjectWrap::Unwrap<Variable>(args.Holder());
     if (args.Length() != 2 * obj->ndims) {
@@ -444,9 +633,11 @@ void Variable::ReadSlice(const v8::FunctionCallbackInfo<v8::Value>& args) {
     args.GetReturnValue().Set(result);
     delete[] pos;
     delete[] size;
+*/ return NULL;
 }
 
-void Variable::ReadStridedSlice(const v8::FunctionCallbackInfo<v8::Value>& args) {
+napi_value Variable::ReadStridedSlice(napi_env env, napi_callback_info info) {
+    /*
     v8::Isolate* isolate = args.GetIsolate();
     Variable* obj = node::ObjectWrap::Unwrap<Variable>(args.Holder());
     if (args.Length() != 3 * obj->ndims) {
@@ -511,9 +702,11 @@ void Variable::ReadStridedSlice(const v8::FunctionCallbackInfo<v8::Value>& args)
     delete[] pos;
     delete[] size;
     delete[] stride;
+*/ return NULL;
 }
 
-void Variable::AddAttribute(const v8::FunctionCallbackInfo<v8::Value>& args) {
+napi_value Variable::AddAttribute(napi_env env, napi_callback_info info) {
+    /*
     v8::Isolate* isolate = args.GetIsolate();
     Variable* obj = node::ObjectWrap::Unwrap<Variable>(args.Holder());
     if (args.Length() < 3) {
@@ -538,15 +731,19 @@ void Variable::AddAttribute(const v8::FunctionCallbackInfo<v8::Value>& args) {
                                    obj->id, obj->parent_id, type);
     res->set_value(args[2]);
     args.GetReturnValue().Set(res->handle());
+*/ return NULL;
 }
 
-void Variable::GetId(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
+napi_value Variable::GetId(napi_env env, napi_callback_info info) {
+    /*
     v8::Isolate* isolate = info.GetIsolate();
     Variable* obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
     info.GetReturnValue().Set(v8::Integer::New(isolate, obj->id));
+*/ return NULL;
 }
 
-void Variable::GetDimensions(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
+napi_value Variable::GetDimensions(napi_env env, napi_callback_info info) {
+    /*
     v8::Isolate* isolate = info.GetIsolate();
     Variable* obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
     int* dim_ids = new int[obj->ndims];
@@ -563,9 +760,11 @@ void Variable::GetDimensions(v8::Local<v8::String> property, const v8::PropertyC
     }
     info.GetReturnValue().Set(result);
     delete[] dim_ids;
+*/ return NULL;
 }
 
-void Variable::GetAttributes(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
+napi_value Variable::GetAttributes(napi_env env, napi_callback_info info) {
+    /*
     v8::Isolate* isolate = info.GetIsolate();
     Variable* obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
     int natts;
@@ -586,9 +785,11 @@ void Variable::GetAttributes(v8::Local<v8::String> property, const v8::PropertyC
         result->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, name, v8::NewStringType::kNormal).ToLocalChecked(), a->handle());
     }
     info.GetReturnValue().Set(result);
+*/ return NULL;
 }
 
-void Variable::GetType(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
+napi_value Variable::GetType(napi_env env, napi_callback_info info) {
+    /*
     v8::Isolate* isolate = info.GetIsolate();
     Variable* obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
     const char* res;
@@ -598,18 +799,22 @@ void Variable::GetType(v8::Local<v8::String> property, const v8::PropertyCallbac
         res = type_names[obj->type];
     }
     info.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, res, v8::NewStringType::kNormal).ToLocalChecked());
+*/ return NULL;
 }
 
-void Variable::GetName(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
+napi_value Variable::GetName(napi_env env, napi_callback_info info) {
+    /*
     v8::Isolate* isolate = info.GetIsolate();
     Variable* obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
     char name[NC_MAX_NAME + 1];
     if (obj->get_name(name)) {
         info.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, name, v8::NewStringType::kNormal).ToLocalChecked());
     }
+*/ return NULL;
 }
 
-void Variable::SetName(v8::Local<v8::String> property, v8::Local<v8::Value> val, const v8::PropertyCallbackInfo<void>& info) {
+napi_value Variable::SetName(napi_env env, napi_callback_info info) {
+    /*
     v8::Isolate* isolate = info.GetIsolate();
     Variable* obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
     v8::String::Utf8Value new_name_(
@@ -622,9 +827,11 @@ void Variable::SetName(v8::Local<v8::String> property, v8::Local<v8::Value> val,
         throw_netcdf_error(isolate, retval);
         return;
     }
+*/ return NULL;
 }
 
-void Variable::GetEndianness(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
+napi_value Variable::GetEndianness(napi_env env, napi_callback_info info) {
+    /*
     v8::Isolate* isolate = info.GetIsolate();
     Variable* obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
     int v;
@@ -649,9 +856,11 @@ void Variable::GetEndianness(v8::Local<v8::String> property, const v8::PropertyC
             break;
     }
     info.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, res, v8::NewStringType::kNormal).ToLocalChecked());
+*/ return NULL;
 }
 
-void Variable::SetEndianness(v8::Local<v8::String> property, v8::Local<v8::Value> val, const v8::PropertyCallbackInfo<void>& info) {
+napi_value Variable::SetEndianness(napi_env env, napi_callback_info info) {
+    /*
     v8::Isolate* isolate = info.GetIsolate();
     Variable* obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
     std::string arg = *v8::String::Utf8Value(
@@ -675,9 +884,11 @@ void Variable::SetEndianness(v8::Local<v8::String> property, v8::Local<v8::Value
         throw_netcdf_error(isolate, retval);
         return;
     }
+*/ return NULL;
 }
 
-void Variable::GetChecksumMode(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
+napi_value Variable::GetChecksumMode(napi_env env, napi_callback_info info) {
+    /*
     v8::Isolate* isolate = info.GetIsolate();
     Variable* obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
     int v;
@@ -699,9 +910,11 @@ void Variable::GetChecksumMode(v8::Local<v8::String> property, const v8::Propert
             break;
     }
     info.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, res, v8::NewStringType::kNormal).ToLocalChecked());
+*/ return NULL;
 }
 
-void Variable::SetChecksumMode(v8::Local<v8::String> property, v8::Local<v8::Value> val, const v8::PropertyCallbackInfo<void>& info) {
+napi_value Variable::SetChecksumMode(napi_env env, napi_callback_info info) {
+    /*
     v8::Isolate* isolate = info.GetIsolate();
     Variable* obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
     std::string arg = *v8::String::Utf8Value(
@@ -723,9 +936,11 @@ void Variable::SetChecksumMode(v8::Local<v8::String> property, v8::Local<v8::Val
         throw_netcdf_error(isolate, retval);
         return;
     }
+*/ return NULL;
 }
 
-void Variable::GetChunkMode(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
+napi_value Variable::GetChunkMode(napi_env env, napi_callback_info info) {
+    /*
     v8::Isolate* isolate = info.GetIsolate();
     Variable* obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
     int v;
@@ -747,9 +962,11 @@ void Variable::GetChunkMode(v8::Local<v8::String> property, const v8::PropertyCa
             break;
     }
     info.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, res, v8::NewStringType::kNormal).ToLocalChecked());
+*/ return NULL;
 }
 
-void Variable::SetChunkMode(v8::Local<v8::String> property, v8::Local<v8::Value> val, const v8::PropertyCallbackInfo<void>& info) {
+napi_value Variable::SetChunkMode(napi_env env, napi_callback_info info) {
+    /*
     v8::Isolate* isolate = info.GetIsolate();
     Variable* obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
     std::string arg = *v8::String::Utf8Value(
@@ -784,9 +1001,11 @@ void Variable::SetChunkMode(v8::Local<v8::String> property, v8::Local<v8::Value>
         throw_netcdf_error(isolate, retval);
     }
     delete[] sizes;
+*/ return NULL;
 }
 
-void Variable::GetChunkSizes(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
+napi_value Variable::GetChunkSizes(napi_env env, napi_callback_info info) {
+    /*
     v8::Isolate* isolate = info.GetIsolate();
     Variable* obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
     size_t* sizes = new size_t[obj->ndims];
@@ -802,9 +1021,11 @@ void Variable::GetChunkSizes(v8::Local<v8::String> property, const v8::PropertyC
     }
     info.GetReturnValue().Set(result);
     delete[] sizes;
+*/ return NULL;
 }
 
-void Variable::SetChunkSizes(v8::Local<v8::String> property, v8::Local<v8::Value> val, const v8::PropertyCallbackInfo<void>& info) {
+napi_value Variable::SetChunkSizes(napi_env env, napi_callback_info info) {
+    /*
     v8::Isolate* isolate = info.GetIsolate();
     Variable* obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
     if (!val->IsArray()) {
@@ -831,9 +1052,11 @@ void Variable::SetChunkSizes(v8::Local<v8::String> property, v8::Local<v8::Value
         throw_netcdf_error(isolate, retval);
     }
     delete[] sizes;
+*/ return NULL;
 }
 
-void Variable::GetFillMode(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
+napi_value Variable::GetFillMode(napi_env env, napi_callback_info info) {
+    /*
     v8::Isolate* isolate = info.GetIsolate();
     Variable* obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
     int v;
@@ -843,9 +1066,11 @@ void Variable::GetFillMode(v8::Local<v8::String> property, const v8::PropertyCal
         return;
     }
     info.GetReturnValue().Set(v8::Boolean::New(isolate, v == 1));
+*/ return NULL;
 }
 
-void Variable::SetFillMode(v8::Local<v8::String> property, v8::Local<v8::Value> val, const v8::PropertyCallbackInfo<void>& info) {
+napi_value Variable::SetFillMode(napi_env env, napi_callback_info info) {
+    /*
     v8::Isolate* isolate = info.GetIsolate();
     Variable* obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
     if (!val->IsBoolean()) {
@@ -873,9 +1098,11 @@ void Variable::SetFillMode(v8::Local<v8::String> property, v8::Local<v8::Value> 
         throw_netcdf_error(isolate, retval);
     }
     delete[] value;
+*/ return NULL;
 }
 
-void Variable::GetFillValue(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
+napi_value Variable::GetFillValue(napi_env env, napi_callback_info info) {
+    /*
     v8::Isolate* isolate = info.GetIsolate();
     Variable* obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
     v8::Local<v8::Value> result;
@@ -936,9 +1163,11 @@ void Variable::GetFillValue(v8::Local<v8::String> property, const v8::PropertyCa
         return;
     }
     info.GetReturnValue().Set(result);
+*/ return NULL;
 }
 
-void Variable::SetFillValue(v8::Local<v8::String> property, v8::Local<v8::Value> val, const v8::PropertyCallbackInfo<void>& info) {
+napi_value Variable::SetFillValue(napi_env env, napi_callback_info info) {
+    /*
     v8::Isolate* isolate = info.GetIsolate();
     Variable* obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
     int mode;
@@ -988,9 +1217,11 @@ void Variable::SetFillValue(v8::Local<v8::String> property, v8::Local<v8::Value>
     if (retval != NC_NOERR) {
         throw_netcdf_error(isolate, retval);
     }
+*/ return NULL;
 }
 
-void Variable::GetCompressionShuffle(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
+napi_value Variable::GetCompressionShuffle(napi_env env, napi_callback_info info) {
+    /*
     v8::Isolate* isolate = info.GetIsolate();
     Variable* obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
     int v;
@@ -1000,9 +1231,11 @@ void Variable::GetCompressionShuffle(v8::Local<v8::String> property, const v8::P
         return;
     }
     info.GetReturnValue().Set(v8::Boolean::New(isolate, v == 1));
+*/ return NULL;
 }
 
-void Variable::SetCompressionShuffle(v8::Local<v8::String> property, v8::Local<v8::Value> val, const v8::PropertyCallbackInfo<void>& info) {
+napi_value Variable::SetCompressionShuffle(napi_env env, napi_callback_info info) {
+    /*
     v8::Isolate* isolate = info.GetIsolate();
     Variable* obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
     if (!val->IsBoolean()) {
@@ -1024,9 +1257,11 @@ void Variable::SetCompressionShuffle(v8::Local<v8::String> property, v8::Local<v
     if (retval != NC_NOERR) {
         throw_netcdf_error(isolate, retval);
     }
+*/ return NULL;
 }
 
-void Variable::GetCompressionDeflate(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
+napi_value Variable::GetCompressionDeflate(napi_env env, napi_callback_info info) {
+    /*
     v8::Isolate* isolate = info.GetIsolate();
     Variable* obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
     int v;
@@ -1036,9 +1271,11 @@ void Variable::GetCompressionDeflate(v8::Local<v8::String> property, const v8::P
         return;
     }
     info.GetReturnValue().Set(v8::Boolean::New(isolate, v == 1));
+*/ return NULL;
 }
 
-void Variable::SetCompressionDeflate(v8::Local<v8::String> property, v8::Local<v8::Value> val, const v8::PropertyCallbackInfo<void>& info) {
+napi_value Variable::SetCompressionDeflate(napi_env env, napi_callback_info info) {
+    /*
     v8::Isolate* isolate = info.GetIsolate();
     Variable* obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
     if (!val->IsBoolean()) {
@@ -1060,9 +1297,11 @@ void Variable::SetCompressionDeflate(v8::Local<v8::String> property, v8::Local<v
     if (retval != NC_NOERR) {
         throw_netcdf_error(isolate, retval);
     }
+*/ return NULL;
 }
 
-void Variable::GetCompressionLevel(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
+napi_value Variable::GetCompressionLevel(napi_env env, napi_callback_info info) {
+    /*
     v8::Isolate* isolate = info.GetIsolate();
     Variable* obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
     int v;
@@ -1072,9 +1311,11 @@ void Variable::GetCompressionLevel(v8::Local<v8::String> property, const v8::Pro
         return;
     }
     info.GetReturnValue().Set(v8::Integer::New(isolate, v));
+*/ return NULL;
 }
 
-void Variable::SetCompressionLevel(v8::Local<v8::String> property, v8::Local<v8::Value> val, const v8::PropertyCallbackInfo<void>& info) {
+napi_value Variable::SetCompressionLevel(napi_env env, napi_callback_info info) {
+    /*
     v8::Isolate* isolate = info.GetIsolate();
     Variable* obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
     if (!val->IsUint32()) {
@@ -1092,10 +1333,13 @@ void Variable::SetCompressionLevel(v8::Local<v8::String> property, v8::Local<v8:
     if (retval != NC_NOERR) {
         throw_netcdf_error(isolate, retval);
     }
+*/ return NULL;
 }
 
-void Variable::Inspect(const v8::FunctionCallbackInfo<v8::Value>& args) {
+napi_value Variable::Inspect(napi_env env, napi_callback_info info) {
+    /*
     v8::Isolate* isolate = args.GetIsolate();
     args.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, "[object Variable]", v8::NewStringType::kNormal).ToLocalChecked());
+*/ return NULL;
 }
 }  // namespace netcdf4js
