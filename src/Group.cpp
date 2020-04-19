@@ -359,9 +359,12 @@ napi_value Group::GetAttributes(napi_env env, napi_callback_info info) {
 
     for (int i = 0; i < natts; i++) {
         char name[NC_MAX_NAME + 1];
-        NC_CALL(nc_inq_attname(self->id, NC_GLOBAL, i, name));
+        nc_type type;
 
-        napi_value attr = Attribute::Build(env, name, NC_GLOBAL, self->id, -1);
+        NC_CALL(nc_inq_attname(self->id, NC_GLOBAL, i, name));
+        NC_CALL(nc_inq_atttype(self->id, NC_GLOBAL, name, &type));
+
+        napi_value attr = Attribute::Build(env, name, NC_GLOBAL, self->id, type);
         NAPI_CALL(napi_set_element(env,array,i, attr));
         NAPI_CALL(napi_set_named_property(env,array,name, attr));
     }

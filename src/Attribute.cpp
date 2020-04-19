@@ -15,20 +15,20 @@ napi_value Attribute::New(napi_env env, napi_callback_info info) {
     napi_value target;
     NAPI_CALL(napi_get_new_target(env, info, &target));
 
-    Attribute* obj;
+    Attribute* self;
     if (argc == 4) {
-        obj = new Attribute(_name, _var_id, _parent_id, _type);
+        self = new Attribute(_name, _var_id, _parent_id, _type);
     } else {
-        obj = new Attribute(_name, _var_id, _parent_id);
+        self = new Attribute(_name, _var_id, _parent_id);
     }
 
-    obj->env_ = env;
+    self->env_ = env;
     NAPI_CALL(napi_wrap(env,
         jsthis,
-        reinterpret_cast<void*>(obj),
+        reinterpret_cast<void*>(self),
         Attribute::Destructor,
         nullptr,  // finalize_hint
-        &obj->wrapper_
+        &self->wrapper_
     ));
 
     return jsthis;
@@ -92,7 +92,7 @@ napi_value Attribute::Init(napi_env env, napi_value exports) {
         "Attribute", NAPI_AUTO_LENGTH,
         Attribute::New,
         nullptr,
-        2,
+        3,
         properties,
         &cons
     ));
@@ -136,74 +136,75 @@ napi_value Attribute::SetName(napi_env env, napi_callback_info info) {
 
 napi_value Attribute::GetValue(napi_env env, napi_callback_info info) {
     ARGS(0)
-    Attribute* obj;
-    NAPI_CALL(napi_unwrap(env, jsthis, reinterpret_cast<void**>(&obj)));
+    Attribute* self;
+    NAPI_CALL(napi_unwrap(env, jsthis, reinterpret_cast<void**>(&self)));
 
-    if ((obj->type < NC_BYTE || obj->type > NC_UINT64) && obj->type != NC_STRING) {
+    if ((self->type < NC_BYTE || self->type > NC_UINT64) && self->type != NC_STRING) {
         napi_throw_error(env, NULL, "Variable type not supported yet");
         return NULL;
     }
 
     size_t len;
-    NC_CALL(nc_inq_attlen(obj->parent_id, obj->var_id, obj->name.c_str(), &len));
+    NC_CALL(nc_inq_attlen(self->parent_id, self->var_id, self->name.c_str(), &len));
 
-    if (obj->type == NC_CHAR || obj->type == NC_STRING) {
+    if (self->type == NC_CHAR || self->type == NC_STRING) {
+        printf("STRING TYPE: %ld\n", len);
         char v[len + 1];
         v[len] = 0;
-        NC_CALL(nc_get_att_text(obj->parent_id, obj->var_id, obj->name.c_str(), v));
+        NC_CALL(nc_get_att_text(self->parent_id, self->var_id, self->name.c_str(), v));
         RETURN_STR(v);
     }
 
     if (len == 1) {
-        switch (obj->type) {
+        switch (self->type) {
             case NC_BYTE: {
                 int8_t v;
-                NC_CALL(nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), &v));
+                NC_CALL(nc_get_att(self->parent_id, self->var_id, self->name.c_str(), &v));
                 RETURN_I8(v);
             }
             case NC_SHORT: {
                 int16_t v;
-                NC_CALL(nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), &v));
+                NC_CALL(nc_get_att(self->parent_id, self->var_id, self->name.c_str(), &v));
                 RETURN_I16(v);
             }
             case NC_INT: {
                 int32_t v;
-                NC_CALL(nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), &v));
+                NC_CALL(nc_get_att(self->parent_id, self->var_id, self->name.c_str(), &v));
                 RETURN_I32(v);
             }
             case NC_FLOAT: {
                 float v;
-                NC_CALL(nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), &v));
+                NC_CALL(nc_get_att(self->parent_id, self->var_id, self->name.c_str(), &v));
                 RETURN_FLOAT(v);
             }
             case NC_DOUBLE: {
                 double v;
-                NC_CALL(nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), &v));
+                NC_CALL(nc_get_att(self->parent_id, self->var_id, self->name.c_str(), &v));
                 RETURN_DOUBLE(v);
             }
             case NC_UBYTE: {
                 uint8_t v;
-                NC_CALL(nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), &v));
+                NC_CALL(nc_get_att(self->parent_id, self->var_id, self->name.c_str(), &v));
                 RETURN_U8(v);
             }
             case NC_USHORT: {
                 uint16_t v;
-                NC_CALL(nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), &v));
+                NC_CALL(nc_get_att(self->parent_id, self->var_id, self->name.c_str(), &v));
                 RETURN_U16(v);
             }
             case NC_UINT: {
                 uint32_t v;
-                NC_CALL(nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), &v));
+                NC_CALL(nc_get_att(self->parent_id, self->var_id, self->name.c_str(), &v));
                 RETURN_U32(v);
             }
             case NC_INT64: {
                 int64_t v;
-                NC_CALL(nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), &v));
+                NC_CALL(nc_get_att(self->parent_id, self->var_id, self->name.c_str(), &v));
                 RETURN_I64(v);
             }
             case NC_UINT64: {
                 uint64_t v;
-                NC_CALL(nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), &v));
+                NC_CALL(nc_get_att(self->parent_id, self->var_id, self->name.c_str(), &v));
                 RETURN_U64(v);
             }
             default:
@@ -212,7 +213,7 @@ napi_value Attribute::GetValue(napi_env env, napi_callback_info info) {
         }
     }
 
-    napi_typedarray_type type = typedarray_cons_per_type(env, obj->type);
+    napi_typedarray_type type = typedarray_cons_per_type(env, self->type);
 
     napi_value array;
 
@@ -222,7 +223,7 @@ napi_value Attribute::GetValue(napi_env env, napi_callback_info info) {
 
     NAPI_CALL(napi_create_arraybuffer(
         env,
-        len * type_sizes[obj->type],
+        len * type_sizes[self->type],
         &buffer_data,
         &buffer
     ));
@@ -236,7 +237,7 @@ napi_value Attribute::GetValue(napi_env env, napi_callback_info info) {
         &array
     ));
 
-    NC_CALL(nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), buffer_data));
+    NC_CALL(nc_get_att(self->parent_id, self->var_id, self->name.c_str(), buffer_data));
 
     return array;
 }
