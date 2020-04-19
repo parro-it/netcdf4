@@ -16,7 +16,7 @@ File::File(const int& id_) : id(id_), closed(false) {}
 File::~File() {
     if (!closed) {
         int retval = nc_close(id);
-        assert(retval != NC_NOERR);
+        assert(retval == NC_NOERR);
     }
     napi_delete_reference(env_, wrapper_);
 }

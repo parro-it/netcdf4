@@ -13,4 +13,5 @@ describe('Variable', function() {
       var results = Array.from(file.root.variables.var1.readStridedSlice(0, 2, 2));
         expect(results).to.deep.equal([420, 391.5]);
   });
+
 });

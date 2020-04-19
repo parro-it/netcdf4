@@ -1,42 +1,38 @@
 var expect = require("chai").expect,
     netcdf4 = require("../build/Release/netcdf4.node");
-const {Attribute} = netcdf4;
 
-describe.only('Attribute', function() {
-    describe('NAPI', function() {
-        it('should read test', function() {
-            expect(netcdf4.test()).to.be.undefined;
-        });
+describe('Attribute', function() {
+    const file = new netcdf4.File("test/test_hgroups.nc", "r");
+    const attributes = file.root.subgroups["mozaic_flight_2012030419144751_ascent"].attributes;
+    const attr = attributes["airport_dep"];
+    console.log(attr)
+    it('is an object', function() {
+        expect(typeof attr).equals("object");
+        expect(attr).be.not.null;
     });
 
-    describe('constructor', function() {
-        describe('should return an attr object', function() {
-            const attr = new Attribute("test", 4,2,1);
+    it('with a name', function() {
+        expect(attr.name).equals("airport_dep");
+    });
 
-            it('with a property name', function() {
-                expect(attr.name).equals("test");
-            });
+    it('with a value', function() {
+        expect(attr.value).equals("FRA");
+    });
 
-            it('with a custom inspection', function() {
-                expect(attr.inspect()).equals("[object Attribute]");
-            });
-
-            it.skip('property name is writable', function() {
-                attr.name = 'other';
-                expect(attr.name).equals("other");
-            });
-        });
-
-
+    it('with a custom inspect', function() {
+        console.log(attr.inspect)
+        expect(attr.inspect()).equals("[object Attribute]");
     });
 /*
-    describe('name', function() {
-        it('should read group attribute name', function() {
-            var file = new netcdf4.File("test/test_hgroups.nc", "r");
-            var attributes = file.root.subgroups["mozaic_flight_2012030419144751_ascent"].attributes;
-            expect(attributes["airport_dep"].name).to.equal("airport_dep");
+        it('property name is writable', function() {
+            attr.name = 'other';
+            expect(attr.name).equals("other");
         });
-    });
+*/
+
+
+/*
+
 
     describe('value', function() {
         it('should read group attribute value', function() {

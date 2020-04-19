@@ -1,23 +1,11 @@
 #include "Variable.h"
 #include "Attribute.h"
+#include "Utils.h"
 // #include "Dimension.h"
 #include "napi-utils.h"
 
 
 namespace netcdf4js {
-
-const unsigned char Variable::type_sizes[] = {
-    0,  // NC_NAT // unknown type
-    1,  // NC_BYTE
-    1,  // NC_CHAR
-    2,  // NC_SHORT
-    4,  // NC_INT / NC_LONG
-    4,  // NC_FLOAT
-    8,  // NC_DOUBLE
-    1,  // NC_UBYTE
-    2,  // NC_USHORT
-    4   // NC_UINT
-};
 
 const char* Variable::type_names[] = {
     "unknown",  // NC_NAT // unknown type
@@ -453,6 +441,8 @@ napi_value Variable::Read(napi_env env, napi_callback_info info) {
     delete[] size;*/ return NULL;
 }
 
+
+
 napi_value Variable::ReadSlice(napi_env env, napi_callback_info info) {
     napi_value argv[256];
     size_t argc = 256;
@@ -464,11 +454,8 @@ napi_value Variable::ReadSlice(napi_env env, napi_callback_info info) {
     Variable* self;
     NAPI_CALL(napi_unwrap(env, jsthis, reinterpret_cast<void**>(&self)));
 
-    printf("len sizes %lu\n", argc);
-    printf("ndims %d\n", self->ndims);
 
 	if ((int)argc != self->ndims * 2) {
-        printf("argc %ld, ndims %i\n", argc, self->ndims * 2);
 		napi_throw_error(env, NULL, "Wrong number of arguments");
 		return NULL;
 	}
@@ -486,14 +473,12 @@ napi_value Variable::ReadSlice(napi_env env, napi_callback_info info) {
         VAR_I32_FROM_JS(pos_i, argv[2* i]);
         VAR_I32_FROM_JS(size_i, argv[2* i + 1]);
 
-        printf("pos %d: %d\n", i, pos_i);
         pos[i] = pos_i;
         size[i] = size_i;
         total_size *= size_i;
     }
 
 
-    printf("total_size %ld\n", total_size);
 
     void* buffer_data = NULL;
     napi_value buffer;
@@ -505,7 +490,6 @@ napi_value Variable::ReadSlice(napi_env env, napi_callback_info info) {
         &buffer
     ));
 
-    printf("napi_create_arraybuffer %p\n", buffer);
 
     NC_CALL(nc_get_vara(
         self->parent_id,
@@ -515,41 +499,9 @@ napi_value Variable::ReadSlice(napi_env env, napi_callback_info info) {
         buffer_data
     ));
 
-    printf("nc_get_vara done\n");
 
-    napi_typedarray_type type;
-    switch (self->type) {
-        case NC_BYTE:
-        case NC_CHAR:
-            type = napi_int8_array;
-            break;
-        case NC_SHORT:
-            type = napi_int16_array;
-            break;
-        case NC_INT:
-            type = napi_int32_array;
-            break;
-        case NC_FLOAT:
-            type = napi_float32_array;
-            break;
-        case NC_DOUBLE:
-            type = napi_float64_array;
-            break;
-        case NC_UBYTE:
-            type = napi_uint8_array;
-            break;
-        case NC_USHORT:
-            type = napi_uint16_array;
-            break;
-        case NC_UINT:
-            type = napi_uint32_array;
-            break;
-        default:
-            napi_throw_error(env, NULL, "Variable type not supported yet");
-            return NULL;
-    }
+    napi_typedarray_type type = typedarray_cons_per_type(env, self->type);
 
-    printf("type %d total_size %ld\n", type, total_size);
 
     napi_value result;
 
@@ -562,92 +514,87 @@ napi_value Variable::ReadSlice(napi_env env, napi_callback_info info) {
         &result
     ));
 
-    printf("napi_create_typedarray %p\n", result);
 
     return result;
 
 
-    /*
-    v8::Isolate* isolate = args.GetIsolate();
-    Variable* obj = node::ObjectWrap::Unwrap<Variable>(args.Holder());
-    if (args.Length() != 2 * obj->ndims) {
-        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Wrong number of arguments", v8::NewStringType::kNormal).ToLocalChecked()));
-        return;
-    }
-    if (obj->type < NC_BYTE || obj->type > NC_UINT) {
-        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Variable type not supported yet", v8::NewStringType::kNormal).ToLocalChecked()));
-        return;
-    }
 
-    size_t* pos = new size_t[obj->ndims];
-    size_t* size = new size_t[obj->ndims];
-    size_t total_size = 1;
-    for (int i = 0; i < obj->ndims; i++) {
-        pos[i] = static_cast<size_t>(args[2 * i]->IntegerValue(isolate->GetCurrentContext()).ToChecked());
-        size_t s = static_cast<size_t>(args[2 * i + 1]->IntegerValue(isolate->GetCurrentContext()).ToChecked());
-        size[i] = s;
-        total_size *= s;
-    }
-    v8::Local<v8::ArrayBuffer> buffer = v8::ArrayBuffer::New(isolate, total_size * type_sizes[obj->type]);
-    int retval = nc_get_vara(obj->parent_id, obj->id, pos, size, buffer->GetContents().Data());
-    if (retval != NC_NOERR) {
-        throw_netcdf_error(isolate, retval);
-        delete[] pos;
-        delete[] size;
-        return;
-    }
-    v8::Local<v8::Object> result;
-
-    switch (obj->type) {
-        case NC_BYTE:
-        case NC_CHAR:
-            result = v8::Int8Array::New(buffer, 0, total_size);
-            break;
-        case NC_SHORT:
-            result = v8::Int16Array::New(buffer, 0, total_size);
-            break;
-        case NC_INT:
-            result = v8::Int32Array::New(buffer, 0, total_size);
-            break;
-        case NC_FLOAT:
-            result = v8::Float32Array::New(buffer, 0, total_size);
-            break;
-        case NC_DOUBLE:
-            result = v8::Float64Array::New(buffer, 0, total_size);
-            break;
-        case NC_UBYTE:
-            result = v8::Uint8Array::New(buffer, 0, total_size);
-            break;
-        case NC_USHORT:
-            result = v8::Uint16Array::New(buffer, 0, total_size);
-            break;
-        case NC_UINT:
-            result = v8::Uint32Array::New(buffer, 0, total_size);
-            break;
-        default:
-            isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Variable type not supported yet", v8::NewStringType::kNormal).ToLocalChecked()));
-            delete[] pos;
-            delete[] size;
-            return;
-    }
-    args.GetReturnValue().Set(result);
-    delete[] pos;
-    delete[] size;
-*/ return NULL;
 }
 
 napi_value Variable::ReadStridedSlice(napi_env env, napi_callback_info info) {
+    napi_value argv[256];
+    size_t argc = 256;
+    char* nuts_error = NULL;
+    napi_value jsthis;
+
+    NAPI_CALL(napi_get_cb_info(env, info, &argc, argv, &jsthis, NULL));
+
+    Variable* self;
+    NAPI_CALL(napi_unwrap(env, jsthis, reinterpret_cast<void**>(&self)));
+
+    if ((int)argc != self->ndims * 3) {
+		napi_throw_error(env, NULL, "Wrong number of arguments");
+		return NULL;
+	}
+
+    if (self->type < NC_BYTE || self->type > NC_UINT) {
+        napi_throw_error(env, NULL, "Variable type not supported yet");
+        return NULL;
+    }
+
+    size_t pos[self->ndims];
+    size_t size[self->ndims];
+    ptrdiff_t stride[self->ndims];
+    size_t total_size = 1;
+
+    for (int i = 0; i < self->ndims; i++) {
+        VAR_I32_FROM_JS(pos_i, argv[2* i]);
+        VAR_I32_FROM_JS(size_i, argv[2* i + 1]);
+        VAR_I32_FROM_JS(stride_i, argv[2* i + 2]);
+
+        pos[i] = pos_i;
+        size[i] = size_i;
+        stride[i] = stride_i;
+
+        total_size *= size_i;
+    }
+
+    void* buffer_data = NULL;
+    napi_value buffer;
+
+    NAPI_CALL(napi_create_arraybuffer(
+        env,
+        total_size * type_sizes[self->type],
+        &buffer_data,
+        &buffer
+    ));
+
+    NC_CALL(nc_get_vars(
+        self->parent_id,
+        self->id,
+        pos,
+        size,
+        stride,
+        buffer_data
+    ));
+
+    napi_typedarray_type type = typedarray_cons_per_type(env, self->type);
+
+    napi_value result;
+
+    NAPI_CALL(napi_create_typedarray(
+        env,
+        type,
+        total_size,
+        buffer,
+        0,
+        &result
+    ));
+
+    return result;
+
     /*
-    v8::Isolate* isolate = args.GetIsolate();
-    Variable* obj = node::ObjectWrap::Unwrap<Variable>(args.Holder());
-    if (args.Length() != 3 * obj->ndims) {
-        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Wrong number of arguments", v8::NewStringType::kNormal).ToLocalChecked()));
-        return;
-    }
-    if (obj->type < NC_BYTE || obj->type > NC_UINT) {
-        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Variable type not supported yet", v8::NewStringType::kNormal).ToLocalChecked()));
-        return;
-    }
+
 
     size_t* pos = new size_t[obj->ndims];
     size_t* size = new size_t[obj->ndims];

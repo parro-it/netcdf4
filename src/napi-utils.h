@@ -3,15 +3,39 @@
 
 #define SUPPRESS_UNUSED_WARNING(x) (void)(x)
 
+#define SECOND_ARG(_, ARG, ...) ARG
+
+#define INVALID_C_VALUE_ERR(target, frmt_char, ...)                                                \
+	{                                                                                              \
+		const char *frmt = "Invalid value `" frmt_char "`: %s";                                         \
+		int error_len = snprintf(NULL, 0, frmt, __VA_ARGS__);                                      \
+		char *error_buff = malloc(error_len + 1);                                                  \
+		snprintf(error_buff, error_len + 1, frmt, __VA_ARGS__);                                    \
+		free(SECOND_ARG(__VA_ARGS__));                                                             \
+		target = error_buff;                                                                       \
+	}
+
 #ifdef __cplusplus
 extern "C" {  // only need to export C interface if
               // used by C++ source code
 #endif
 
+
   napi_value i32_to_value(napi_env env, int32_t c_value, char **error);
   int32_t value_to_i32(napi_env env, napi_value value, char **error);
   napi_value utf8_to_value(napi_env env, char *c_value, char **error);
   char *value_to_utf8(napi_env env, napi_value value, char **error);
+
+	napi_value nuts_u64_to_value(napi_env env, uint64_t c_value, char **error);
+	napi_value nuts_u32_to_value(napi_env env, uint32_t c_value, char **error);
+	napi_value nuts_u16_to_value(napi_env env, uint16_t c_value, char **error);
+	napi_value nuts_u8_to_value(napi_env env, uint8_t c_value, char **error);
+	napi_value nuts_i64_to_value(napi_env env, int64_t c_value, char **error);
+	napi_value nuts_i16_to_value(napi_env env, int16_t c_value, char **error);
+	napi_value nuts_i8_to_value(napi_env env, int8_t c_value, char **error);
+	napi_value nuts_double_to_value(napi_env env, double c_value, char **error);
+	napi_value nuts_float_to_value(napi_env env, float c_value, char **error);
+
 
   // return a js error based on the last napi error occurred.
   napi_value create_napi_error(napi_env env, const napi_extended_error_info *napi_err);
@@ -96,7 +120,7 @@ extern "C" {  // only need to export C interface if
 	size_t arg_idx = 0;                                                                	\
     napi_value jsthis;                                                                  \
 	napi_get_cb_info(env, info, &argc, argv, &jsthis, NULL);                           	\
-	if (argc < (N - OPT_N) || argc > N) {                                               \
+	if ((long)argc < (N - OPT_N) || argc > N) {                                               \
 		NAPI_CALL(napi_throw_error(env, NULL, "Wrong number of arguments."));          	\
 		return NULL;                                                                   	\
 	} 				                                                                   	\
@@ -170,4 +194,108 @@ extern "C" {  // only need to export C interface if
 			return NULL;															                            \
 		}																						                            \
 		return val;                                                             \
+	}
+
+
+
+#define RETURN_I64(VALUE)                                                                           \
+	{                                                                                               \
+		napi_value val = nuts_i64_to_value(env, VALUE, &nuts_error);                            	\
+		if (nuts_error != NULL) {																 	\
+			napi_throw_error(env, NULL, nuts_error);												\
+			free(nuts_error);                                   									\
+			return NULL;																			\
+		}																							\
+		return val;                                                                        \
+	}
+
+
+#define RETURN_U64(VALUE)                                                                          \
+	{                                                                                              \
+		napi_value val = nuts_u64_to_value(env, VALUE, &nuts_error);                            	\
+		if (nuts_error != NULL) {																 	\
+			napi_throw_error(env, NULL, nuts_error);												\
+			free(nuts_error);                                   									\
+			return NULL;																			\
+		}																							\
+		return val;                                                                        \
+	}
+
+#define RETURN_U32(VALUE)                                                                          \
+	{                                                                                              \
+		napi_value val = nuts_u32_to_value(env, VALUE, &nuts_error);                            	\
+		if (nuts_error != NULL) {																 	\
+			napi_throw_error(env, NULL, nuts_error);												\
+			free(nuts_error);                                   									\
+			return NULL;																			\
+		}																							\
+		return val;                                                                        \
+	}
+
+#define RETURN_U16(VALUE)                                                                          \
+	{                                                                                              \
+		napi_value val = nuts_u16_to_value(env, VALUE, &nuts_error);                            	\
+		if (nuts_error != NULL) {																 	\
+			napi_throw_error(env, NULL, nuts_error);												\
+			free(nuts_error);                                   									\
+			return NULL;																			\
+		}																							\
+		return val;                                                                        \
+	}
+
+#define RETURN_I16(VALUE)                                                                          \
+	{                                                                                              \
+		napi_value val = nuts_i16_to_value(env, VALUE, &nuts_error);                            	\
+		if (nuts_error != NULL) {																 	\
+			napi_throw_error(env, NULL, nuts_error);												\
+			free(nuts_error);                                   									\
+			return NULL;																			\
+		}																							\
+		return val;                                                                        \
+	}
+
+
+#define RETURN_U8(VALUE) \
+	{                                                                                              \
+		napi_value val = nuts_u8_to_value(env, VALUE, &nuts_error);                            	\
+		if (nuts_error != NULL) {																 	\
+			napi_throw_error(env, NULL, nuts_error);												\
+			free(nuts_error);                                   									\
+			return NULL;																			\
+		}																							\
+		return val;                                                                        \
+	}
+
+#define RETURN_I8(VALUE) \
+	{                                                                                              \
+		napi_value val = nuts_i8_to_value(env, VALUE, &nuts_error);                            	\
+		if (nuts_error != NULL) {																 	\
+			napi_throw_error(env, NULL, nuts_error);												\
+			free(nuts_error);                                   									\
+			return NULL;																			\
+		}																							\
+		return val;                                                                        \
+	}
+
+
+#define RETURN_DOUBLE(VALUE)                                                                      	\
+	{                                                                                             	\
+		napi_value val = nuts_double_to_value(env, VALUE, &nuts_error);                           	\
+		if (nuts_error != NULL) {																	\
+			napi_throw_error(env, NULL, nuts_error);												\
+			free(nuts_error);                                   									\
+			return NULL;																			\
+		}																							\
+		return val;                                                                         		\
+	}
+
+#define RETURN_FLOAT(VALUE) 																		\
+	{																			                    \
+		napi_value val = nuts_double_to_value(env, VALUE, &nuts_error);                            	\
+		if (nuts_error != NULL) {																 	\
+			napi_throw_error(env, NULL, nuts_error);												\
+			free(nuts_error);                                   									\
+			return NULL;																			\
+		}																							\
+		return val;                                                                         		\
 	}

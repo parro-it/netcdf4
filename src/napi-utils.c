@@ -3,7 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-
+#include <math.h>
+#include <float.h>
+#include <inttypes.h>
 
 /**
  * returns a string containing the name of given napi status
@@ -110,6 +112,174 @@ int32_t value_to_i32(napi_env env, napi_value value, char **error) {
 	return (int32_t)value_to_int(INT32_MIN, INT32_MAX, env, value, error);
 }
 
+
+int64_t nuts_value_to_i64(napi_env env, napi_value value, char **error) {
+	*error = NULL;
+	int64_t c_value;
+
+	napi_valuetype value_type;
+	napi_status status = napi_typeof(env, value, &value_type);
+	if (status != napi_ok) {
+		*error = invalid_value_err(env, value, nuts_napi_err_f(env, "%s (%s)"));
+		return 0;
+	}
+
+	if (value_type == napi_bigint) {
+		bool lossless;
+		status = napi_get_value_bigint_int64(env, value, &c_value, &lossless);
+		if (!lossless || status != napi_ok) {
+			*error = invalid_value_err(env, value, nuts_napi_err_f(env, "%s (%s)"));
+			return 0;
+		}
+	} else {
+		status = napi_get_value_int64(env, value, &c_value);
+		if (status != napi_ok) {
+			*error = invalid_value_err(env, value, nuts_napi_err_f(env, "%s (%s)"));
+			return 0;
+		}
+	}
+
+	return c_value;
+}
+
+int16_t nuts_value_to_i16(napi_env env, napi_value value, char **error) {
+	return (int16_t)value_to_int(INT16_MIN, INT16_MAX, env, value, error);
+}
+
+int8_t nuts_value_to_i8(napi_env env, napi_value value, char **error) {
+	return (int8_t)value_to_int(INT8_MIN, INT8_MAX, env, value, error);
+}
+
+static uint32_t nuts_value_to_uint(uint32_t max, napi_env env, napi_value value, char **error) {
+	*error = NULL;
+	uint32_t c_value;
+
+	napi_status status = napi_get_value_uint32(env, value, &c_value);
+	if (status != napi_ok) {
+		*error = invalid_value_err(env, value, nuts_napi_err_f(env, "%s (%s)"));
+		return 0;
+	}
+
+	return c_value;
+}
+
+
+uint32_t nuts_value_to_u32(napi_env env, napi_value value, char **error) {
+	return nuts_value_to_uint(UINT32_MAX, env, value, error);
+}
+
+uint64_t nuts_value_to_u64(napi_env env, napi_value value, char **error) {
+	*error = NULL;
+	uint64_t c_value;
+
+	bool lossless;
+	napi_status status = napi_get_value_bigint_uint64(env, value, &c_value, &lossless);
+	if (!lossless || status != napi_ok) {
+		*error = invalid_value_err(env, value, nuts_napi_err_f(env, "%s (%s)"));
+		return 0;
+	}
+
+	return c_value;
+}
+
+uint16_t nuts_value_to_u16(napi_env env, napi_value value, char **error) {
+	return (uint16_t)nuts_value_to_uint(UINT16_MAX, env, value, error);
+}
+
+uint8_t nuts_value_to_u8(napi_env env, napi_value value, char **error) {
+	return (uint8_t)nuts_value_to_uint(UINT8_MAX, env, value, error);
+}
+
+double nuts_value_to_double(napi_env env, napi_value value, char **error) {
+	double c_value;
+	napi_status status = napi_get_value_double(env, value, &c_value);
+
+	if (status != napi_ok) {
+		*error = invalid_value_err(env, value, nuts_napi_err_f(env, "%s (%s)"));
+		return 0;
+	}
+
+	return c_value;
+}
+
+float nuts_value_to_float(napi_env env, napi_value value, char **error) {
+	*error = NULL;
+	double c_value = nuts_value_to_double(env, value, error);
+
+	return (float)c_value;
+}
+
+
+napi_value nuts_i64_to_value(napi_env env, int64_t c_value, char **error) {
+	napi_value value;
+	napi_status status = napi_create_bigint_int64(env, c_value, &value);
+	if (status != napi_ok) {
+		INVALID_C_VALUE_ERR(*error, "%ld", c_value, nuts_napi_err_f(env, "%s (%s)"));
+		return NULL;
+	}
+	return value;
+}
+
+napi_value nuts_i32_to_value(napi_env env, int32_t c_value, char **error) {
+	napi_value value;
+	napi_status status = napi_create_int32(env, c_value, &value);
+	if (status != napi_ok) {
+		INVALID_C_VALUE_ERR(*error, "%d", c_value, nuts_napi_err_f(env, "%s (%s)"));
+		return NULL;
+	}
+	return value;
+}
+
+napi_value nuts_i16_to_value(napi_env env, int16_t c_value, char **error) {
+	return nuts_i32_to_value(env, (int32_t)c_value, error);
+}
+
+napi_value nuts_i8_to_value(napi_env env, int8_t c_value, char **error) {
+	return nuts_i32_to_value(env, (int32_t)c_value, error);
+}
+
+napi_value nuts_u64_to_value(napi_env env, uint64_t c_value, char **error) {
+	napi_value value;
+	napi_status status = napi_create_bigint_uint64(env, c_value, &value);
+	if (status != napi_ok) {
+		INVALID_C_VALUE_ERR(*error, "%lu", c_value, nuts_napi_err_f(env, "%s (%s)"));
+		return NULL;
+	}
+	return value;
+}
+
+
+napi_value nuts_u32_to_value(napi_env env, uint32_t c_value, char **error) {
+	napi_value value;
+	napi_status status = napi_create_uint32(env, c_value, &value);
+	if (status != napi_ok) {
+		INVALID_C_VALUE_ERR(*error, "%u", c_value, nuts_napi_err_f(env, "%s (%s)"));
+		return NULL;
+	}
+	return value;
+}
+
+napi_value nuts_u16_to_value(napi_env env, uint16_t c_value, char **error) {
+	return nuts_u32_to_value(env, (uint32_t)c_value, error);
+}
+
+napi_value nuts_u8_to_value(napi_env env, uint8_t c_value, char **error) {
+	return nuts_u32_to_value(env, (uint32_t)c_value, error);
+}
+
+napi_value nuts_double_to_value(napi_env env, double c_value, char **error) {
+	napi_value value_js;
+	napi_status status = napi_create_double(env, c_value, &value_js);
+	if (status != napi_ok) {
+		INVALID_C_VALUE_ERR(*error, "%f", c_value, nuts_napi_err_f(env, "%s (%s)"));
+		return NULL;
+	}
+	return value_js;
+}
+
+napi_value nuts_float_to_value(napi_env env, float c_value, char **error) {
+	return nuts_double_to_value(env, (double)c_value, error);
+}
 
 char *value_to_utf8(napi_env env, napi_value value, char **error) {
 

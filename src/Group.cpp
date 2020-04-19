@@ -99,7 +99,7 @@ napi_value Group::New(napi_env env, napi_callback_info info) {
         &group->wrapper_
     ));
 
-    printf("root js %p\n", jsthis);
+
     return jsthis;
 
 }
@@ -254,7 +254,7 @@ napi_value Group::GetId(napi_env env, napi_callback_info info) {
 
 napi_value Group::GetVariables(napi_env env, napi_callback_info info) {
     ARGS(0);
-    printf("array start\n");
+
     Group* self;
     NAPI_CALL(napi_unwrap(env, jsthis, reinterpret_cast<void**>(&self)));
 
@@ -276,7 +276,7 @@ napi_value Group::GetVariables(napi_env env, napi_callback_info info) {
 
         NAPI_CALL(napi_set_named_property(env, array, name, var));
     }
-    printf("array %p\n", array);
+
     return array;
 }
 
@@ -347,72 +347,68 @@ napi_value Group::GetUnlimited(napi_env env, napi_callback_info info) {
 }
 
 napi_value Group::GetAttributes(napi_env env, napi_callback_info info) {
-    /*
-    v8::Isolate* isolate = info.GetIsolate();
-    Group* obj = node::ObjectWrap::Unwrap<Group>(info.Holder());
+    ARGS(0);
+    Group* self;
+    NAPI_CALL(napi_unwrap(env, jsthis, reinterpret_cast<void**>(&self)));
+
     int natts;
-    int retval = nc_inq_natts(obj->id, &natts);
-    if (retval != NC_NOERR) {
-        throw_netcdf_error(isolate, retval);
-        return;
-    }
-    v8::Local<v8::Object> result = v8::Object::New(isolate);
-    char name[NC_MAX_NAME + 1];
+    NC_CALL(nc_inq_natts(self->id, &natts));
+
+    napi_value array;
+    NAPI_CALL(napi_create_array_with_length(env, natts, &array));
+
     for (int i = 0; i < natts; i++) {
-        retval = nc_inq_attname(obj->id, NC_GLOBAL, i, name);
-        if (retval != NC_NOERR) {
-            throw_netcdf_error(isolate, retval);
-            return;
-        }
-        Attribute* a = new Attribute(name, NC_GLOBAL, obj->id);
-        result->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, name, v8::NewStringType::kNormal).ToLocalChecked(), a->handle());
+        char name[NC_MAX_NAME + 1];
+        NC_CALL(nc_inq_attname(self->id, NC_GLOBAL, i, name));
+
+        napi_value attr = Attribute::Build(env, name, NC_GLOBAL, self->id, -1);
+        NAPI_CALL(napi_set_element(env,array,i, attr));
+        NAPI_CALL(napi_set_named_property(env,array,name, attr));
     }
-    info.GetReturnValue().Set(result);
-    */return NULL;
+
+    return array;
+
 }
 
 napi_value Group::GetSubgroups(napi_env env, napi_callback_info info) {
-    /*
-    v8::Isolate* isolate = info.GetIsolate();
-    Group* obj = node::ObjectWrap::Unwrap<Group>(info.Holder());
-    int ngrps;
-    int retval = nc_inq_grps(obj->id, &ngrps, NULL);
-    if (retval != NC_NOERR) {
-        throw_netcdf_error(isolate, retval);
-        return;
-    }
-    int* grp_ids = new int[ngrps];
-    retval = nc_inq_grps(obj->id, NULL, grp_ids);
-    if (retval != NC_NOERR) {
-        throw_netcdf_error(isolate, retval);
-        delete[] grp_ids;
-        return;
-    }
-    v8::Local<v8::Object> result = v8::Object::New(isolate);
-    char name[NC_MAX_NAME + 1];
-    for (int i = 0; i < ngrps; ++i) {
-        Group* g = new Group(grp_ids[i]);
-        if (g->get_name(name)) {
-            result->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, name, v8::NewStringType::kNormal).ToLocalChecked(), g->handle());
-        } else {
-            delete[] grp_ids;
-            return;
+    ARGS(0);
+    Group* self;
+    NAPI_CALL(napi_unwrap(env, jsthis, reinterpret_cast<void**>(&self)));
+
+    int nsubgroups;
+    NC_CALL(nc_inq_grps(self->id, &nsubgroups, NULL));
+    int grp_ids[nsubgroups];
+    NC_CALL(nc_inq_grps(self->id, NULL, grp_ids));
+
+    napi_value array;
+    NAPI_CALL(napi_create_array_with_length(env, nsubgroups, &array));
+    for (int i = 0; i < nsubgroups; i++) {
+        napi_value sub = Group::Build(env, grp_ids[i]);
+        NAPI_CALL(napi_set_element(env, array, i, sub));
+
+        char name[NC_MAX_NAME + 1];
+        NC_CALL(nc_inq_grpname(grp_ids[i], name));
+        int retval = nc_inq_grpname(grp_ids[i], name);
+        if (retval == NC_NOERR) {
+            NAPI_CALL(napi_set_named_property(env,array,name,sub));
         }
+
+
     }
-    info.GetReturnValue().Set(result);
-    delete[] grp_ids;
-    */return NULL;
+
+    return array;
 }
 
 napi_value Group::GetName(napi_env env, napi_callback_info info) {
-    /*
-    v8::Isolate* isolate = info.GetIsolate();
-    Group* obj = node::ObjectWrap::Unwrap<Group>(info.Holder());
+    ARGS(0)
+    Group* self;
+    NAPI_CALL(napi_unwrap(env, jsthis, reinterpret_cast<void**>(&self)));
     char name[NC_MAX_NAME + 1];
-    if (obj->get_name(name)) {
-        info.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, name, v8::NewStringType::kNormal).ToLocalChecked());
+    if (self->get_name(name)) {
+        RETURN_STR(name);
     }
-    */return NULL;
+
+    return NULL;
 }
 
 napi_value Group::GetFullname(napi_env env, napi_callback_info info) {

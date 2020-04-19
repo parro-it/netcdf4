@@ -13,6 +13,7 @@ class Attribute {
     Attribute(const char* name_, int var_id_, int parent_id_);
     Attribute(const char* name_, int var_id_, int parent_id_, int type_);
     void set_value(napi_value val);
+    static napi_value Build(napi_env env, char* name, int id, int parentId, int type);
 
 
   private:
@@ -22,8 +23,8 @@ class Attribute {
     //static napi_value Delete(napi_env env, napi_callback_info info);
     static napi_value GetName(napi_env env, napi_callback_info info);
     static napi_value SetName(napi_env env, napi_callback_info info);
-    //static napi_value GetValue(napi_env env, napi_callback_info info);
-    //static napi_value SetValue(napi_env env, napi_callback_info info);
+    static napi_value GetValue(napi_env env, napi_callback_info info);
+    static napi_value SetValue(napi_env env, napi_callback_info info);
     static napi_value Inspect(napi_env env, napi_callback_info info);
     std::string name;
     int var_id;

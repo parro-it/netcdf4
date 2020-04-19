@@ -8,14 +8,14 @@ describe('Group', function() {
             expect(file.root.variables).to.have.property("UTC_time");
         });
     });
-
+/*
     describe('dimensions', function() {
         it('should read list of dimensions', function() {
             var file = new netcdf4.File("test/test_hgroups.nc", "r");
             expect(file.root.dimensions).to.have.property("recNum");
         });
     });
-
+*/
     describe('subgroups', function() {
         it('should read list of subgroups', function() {
             var file = new netcdf4.File("test/test_hgroups.nc", "r");

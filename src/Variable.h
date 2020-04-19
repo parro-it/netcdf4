@@ -54,7 +54,6 @@ class Variable {
     static napi_ref constructor;
     napi_ref wrapper_;
     napi_env env_;
-    static const unsigned char type_sizes[];
     static const char* type_names[];
     int id;
     int parent_id;

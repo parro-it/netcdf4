@@ -10,6 +10,7 @@
         "src/Group.cpp",
         "src/module.c",
         "src/Variable.cpp",
+        "src/Utils.cpp",
         "src/napi-utils.c"
       ],
       "cpp": [
