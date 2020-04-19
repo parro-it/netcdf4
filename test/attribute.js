@@ -19,6 +19,11 @@ describe('Attribute', function() {
         expect(attr.value).equals("FRA");
     });
 
+    it('value is writable', function() {
+        attr.value = 'ciao';
+        expect(attr.value).equals("ciao");
+    });
+
     it('with a custom inspect', function() {
         console.log(attr.inspect)
         expect(attr.inspect()).equals("[object Attribute]");
