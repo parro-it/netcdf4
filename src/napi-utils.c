@@ -366,7 +366,6 @@ napi_value create_napi_error(napi_env env, const napi_extended_error_info *napi_
 	return error;
 }
 
-
 // return NULL if status_to_check is napi_ok, or the exception
 // occurred if there is a pending one, or an error describing
 // then napi error occurred.
@@ -418,4 +417,18 @@ napi_value error_for_napi_status(napi_env env, napi_status status_to_check) {
 	// return an exception base on the
 	// napi error description.
 	return create_napi_error(env, &napi_err);
+}
+
+int32_t nuts_value_to_i32(napi_env env, napi_value value, char **error) {
+	return (int32_t)value_to_int(INT32_MIN, INT32_MAX, env, value, error);
+}
+
+bool nuts_value_to_bool(napi_env env, napi_value value, char **error) {
+	bool c_value;
+	napi_status status = napi_get_value_bool(env, value, &c_value);
+	if (status != napi_ok) {
+		*error = invalid_value_err(env, value, nuts_napi_err_f(env, "%s (%s)"));
+		return false;
+	}
+	return c_value;
 }

@@ -4,6 +4,7 @@
 #include <netcdf.h>
 #include <iostream>
 #include "napi-utils.h"
+#include "string.h"
 
 namespace netcdf4js {
 
@@ -243,44 +244,69 @@ napi_value Attribute::GetValue(napi_env env, napi_callback_info info) {
 }
 
 napi_value Attribute::SetValue(napi_env env, napi_callback_info info) {
-    /*
-    Attribute* obj = node::ObjectWrap::Unwrap<Attribute>(info.Holder());
-    obj->set_value(val);
-    */
-   return NULL;
+    ARGS(1, VALUE(val))
+    Attribute* self;
+    NAPI_CALL(napi_unwrap(env, jsthis, reinterpret_cast<void**>(&self)));
+
+    if ((self->type < NC_BYTE || self->type > NC_UINT64) && self->type != NC_STRING) {
+        napi_throw_error(env, NULL, "Variable type not supported yet");
+        return NULL;
+    }
+
+    switch (self->type) {
+        case NC_BYTE: {
+            VAR_I8_FROM_JS(value, val);
+            NC_CALL(nc_put_att(self->parent_id, self->var_id, self->name.c_str(), self->type, 1, &value));
+        } break;
+        case NC_SHORT: {
+            VAR_I16_FROM_JS(value, val);
+            NC_CALL(nc_put_att(self->parent_id, self->var_id, self->name.c_str(), self->type, 1, &value));
+        } break;
+        case NC_INT: {
+            VAR_I32_FROM_JS(value, val);
+            NC_CALL(nc_put_att(self->parent_id, self->var_id, self->name.c_str(), self->type, 1, &value));
+        } break;
+        case NC_FLOAT: {
+            VAR_FLOAT_FROM_JS(value, val);
+            NC_CALL(nc_put_att(self->parent_id, self->var_id, self->name.c_str(), self->type, 1, &value));
+        } break;
+        case NC_DOUBLE: {
+            VAR_DOUBLE_FROM_JS(value, val);
+            NC_CALL(nc_put_att(self->parent_id, self->var_id, self->name.c_str(), self->type, 1, &value));
+        } break;
+        case NC_UBYTE: {
+            VAR_U8_FROM_JS(value, val);
+            NC_CALL(nc_put_att(self->parent_id, self->var_id, self->name.c_str(), self->type, 1, &value));
+        } break;
+        case NC_USHORT: {
+            VAR_U16_FROM_JS(value, val);
+            NC_CALL(nc_put_att(self->parent_id, self->var_id, self->name.c_str(), self->type, 1, &value));
+        } break;
+        case NC_UINT: {
+            VAR_U32_FROM_JS(value, val);
+            NC_CALL(nc_put_att(self->parent_id, self->var_id, self->name.c_str(), self->type, 1, &value));
+        } break;
+        case NC_INT64: {
+            VAR_I64_FROM_JS(value, val);
+            NC_CALL(nc_put_att(self->parent_id, self->var_id, self->name.c_str(), self->type, 1, &value));
+        } break;
+        case NC_UINT64: {
+            VAR_U64_FROM_JS(value, val);
+            NC_CALL(nc_put_att(self->parent_id, self->var_id, self->name.c_str(), self->type, 1, &value));
+        } break;
+        case NC_CHAR:
+        case NC_STRING: {
+            VAR_STR_FROM_JS(value, val);
+            NC_CALL(nc_put_att_text(self->parent_id, self->var_id, self->name.c_str(), strlen(value), value));
+        } break;
+        default:
+            napi_throw_error(env, NULL, "Variable type not supported yet");
+            return NULL;
+    }
+
+    return NULL;
 }
 /*
-
-void Attribute::set_value(const v8::Local<v8::Value>& val) {
-    v8::Isolate* isolate = v8::Isolate::GetCurrent();
-    if ((type < NC_BYTE || type > NC_UINT) && type != NC_STRING) {
-        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Variable type not supported yet", v8::NewStringType::kNormal).ToLocalChecked()));
-        return;
-    }
-
-    int retval;
-    if (val->IsUint32()) {
-        uint32_t v = val->Uint32Value(isolate->GetCurrentContext()).ToChecked();
-        retval = nc_put_att(parent_id, var_id, name.c_str(), NC_UINT, 1, &v);
-    } else if (val->IsInt32()) {
-        int32_t v = val->Int32Value(isolate->GetCurrentContext()).ToChecked();
-        retval = nc_put_att(parent_id, var_id, name.c_str(), NC_INT, 1, &v);
-    } else if (val->IsNumber()) {
-        double v = val->NumberValue(isolate->GetCurrentContext()).ToChecked();
-        retval = nc_put_att(parent_id, var_id, name.c_str(), NC_DOUBLE, 1, &v);
-    } else {
-        std::string v = *v8::String::Utf8Value(
-#if NODE_MAJOR_VERSION >= 8
-            isolate,
-#endif
-            val->ToString(isolate->GetCurrentContext()).ToLocalChecked());
-        retval = nc_put_att_text(parent_id, var_id, name.c_str(), v.length(), v.c_str());
-    }
-    if (retval != NC_NOERR) {
-        throw_netcdf_error(isolate, retval);
-    }
-}
-
 void Attribute::Delete(const v8::FunctionCallbackInfo<v8::Value>& args) {
     Attribute* obj = node::ObjectWrap::Unwrap<Attribute>(args.Holder());
     int retval = nc_del_att(obj->parent_id, obj->var_id, obj->name.c_str());
@@ -288,7 +314,6 @@ void Attribute::Delete(const v8::FunctionCallbackInfo<v8::Value>& args) {
         throw_netcdf_error(args.GetIsolate(), retval);
     }
 }
-
 */
 
 } // end namespace

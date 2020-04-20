@@ -592,64 +592,6 @@ napi_value Variable::ReadStridedSlice(napi_env env, napi_callback_info info) {
     ));
 
     return result;
-
-    /*
-
-
-    size_t* pos = new size_t[obj->ndims];
-    size_t* size = new size_t[obj->ndims];
-    ptrdiff_t* stride = new ptrdiff_t[obj->ndims];
-    size_t total_size = 1;
-    for (int i = 0; i < obj->ndims; i++) {
-        pos[i] = static_cast<size_t>(args[3 * i]->IntegerValue(isolate->GetCurrentContext()).ToChecked());
-        size_t s = static_cast<size_t>(args[3 * i + 1]->IntegerValue(isolate->GetCurrentContext()).ToChecked());
-        size[i] = s;
-        total_size *= s;
-        stride[i] = static_cast<ptrdiff_t>(args[3 * i + 2]->IntegerValue(isolate->GetCurrentContext()).ToChecked());
-    }
-    v8::Local<v8::ArrayBuffer> buffer = v8::ArrayBuffer::New(isolate, total_size * type_sizes[obj->type]);
-    int retval = nc_get_vars(obj->parent_id, obj->id, pos, size, stride, buffer->GetContents().Data());
-    if (retval != NC_NOERR) {
-        throw_netcdf_error(isolate, retval);
-        delete[] pos;
-        delete[] size;
-        delete[] stride;
-        return;
-    }
-    v8::Local<v8::Object> result;
-
-    switch (obj->type) {
-        case NC_BYTE:
-        case NC_CHAR:
-            result = v8::Int8Array::New(buffer, 0, total_size);
-            break;
-        case NC_SHORT:
-            result = v8::Int16Array::New(buffer, 0, total_size);
-            break;
-        case NC_INT:
-            result = v8::Int32Array::New(buffer, 0, total_size);
-            break;
-        case NC_FLOAT:
-            result = v8::Float32Array::New(buffer, 0, total_size);
-            break;
-        case NC_DOUBLE:
-            result = v8::Float64Array::New(buffer, 0, total_size);
-            break;
-        case NC_UBYTE:
-            result = v8::Uint8Array::New(buffer, 0, total_size);
-            break;
-        case NC_USHORT:
-            result = v8::Uint16Array::New(buffer, 0, total_size);
-            break;
-        case NC_UINT:
-            result = v8::Uint32Array::New(buffer, 0, total_size);
-            break;
-    }
-    args.GetReturnValue().Set(result);
-    delete[] pos;
-    delete[] size;
-    delete[] stride;
-*/ return NULL;
 }
 
 napi_value Variable::AddAttribute(napi_env env, napi_callback_info info) {
@@ -711,6 +653,31 @@ napi_value Variable::GetDimensions(napi_env env, napi_callback_info info) {
 }
 
 napi_value Variable::GetAttributes(napi_env env, napi_callback_info info) {
+    ARGS(0);
+    Variable* self;
+    NAPI_CALL(napi_unwrap(env, jsthis, reinterpret_cast<void**>(&self)));
+
+    int natts;
+    NC_CALL(nc_inq_varnatts(self->parent_id, self->id, &natts));
+
+    napi_value array;
+    NAPI_CALL(napi_create_array_with_length(env, natts, &array));
+
+    for (int i = 0; i < natts; i++) {
+        char name[NC_MAX_NAME + 1];
+        nc_type type;
+
+        NC_CALL(nc_inq_attname(self->parent_id, self->id, i, name));
+        NC_CALL(nc_inq_atttype(self->parent_id, self->id, name, &type));
+
+        napi_value attr = Attribute::Build(env, name, self->id, self->parent_id, type);
+        NAPI_CALL(napi_set_element(env,array,i, attr));
+        NAPI_CALL(napi_set_named_property(env,array,name, attr));
+    }
+
+    return array;
+
+
     /*
     v8::Isolate* isolate = info.GetIsolate();
     Variable* obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());

@@ -151,6 +151,213 @@ extern "C" {  // only need to export C interface if
 	}
 
 
+
+/**
+ * @brief Converts a napi_value to an int64_t.
+ *
+ * Converts a napi_value containing a Number or a BigInt in an int64_t.
+ * Error argument is set in the following conditions:
+ * - you pass a type different from Number or BigInt.
+ * - you pass a Number that is not integral.
+ * - you pass a BigInt not between C INT64_MIN and INT64_MAX
+ *
+ * Any valid value is converted to an int64_t and returned to the
+ * caller.
+ *
+ * The function returns 0 in case of error.
+ *
+ */
+int64_t nuts_value_to_i64(napi_env env, napi_value value, char** error);
+
+/**
+ * @brief Converts a napi_value to an int32_t.
+ *
+ * Converts a napi_value containing a Number in an int32_t.
+ * Error argument is set in the following conditions:
+ * - you pass a type different from Number or BigInt.
+ * - you pass a Number that is not integral.
+ * - you pass a Number or BigInt not between C INT32_MIN and INT32_MAX
+ *
+ * Any valid value is converted to an int32_t and returned to the
+ * caller.
+ *
+ * The function returns 0 in case of error.
+ *
+ */
+int32_t nuts_value_to_i32(napi_env env, napi_value value, char** error);
+
+/**
+ * @brief Converts a napi_value to an int16_t.
+ *
+ * Converts a napi_value containing a Number in an int16_t.
+ * Error argument is set in the following conditions:
+ * - you pass a type different from Number or BigInt.
+ * - you pass a Number that is not integral.
+ * - you pass a Number or BigInt not between C INT16_MIN and INT16_MAX
+ *
+ * Any valid value is converted to an int16_t and returned to the
+ * caller.
+ *
+ * The function returns 0 in case of error.
+ *
+ */
+int16_t nuts_value_to_i16(napi_env env, napi_value value, char** error);
+
+/**
+ * @brief Converts a napi_value to an int8_t.
+ *
+ * Converts a napi_value containing a Number in an int8_t.
+ * Error argument is set in the following conditions:
+ * - you pass a type different from Number or BigInt.
+ * - you pass a Number that is not integral.
+ * - you pass a Number or BigInt not between C INT8_MIN and INT8_MAX
+ *
+ * Any valid value is converted to an int8_t and returned to the
+ * caller.
+ *
+ * The function returns 0 in case of error.
+ *
+ */
+int8_t nuts_value_to_i8(napi_env env, napi_value value, char** error);
+
+/**
+ * @brief Converts a napi_value to an uint64_t.
+ *
+ * Converts a napi_value containing a Number in an uint64_t.
+ * Error argument is set in the following conditions:
+ * - you pass a type different from Number or BigInt.
+ * - you pass a Number that is not integral.
+ * - you pass a Number or BigInt not between 0 and C UINT64_MAX
+ *
+ * Any valid value is converted to an uint64_t and returned to the
+ * caller.
+ *
+ * The function returns 0 in case of error.
+ *
+ */
+uint64_t nuts_value_to_u64(napi_env env, napi_value value, char** error);
+
+/**
+ * @brief Converts a napi_value to an uint32_t.
+ *
+ * Converts a napi_value containing a Number in an uint32_t.
+ * Error argument is set in the following conditions:
+ * - you pass a type different from Number or BigInt.
+ * - you pass a Number that is not integral.
+ * - you pass a Number or BigInt not between 0 and C UINT32_MAX
+ *
+ * Any valid value is converted to an uint32_t and returned to the
+ * caller.
+ *
+ * The function returns 0 in case of error.
+ *
+ */
+uint32_t nuts_value_to_u32(napi_env env, napi_value value, char** error);
+
+/**
+ * @brief Converts a napi_value to an uint16_t.
+ *
+ * Converts a napi_value containing a Number in an uint16_t.
+ * Error argument is set in the following conditions:
+ * - you pass a type different from Number or BigInt.
+ * - you pass a Number that is not integral.
+ * - you pass a Number or BigInt not between 0 and C UINT16_MAX
+ *
+ * Any valid value is converted to an uint16_t and returned to the
+ * caller.
+ *
+ * The function returns 0 in case of error.
+ *
+ */
+uint16_t nuts_value_to_u16(napi_env env, napi_value value, char** error);
+
+/**
+ * @brief Converts a napi_value to an uint8_t.
+ *
+ * Converts a napi_value containing a Number in an uint8_t.
+ * Error argument is set in the following conditions:
+ * - you pass a type different from Number or BigInt.
+ * - you pass a Number that is not integral.
+ * - you pass a Number or BigInt not between 0 and C UINT8_MAX
+ *
+ * Any valid value is converted to an uint8_t and returned to the
+ * caller.
+ *
+ * The function returns 0 in case of error.
+ *
+ */
+uint8_t nuts_value_to_u8(napi_env env, napi_value value, char** error);
+
+/**
+ * @brief Converts a napi_value to a `double`.
+ *
+ * Converts a napi_value containing a Number in a `double`.
+ * Error argument is set in the following conditions:
+ * - you pass a type different than Number.
+ *
+ * Any valid value is converted to a `double` and returned to the
+ * caller.
+ *
+ * The function returns 0 in case of error.
+ *
+ */
+double nuts_value_to_double(napi_env env, napi_value value, char** error);
+
+/**
+ * @brief Converts a napi_value to a float.
+ *
+ * Converts a napi_value containing a Number in a `float`.
+ * Error argument is set in the following conditions:
+ * - you pass a type different from Number
+ * - you pass a Number not between 0 and C UINT8_MAX
+ *
+ * Any valid value is converted to a `float` and returned to the
+ * caller.
+ *
+ * The function returns 0 in case of error.
+ *
+ */
+float nuts_value_to_float(napi_env env, napi_value value, char** error);
+
+
+#define VAR_I64_FROM_JS(VAR_NAME, VALUE_JS) 											\
+	int64_t VAR_NAME = nuts_value_to_i64(env, VALUE_JS, &nuts_error); 					\
+	_CHECK_NUTS_ERROR
+
+#define VAR_U32_FROM_JS(VAR_NAME, VALUE_JS) 											\
+	uint32_t VAR_NAME = nuts_value_to_u32(env, VALUE_JS, &nuts_error); 					\
+	_CHECK_NUTS_ERROR
+
+#define VAR_I16_FROM_JS(VAR_NAME, VALUE_JS) 											\
+	int16_t VAR_NAME = nuts_value_to_i16(env, VALUE_JS, &nuts_error); 					\
+	_CHECK_NUTS_ERROR
+
+#define VAR_U16_FROM_JS(VAR_NAME, VALUE_JS) 											\
+	uint16_t VAR_NAME = nuts_value_to_u16(env, VALUE_JS, &nuts_error); 					\
+	_CHECK_NUTS_ERROR
+
+#define VAR_I8_FROM_JS(VAR_NAME, VALUE_JS) 												\
+	int8_t VAR_NAME = nuts_value_to_i8(env, VALUE_JS, &nuts_error); 					\
+	_CHECK_NUTS_ERROR
+
+#define VAR_U8_FROM_JS(VAR_NAME, VALUE_JS) 												\
+	uint8_t VAR_NAME = nuts_value_to_u8(env, VALUE_JS, &nuts_error); 					\
+	_CHECK_NUTS_ERROR
+
+#define VAR_DOUBLE_FROM_JS(VAR_NAME, VALUE_JS) 											\
+	double VAR_NAME = nuts_value_to_double(env, VALUE_JS, &nuts_error); 				\
+	_CHECK_NUTS_ERROR
+
+#define VAR_FLOAT_FROM_JS(VAR_NAME, VALUE_JS) 											\
+	float VAR_NAME = nuts_value_to_float(env, VALUE_JS, &nuts_error); 					\
+	_CHECK_NUTS_ERROR
+
+
+#define VAR_U64_FROM_JS(VAR_NAME, VALUE_JS) 											\
+	uint64_t VAR_NAME = nuts_value_to_u64(env, VALUE_JS, &nuts_error); 					\
+	_CHECK_NUTS_ERROR
+
+
 #define VAR_JS_FROM_I32(VAR_NAME, VALUE) 											\
 	napi_value VAR_NAME = i32_to_value(env, VALUE, &nuts_error); 					\
 	_CHECK_NUTS_ERROR
@@ -160,8 +367,11 @@ extern "C" {  // only need to export C interface if
 	napi_value VAR_NAME = utf8_to_value(env, VALUE, &nuts_error); 					\
 	_CHECK_NUTS_ERROR
 
+
+
 #define I32(ARG_NAME) VAR_I32_FROM_JS(ARG_NAME, ((arg_idx < argc) ? (argv[arg_idx]) : nullptr))
 #define STR(ARG_NAME) VAR_STR_FROM_JS(ARG_NAME, ((arg_idx < argc) ? (argv[arg_idx]) : nullptr))
+#define VALUE(ARG_NAME) napi_value ARG_NAME = (arg_idx < argc) ? argv[arg_idx] : NULL;
 
 #define NC_CALL(FN) {                                              \
     int retval = FN;                                               \

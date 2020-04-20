@@ -12,7 +12,6 @@ class Attribute {
     static napi_value Init(napi_env env, napi_value exports);
     Attribute(const char* name_, int var_id_, int parent_id_);
     Attribute(const char* name_, int var_id_, int parent_id_, int type_);
-    void set_value(napi_value val);
     static napi_value Build(napi_env env, char* name, int id, int parentId, int type);
 
 
