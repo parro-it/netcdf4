@@ -50,10 +50,12 @@ const char *status_name(napi_status status) {
 		return "napi_bigint_expected";
 	case napi_date_expected:
 		return "napi_date_expected";
-	case napi_arraybuffer_expected:
+
+	// not supported in 8 & 10
+	/*case napi_arraybuffer_expected:
 		return "napi_arraybuffer_expected";
 	case napi_detachable_arraybuffer_expected:
-		return "napi_detachable_arraybuffer_expected";
+		return "napi_detachable_arraybuffer_expected";*/
 	}
 	return NULL;
 }
