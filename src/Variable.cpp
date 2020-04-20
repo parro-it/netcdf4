@@ -678,28 +678,6 @@ napi_value Variable::GetAttributes(napi_env env, napi_callback_info info) {
     return array;
 
 
-    /*
-    v8::Isolate* isolate = info.GetIsolate();
-    Variable* obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
-    int natts;
-    int retval = nc_inq_varnatts(obj->parent_id, obj->id, &natts);
-    if (retval != NC_NOERR) {
-        throw_netcdf_error(isolate, retval);
-        return;
-    }
-    v8::Local<v8::Object> result = v8::Object::New(isolate);
-    char name[NC_MAX_NAME + 1];
-    for (int i = 0; i < natts; i++) {
-        retval = nc_inq_attname(obj->parent_id, obj->id, i, name);
-        if (retval != NC_NOERR) {
-            throw_netcdf_error(isolate, retval);
-            return;
-        }
-        Attribute* a = new Attribute(name, obj->id, obj->parent_id);
-        result->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, name, v8::NewStringType::kNormal).ToLocalChecked(), a->handle());
-    }
-    info.GetReturnValue().Set(result);
-*/ return NULL;
 }
 
 napi_value Variable::GetType(napi_env env, napi_callback_info info) {

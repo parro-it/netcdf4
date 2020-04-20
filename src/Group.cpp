@@ -283,19 +283,15 @@ napi_value Group::GetVariables(napi_env env, napi_callback_info info) {
 
 napi_value Group::GetDimensions(napi_env env, napi_callback_info info) {
     ARGS(0);
-printf("GetDimensions\n");
     Group* self;
     NAPI_CALL(napi_unwrap(env, jsthis, reinterpret_cast<void**>(&self)));
-printf("napi_unwrap done\n");
     int ndims;
     NC_CALL(nc_inq_dimids(self->id, &ndims, NULL, 0));
 
     int dim_ids[ndims];
     NC_CALL(nc_inq_dimids(self->id, NULL, dim_ids, 0));
-printf("nc_inq_dimids done\n");
     napi_value array;
     NAPI_CALL(napi_create_array_with_length(env, ndims, &array));
-printf("napi_create_array_with_length done\n");
     for (int i = 0; i < ndims; i++) {
         printf("iter %d\n", i);
         napi_value dims = Dimension::Build(env, dim_ids[i], self->id);
@@ -315,35 +311,6 @@ printf("napi_create_array_with_length done\n");
 
 
 
-
-    /*
-    int ndims;
-    int retval = nc_inq_dimids(obj->id, &ndims, NULL, 0);
-    if (retval != NC_NOERR) {
-        throw_netcdf_error(isolate, retval);
-        return;
-    }
-    int* dim_ids = new int[ndims];
-    retval = nc_inq_dimids(obj->id, NULL, dim_ids, 0);
-    if (retval != NC_NOERR) {
-        throw_netcdf_error(isolate, retval);
-        delete[] dim_ids;
-        return;
-    }
-    v8::Local<v8::Object> result = v8::Object::New(isolate);
-    char name[NC_MAX_NAME + 1];
-    for (int i = 0; i < ndims; ++i) {
-        Dimension* d = new Dimension(dim_ids[i], obj->id);
-        if (d->get_name(name)) {
-            result->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, name, v8::NewStringType::kNormal).ToLocalChecked(), d->handle());
-        } else {
-            delete[] dim_ids;
-            return;
-        }
-    }
-    info.GetReturnValue().Set(result);
-    delete[] dim_ids;
-    */
 }
 
 napi_value Group::GetUnlimited(napi_env env, napi_callback_info info) {

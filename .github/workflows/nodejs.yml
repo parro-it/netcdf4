@@ -17,7 +17,7 @@ jobs:
     strategy:
       max-parallel: 2
       matrix:
-        node-version: [8.x, 10.x, 12.x, 13.x]
+        node-version: [13.x, 12.x, 10.x, 8.x]
 
     steps:
     - uses: actions/checkout@v2
@@ -26,7 +26,7 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
     - run: sudo apt update
-    - run: sudo apt install -y libnetcdf-dev 
+    - run: sudo apt install -y libnetcdf-dev
     - run: npm install
     - run: npm test
       env:
