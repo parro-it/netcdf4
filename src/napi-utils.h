@@ -1,5 +1,6 @@
 #define NAPI_EXPERIMENTAL 1
 #include <node_api.h>
+#include "stdlib.h"
 
 #define SUPPRESS_UNUSED_WARNING(x) (void)(x)
 

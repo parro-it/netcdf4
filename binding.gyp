@@ -11,10 +11,10 @@
         "src/module.c",
         "src/Variable.cpp",
         "src/Utils.cpp",
+        "src/Dimension.cpp",
         "src/napi-utils.c"
       ],
       "cpp": [
-        "src/Dimension.cpp",
         "src/netcdf4js.cpp"
       ],
       "target_name": "netcdf4",

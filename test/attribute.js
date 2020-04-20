@@ -32,22 +32,16 @@ describe('Attribute', function() {
         expect(attr.value).equals("FRA");
     });
 
+    it('name is writable', function() {
+        attr.name = 'changed';
+        expect(attr.name).equals("changed");
+        attr.name = 'airport_dep';
+        expect(attr.name).equals("airport_dep");
+    });
+
     it('with a custom inspect', function() {
         console.log(attr.inspect)
         expect(attr.inspect()).equals("[object Attribute]");
     });
-/* Error: NetCDF: String match to name in use
-
-    it('property name is writable', function() {
-        try {
-            attr.name = 'otherThings';
-            expect(attr.name).equals("otherThings");
-        } finally {
-            attr.name = 'airport_dep';
-            expect(attr.name).equals("airport_dep");
-        }
-
-    });
-*/
 
 });

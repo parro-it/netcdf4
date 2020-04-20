@@ -1,4 +1,5 @@
 #include "Group.h"
+#include "Dimension.h"
 #include <netcdf.h>
 #include "Attribute.h"
 //#include "Dimension.h"
@@ -281,9 +282,41 @@ napi_value Group::GetVariables(napi_env env, napi_callback_info info) {
 }
 
 napi_value Group::GetDimensions(napi_env env, napi_callback_info info) {
+    ARGS(0);
+printf("GetDimensions\n");
+    Group* self;
+    NAPI_CALL(napi_unwrap(env, jsthis, reinterpret_cast<void**>(&self)));
+printf("napi_unwrap done\n");
+    int ndims;
+    NC_CALL(nc_inq_dimids(self->id, &ndims, NULL, 0));
+
+    int dim_ids[ndims];
+    NC_CALL(nc_inq_dimids(self->id, NULL, dim_ids, 0));
+printf("nc_inq_dimids done\n");
+    napi_value array;
+    NAPI_CALL(napi_create_array_with_length(env, ndims, &array));
+printf("napi_create_array_with_length done\n");
+    for (int i = 0; i < ndims; i++) {
+        printf("iter %d\n", i);
+        napi_value dims = Dimension::Build(env, dim_ids[i], self->id);
+        printf("Build done\n");
+        NAPI_CALL(napi_set_element(env, array, i, dims));
+        printf("napi_set_element done\n");
+
+        char name[NC_MAX_NAME + 1];
+        if (nc_inq_dimname(self->id, dim_ids[i], name) == NC_NOERR) {
+            printf("DIM NAME %s\n", name);
+            NAPI_CALL(napi_set_named_property(env, array, name, dims));
+        }
+        printf("iter %d done\n", i);
+    }
+
+    return array;
+
+
+
+
     /*
-    v8::Isolate* isolate = info.GetIsolate();
-    Group* obj = node::ObjectWrap::Unwrap<Group>(info.Holder());
     int ndims;
     int retval = nc_inq_dimids(obj->id, &ndims, NULL, 0);
     if (retval != NC_NOERR) {
@@ -310,7 +343,7 @@ napi_value Group::GetDimensions(napi_env env, napi_callback_info info) {
     }
     info.GetReturnValue().Set(result);
     delete[] dim_ids;
-    */return NULL;
+    */
 }
 
 napi_value Group::GetUnlimited(napi_env env, napi_callback_info info) {
