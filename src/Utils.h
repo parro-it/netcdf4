@@ -4,9 +4,9 @@
 
 namespace netcdf4js {
 
-    extern const unsigned char type_sizes[];
+extern const unsigned char type_sizes[];
 
-    napi_typedarray_type typedarray_cons_per_type(napi_env env, int type);
-}
+napi_typedarray_type typedarray_cons_per_type(napi_env env, int type);
+} // namespace netcdf4js
 
 #endif

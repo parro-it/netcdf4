@@ -5,6 +5,7 @@
   "main": "./build/Release/netcdf4.node",
   "scripts": {
     "install": "node-gyp rebuild",
+    "lint": "clang-format --Werror --dry-run src/*",
     "test": "mocha"
   },
   "author": {
@@ -23,6 +24,7 @@
   "gypfile": true,
   "devDependencies": {
     "chai": "^4.2.0",
+    "clang-format": "^1.4.0",
     "mocha": "^7.1.1"
   }
 }

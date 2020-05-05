@@ -1,11 +1,11 @@
 #include "napi-utils.h"
 #include <assert.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <math.h>
 #include <float.h>
 #include <inttypes.h>
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 /**
  * returns a string containing the name of given napi status
@@ -51,11 +51,11 @@ const char *status_name(napi_status status) {
 	case napi_date_expected:
 		return "napi_date_expected";
 
-	// not supported in 8 & 10
-	/*case napi_arraybuffer_expected:
-		return "napi_arraybuffer_expected";
-	case napi_detachable_arraybuffer_expected:
-		return "napi_detachable_arraybuffer_expected";*/
+		// not supported in 8 & 10
+		/*case napi_arraybuffer_expected:
+			return "napi_arraybuffer_expected";
+		case napi_detachable_arraybuffer_expected:
+			return "napi_detachable_arraybuffer_expected";*/
 	}
 	return NULL;
 }
@@ -86,7 +86,7 @@ char *nuts_napi_err_f(napi_env env, const char *msg) {
 
 static char *invalid_value_err(napi_env env, napi_value value, char *err) {
 	const char *frmt = "Invalid value `%s`: %s";
-	char* nuts_error = NULL;
+	char *nuts_error = NULL;
 	char *value_s_c = value_to_utf8(env, value, &nuts_error);
 	int error_len = snprintf(NULL, 0, frmt, value_s_c, err);
 	char *error = malloc(error_len + 1);
@@ -97,7 +97,7 @@ static char *invalid_value_err(napi_env env, napi_value value, char *err) {
 }
 
 static int32_t value_to_int(int32_t min, int32_t max, napi_env env, napi_value value,
-								 char **error) {
+							char **error) {
 	*error = NULL;
 	int32_t c_value;
 
@@ -113,7 +113,6 @@ static int32_t value_to_int(int32_t min, int32_t max, napi_env env, napi_value v
 int32_t value_to_i32(napi_env env, napi_value value, char **error) {
 	return (int32_t)value_to_int(INT32_MIN, INT32_MAX, env, value, error);
 }
-
 
 int64_t nuts_value_to_i64(napi_env env, napi_value value, char **error) {
 	*error = NULL;
@@ -165,7 +164,6 @@ static uint32_t nuts_value_to_uint(uint32_t max, napi_env env, napi_value value,
 	return c_value;
 }
 
-
 uint32_t nuts_value_to_u32(napi_env env, napi_value value, char **error) {
 	return nuts_value_to_uint(UINT32_MAX, env, value, error);
 }
@@ -211,7 +209,6 @@ float nuts_value_to_float(napi_env env, napi_value value, char **error) {
 	return (float)c_value;
 }
 
-
 napi_value nuts_i64_to_value(napi_env env, int64_t c_value, char **error) {
 	napi_value value;
 	napi_status status = napi_create_bigint_int64(env, c_value, &value);
@@ -249,7 +246,6 @@ napi_value nuts_u64_to_value(napi_env env, uint64_t c_value, char **error) {
 	}
 	return value;
 }
-
 
 napi_value nuts_u32_to_value(napi_env env, uint32_t c_value, char **error) {
 	napi_value value;
@@ -361,7 +357,8 @@ napi_value create_napi_error(napi_env env, const napi_extended_error_info *napi_
 	napi_value error;
 	status = napi_create_error(env, err_code, err_msg, &error);
 	if (status != napi_ok) {
-		printf("Cannot create error: orig code: %d, original napi error: %s\n", napi_err->error_code, napi_err->error_message);
+		printf("Cannot create error: orig code: %d, original napi error: %s\n",
+			   napi_err->error_code, napi_err->error_message);
 	}
 	assert(status == napi_ok);
 
