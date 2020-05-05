@@ -6,3 +6,4 @@ GRTAGS
 GSYMS
 GTAGS
 .vscode
+test/test_hgroups.nc
