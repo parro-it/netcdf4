@@ -19,7 +19,7 @@
   ],
   "repository": "parro-it/netcdf4",
   "engines": {
-    "node": ">=4.0"
+    "node": ">8"
   },
   "license": "ISC",
   "dependencies": {
