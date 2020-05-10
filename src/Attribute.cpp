@@ -73,12 +73,6 @@ void Attribute::SetName(const Napi::CallbackInfo &info, const Napi::Value &value
 
 Napi::Value Attribute::GetValue(const Napi::CallbackInfo &info) {
 
-	if ((this->type < NC_BYTE || this->type > NC_UINT64) && this->type != NC_STRING) {
-		Napi::TypeError::New(info.Env(), "Variable type not supported yet")
-			.ThrowAsJavaScriptException();
-		return info.Env().Undefined();
-	}
-
 	size_t len;
 	NC_CALL(nc_inq_attlen(this->parent_id, this->var_id, this->name.c_str(), &len));
 
@@ -171,6 +165,7 @@ Napi::Value Attribute::GetValue(const Napi::CallbackInfo &info) {
 				Napi::ArrayBuffer::New(info.Env(), v, len * sizeof(uint32_t)), 0, napi_int8_array);
 		}
 	}
+#if NODE_MAJOR_VERSION > 8
 	case NC_UINT64: {
 		uint64_t v[len];
 		NC_CALL(nc_get_att(this->parent_id, this->var_id, this->name.c_str(), v));
@@ -193,6 +188,7 @@ Napi::Value Attribute::GetValue(const Napi::CallbackInfo &info) {
 				Napi::ArrayBuffer::New(info.Env(), v, len * sizeof(int64_t)), 0, napi_int8_array);
 		}
 	}
+#endif
 	case NC_CHAR:
 	case NC_STRING: {
 		char v[len + 1];
@@ -200,26 +196,26 @@ Napi::Value Attribute::GetValue(const Napi::CallbackInfo &info) {
 		NC_CALL(nc_get_att_text(this->parent_id, this->var_id, this->name.c_str(), v));
 		return Napi::String::New(info.Env(), v);
 	}
+	default:
+		Napi::TypeError::New(info.Env(), "Variable type not supported yet")
+			.ThrowAsJavaScriptException();
+		return info.Env().Undefined();
 	}
 
 	return info.Env().Undefined();
 }
 
 void Attribute::SetValue(const Napi::CallbackInfo &info, const Napi::Value &value) {
-	if ((this->type < NC_BYTE || this->type > NC_UINT64) && this->type != NC_STRING) {
-		Napi::TypeError::New(info.Env(), "Variable type not supported yet")
-			.ThrowAsJavaScriptException();
-		return;
-	}
-
 	switch (this->type) {
 	case NC_BYTE: {
 		if (value.IsNumber()) {
 			int8_t v = value.As<Napi::Number>().Int32Value();
 			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
+#if NODE_MAJOR_VERSION > 8
 		} else if (value.IsBigInt()) {
 			int8_t v = value.As<Napi::BigInt>().Int64Value(nullptr);
 			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
+#endif
 		} else {
 			auto array = value.As<Napi::Int8Array>();
 			void *v = array.ArrayBuffer().Data();
@@ -231,9 +227,11 @@ void Attribute::SetValue(const Napi::CallbackInfo &info, const Napi::Value &valu
 		if (value.IsNumber()) {
 			int16_t v = value.As<Napi::Number>().Int32Value();
 			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
+#if NODE_MAJOR_VERSION > 8
 		} else if (value.IsBigInt()) {
 			int16_t v = value.As<Napi::BigInt>().Int64Value(nullptr);
 			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
+#endif
 		} else {
 			auto array = value.As<Napi::Int16Array>();
 			void *v = array.ArrayBuffer().Data();
@@ -245,9 +243,11 @@ void Attribute::SetValue(const Napi::CallbackInfo &info, const Napi::Value &valu
 		if (value.IsNumber()) {
 			int32_t v = value.As<Napi::Number>().Int32Value();
 			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
+#if NODE_MAJOR_VERSION > 8
 		} else if (value.IsBigInt()) {
 			int32_t v = value.As<Napi::BigInt>().Int64Value(nullptr);
 			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
+#endif
 		} else {
 			auto array = value.As<Napi::Int32Array>();
 			void *v = array.ArrayBuffer().Data();
@@ -259,9 +259,11 @@ void Attribute::SetValue(const Napi::CallbackInfo &info, const Napi::Value &valu
 		if (value.IsNumber()) {
 			float v = value.As<Napi::Number>().DoubleValue();
 			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
+#if NODE_MAJOR_VERSION > 8
 		} else if (value.IsBigInt()) {
 			float v = value.As<Napi::BigInt>().Int64Value(nullptr);
 			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
+#endif
 		} else {
 			auto array = value.As<Napi::Float32Array>();
 			void *v = array.ArrayBuffer().Data();
@@ -273,9 +275,11 @@ void Attribute::SetValue(const Napi::CallbackInfo &info, const Napi::Value &valu
 		if (value.IsNumber()) {
 			double v = value.As<Napi::Number>().DoubleValue();
 			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
+#if NODE_MAJOR_VERSION > 8
 		} else if (value.IsBigInt()) {
 			double v = value.As<Napi::BigInt>().Int64Value(nullptr);
 			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
+#endif
 		} else {
 			auto array = value.As<Napi::Float64Array>();
 			void *v = array.ArrayBuffer().Data();
@@ -287,9 +291,11 @@ void Attribute::SetValue(const Napi::CallbackInfo &info, const Napi::Value &valu
 		if (value.IsNumber()) {
 			uint8_t v = value.As<Napi::Number>().Uint32Value();
 			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
+#if NODE_MAJOR_VERSION > 8
 		} else if (value.IsBigInt()) {
 			uint8_t v = value.As<Napi::BigInt>().Uint64Value(nullptr);
 			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
+#endif
 		} else {
 			auto array = value.As<Napi::Uint8Array>();
 			void *v = array.ArrayBuffer().Data();
@@ -301,9 +307,11 @@ void Attribute::SetValue(const Napi::CallbackInfo &info, const Napi::Value &valu
 		if (value.IsNumber()) {
 			uint16_t v = value.As<Napi::Number>().Uint32Value();
 			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
+#if NODE_MAJOR_VERSION > 8
 		} else if (value.IsBigInt()) {
 			uint16_t v = value.As<Napi::BigInt>().Uint64Value(nullptr);
 			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
+#endif
 		} else {
 			auto array = value.As<Napi::Uint16Array>();
 			void *v = array.ArrayBuffer().Data();
@@ -315,9 +323,11 @@ void Attribute::SetValue(const Napi::CallbackInfo &info, const Napi::Value &valu
 		if (value.IsNumber()) {
 			uint32_t v = value.As<Napi::Number>().Uint32Value();
 			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
+#if NODE_MAJOR_VERSION > 8
 		} else if (value.IsBigInt()) {
 			uint32_t v = value.As<Napi::BigInt>().Uint64Value(nullptr);
 			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
+#endif
 		} else {
 			auto array = value.As<Napi::Uint32Array>();
 			void *v = array.ArrayBuffer().Data();
@@ -325,6 +335,8 @@ void Attribute::SetValue(const Napi::CallbackInfo &info, const Napi::Value &valu
 			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, l, &v));
 		}
 	} break;
+#if NODE_MAJOR_VERSION > 8
+
 	case NC_UINT64: {
 		if (value.IsNumber()) {
 			uint64_t v = value.As<Napi::Number>().Uint32Value();
@@ -353,11 +365,16 @@ void Attribute::SetValue(const Napi::CallbackInfo &info, const Napi::Value &valu
 			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, l, &v));
 		}
 	} break;
+#endif
 	case NC_CHAR:
 	case NC_STRING: {
 		std::string v = value.As<Napi::String>().ToString();
 		nc_put_att_text(parent_id, var_id, name.c_str(), v.length(), v.c_str());
 	} break;
+	default:
+		Napi::TypeError::New(info.Env(), "Variable type not supported yet")
+			.ThrowAsJavaScriptException();
+		return;
 	}
 }
 

@@ -6,6 +6,7 @@
   "scripts": {
     "install": "node-gyp rebuild",
     "build": "node-gyp build",
+    "clean": "rm -rf build node_modules",
     "test": "node-gyp build && mocha"
   },
   "author": {
