@@ -29,7 +29,7 @@ jobs:
       - run: sudo apt update && sudo apt install -y libnetcdf-dev
         if: ${{ matrix.os == 'ubuntu-16.04' || matrix.os == 'ubuntu-18.04' }}
       # macos netcdf install
-      - run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)" && brew tap homebrew/science && brew install netcdf
+      - run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)" && brew install netcdf
         if: ${{ matrix.os == 'macos-10.15' }}
 
       - run: npm install
