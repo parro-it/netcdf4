@@ -307,16 +307,45 @@ Napi::Value Group::GetUnlimited(const Napi::CallbackInfo &info) {
 	*/
 	return info.Env().Undefined();
 }
-
+/*
+void Group::GetAttributes(v8::Local<v8::String> property,
+						  const v8::PropertyCallbackInfo<v8::Value> &info) {
+	v8::Isolate *isolate = info.GetIsolate();
+	Group *obj = node::ObjectWrap::Unwrap<Group>(info.Holder());
+	int natts;
+	int retval = nc_inq_natts(obj->id, &natts);
+	if (retval != NC_NOERR) {
+		throw_netcdf_error(isolate, retval);
+		return;
+	}
+	v8::Local<v8::Object> result = v8::Object::New(isolate);
+	char name[NC_MAX_NAME + 1];
+	for (int i = 0; i < natts; i++) {
+		retval = nc_inq_attname(obj->id, NC_GLOBAL, i, name);
+		if (retval != NC_NOERR) {
+			throw_netcdf_error(isolate, retval);
+			return;
+		}
+		Attribute *a = new Attribute(name, NC_GLOBAL, obj->id);
+		result->Set(
+			isolate->GetCurrentContext(),
+			v8::String::NewFromUtf8(isolate, name, v8::NewStringType::kNormal).ToLocalChecked(),
+			a->handle());
+	}
+	info.GetReturnValue().Set(result);
+}
+*/
 Napi::Value Group::GetAttributes(const Napi::CallbackInfo &info) {
 	int natts;
 	NC_CALL(nc_inq_natts(this->id, &natts));
 
 	Napi::Object attrs = Napi::Object::New(info.Env());
 
+	printf("ATTR TOT %d\n", natts);
 	char name[NC_MAX_NAME + 1];
 	for (int i = 0; i < natts; ++i) {
 		NC_CALL(nc_inq_attname(this->id, NC_GLOBAL, i, name));
+		printf("ATTR %s %d\n", name, i);
 		Napi::Object attr = Attribute::Build(info.Env(), name, NC_GLOBAL, this->id);
 		attrs.Set(name, attr);
 	}
@@ -332,10 +361,12 @@ Napi::Value Group::GetSubgroups(const Napi::CallbackInfo &info) {
 
 	Napi::Object subgroups = Napi::Object::New(info.Env());
 
+	printf("GROUPS TOT %d\n", ngrps);
 	char name[NC_MAX_NAME + 1];
 	for (int i = 0; i < ngrps; ++i) {
 		Napi::Object subgroup = Group::Build(info.Env(), grp_ids[i]);
 		int retval = nc_inq_grpname(grp_ids[i], name);
+		printf("GROUPS %s %d\n", name, i);
 		if (retval == NC_NOERR) {
 			subgroups.Set(name, subgroup);
 		}
