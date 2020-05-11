@@ -32,8 +32,11 @@ describe("Group", function () {
   });
 
   it("should read list of subgroups", function () {
+    console.log("BEFORE READ");
     var file = new netcdf4.File("test/test_hgroups.nc", "r");
+    console.log("BEFORE SUBGROUPS");
     var subgroups = file.root.subgroups;
+    console.log("AFTER SUBGROUPS");
     expect(subgroups).to.have.property(
       "mozaic_flight_2012030319051051_descent"
     );
