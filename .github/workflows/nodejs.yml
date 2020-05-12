@@ -40,18 +40,13 @@ jobs:
           Invoke-WebRequest -Uri "https://github.com/parro-it/netcdf4/releases/download/prebuilt-netcdf/netCDF.4.7.4.zip" -OutFile .\netCDF.4.7.4.zip
           Expand-Archive -Path netCDF.4.7.4.zip -DestinationPath .
           Set-Item -Path Env:NETCDF_DIR -Value ("$(Get-Location)" + "\netCDF 4.7.4")
-          Write-Host "NETCDF_DIR"
-          Write-Host "$env:NETCDF_DIR"
-          Write-Host "1"
-          dir "$NETCDF_DIR"
-          Write-Host "12"
           dir "$Env:NETCDF_DIR"
 
         if: ${{ matrix.os == 'windows-2019' }}
         name: Windows netcdf install
 
       - run: |
-          dir "$NETCDF_DIR"
+          dir "$Env:NETCDF_DIR"
           npm install
       - run: npm test
         env:
