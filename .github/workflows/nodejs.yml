@@ -26,12 +26,18 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
-      # ubuntu netcdf install
+
       - run: sudo apt update && sudo apt install -y libnetcdf-dev
+        name: Ubuntu netcdf install
         if: ${{ matrix.os == 'ubuntu-16.04' || matrix.os == 'ubuntu-18.04' }}
-      # macos netcdf install
+
       - run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)" && brew install netcdf
         if: ${{ matrix.os == 'macos-10.15' }}
+        name: MacOs netcdf install
+
+      - run: Invoke-WebRequest -Uri "http://www.unidata.ucar.edu/downloads/netcdf/ftp/netCDF4.7.4-NC4-64.exe" -OutFile .\netCDF4.7.4-NC4-64.exe && .\netCDF4.7.4-NC4-64.exe
+        if: ${{ matrix.os == 'windows-2019' }}
+        name: Windows netcdf install
 
       - run: npm install
       - run: npm test
