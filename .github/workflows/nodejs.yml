@@ -47,7 +47,9 @@ jobs:
         if: ${{ matrix.os == 'windows-2019' }}
         name: Windows netcdf install
 
-      - run: npm install
+      - run: |
+        dir "$env:NETCDF_DIR"
+        npm install
       - run: npm test
         env:
           CI: true
