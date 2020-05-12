@@ -45,7 +45,7 @@ jobs:
           Write-Host "1"
           dir "$NETCDF_DIR"
           Write-Host "12"
-          dir "%NETCDF_DIR%"
+          dir "$Env:NETCDF_DIR"
 
         if: ${{ matrix.os == 'windows-2019' }}
         name: Windows netcdf install
