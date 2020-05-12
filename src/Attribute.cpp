@@ -91,6 +91,7 @@ Napi::Value Attribute::GetValue(const Napi::CallbackInfo &info) {
 		delete[] v;
 		return ret;
 	}
+
 	case NC_SHORT: {
 		int16_t *v = new int16_t[len];
 		Napi::Value ret;
