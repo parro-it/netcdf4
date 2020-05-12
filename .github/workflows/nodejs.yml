@@ -28,26 +28,28 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - run: sudo apt update && sudo apt install -y libnetcdf-dev
-        name: Ubuntu netcdf install
+      - name: Ubuntu netcdf install
+        run: |
+          sudo apt update
+          sudo apt install -y libnetcdf-dev
+          npm install
         if: ${{ matrix.os == 'ubuntu-16.04' || matrix.os == 'ubuntu-18.04' }}
 
-      - run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)" && brew install netcdf
+      - name: MacOs netcdf install
+        run: |
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+          brew install netcdf
+          npm install
         if: ${{ matrix.os == 'macos-10.15' }}
-        name: MacOs netcdf install
 
-      - run: |
+      - name: Windows netcdf install
+        run: |
           Invoke-WebRequest -Uri "https://github.com/parro-it/netcdf4/releases/download/prebuilt-netcdf/netCDF.4.7.4.zip" -OutFile .\netCDF.4.7.4.zip
           Expand-Archive -Path netCDF.4.7.4.zip -DestinationPath .
           Set-Item -Path Env:NETCDF_DIR -Value ("$(Get-Location)" + "\netCDF 4.7.4")
-          dir "$Env:NETCDF_DIR"
           npm install
         if: ${{ matrix.os == 'windows-2019' }}
-        name: Windows netcdf install
 
-      - run: |
-          if: ${{ matrix.os != 'windows-2019' }}
-          npm install
       - run: npm test
         env:
           CI: true
