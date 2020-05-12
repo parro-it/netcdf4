@@ -37,7 +37,7 @@ jobs:
         name: MacOs netcdf install
 
       - run: |
-          Invoke-WebRequest -Uri "https://github.com/parro-it/netcdf4/releases/download/prebuilt-netcdf/netCDF.4.7.4.zip"
+          Invoke-WebRequest -Uri "https://github.com/parro-it/netcdf4/releases/download/prebuilt-netcdf/netCDF.4.7.4.zip" -OutFile .\netCDF.4.7.4.zip
           dir .
           Expand-Archive -LiteralPath netCDF.4.7.4.zip
           dir .
