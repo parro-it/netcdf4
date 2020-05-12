@@ -48,8 +48,8 @@ jobs:
         name: Windows netcdf install
 
       - run: |
-        dir "$env:NETCDF_DIR"
-        npm install
+          dir "$env:NETCDF_DIR"
+          npm install
       - run: npm test
         env:
           CI: true
