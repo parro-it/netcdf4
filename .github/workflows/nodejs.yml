@@ -35,7 +35,7 @@ jobs:
         if: ${{ matrix.os == 'macos-10.15' }}
         name: MacOs netcdf install
 
-      - run: Invoke-WebRequest -Uri "http://www.unidata.ucar.edu/downloads/netcdf/ftp/netCDF4.7.4-NC4-64.exe" -OutFile .\netCDF4.7.4-NC4-64.exe && .\netCDF4.7.4-NC4-64.exe
+      - run: Invoke-WebRequest -Uri "http://www.unidata.ucar.edu/downloads/netcdf/ftp/netCDF4.7.4-NC4-64.exe" -OutFile .\netCDF4.7.4-NC4-64.exe && dir .\netCDF4.7.4-NC4-64.exe
         if: ${{ matrix.os == 'windows-2019' }}
         name: Windows netcdf install
 
