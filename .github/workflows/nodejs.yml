@@ -42,7 +42,7 @@ jobs:
           [System.Environment]::SetEnvironmentVariable("NETCDF_DIR","$(Get-Location)\netCDF 4.7.4",[System.EnvironmentVariableTarget]::User)
           Write-Host "NETCDF_DIR"
           Write-Host "$env:NETCDF_DIR"
-          dir "$env:NETCDF_DIR"
+          dir "$env:NETCDF_DIR\include"
 
         if: ${{ matrix.os == 'windows-2019' }}
         name: Windows netcdf install
