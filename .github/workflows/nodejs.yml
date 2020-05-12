@@ -39,6 +39,9 @@ jobs:
       - run: |
           Invoke-WebRequest -Uri "https://github.com/parro-it/netcdf4/releases/download/prebuilt-netcdf/netCDF.4.7.4.zip" -OutFile .\netCDF.4.7.4.zip
           Expand-Archive -Path netCDF.4.7.4.zip -DestinationPath .
+          $env:NETCDF_DIR = "$(Get-Location)\netCDF 4.7.4"
+          Write-Host "$env:NETCDF_DIR"
+
           dir ".\netCDF 4.7.4"
 
         if: ${{ matrix.os == 'windows-2019' }}
