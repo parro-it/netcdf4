@@ -78,123 +78,158 @@ Napi::Value Attribute::GetValue(const Napi::CallbackInfo &info) {
 
 	switch (this->type) {
 	case NC_BYTE: {
-		int8_t v[len];
+		int8_t *v = new int8_t[len];
+		Napi::Value ret;
 		NC_CALL(nc_get_att(this->parent_id, this->var_id, this->name.c_str(), v));
 		if (len == 1) {
-			return Napi::Number::New(info.Env(), v[0]);
+			ret = Napi::Number::New(info.Env(), v[0]);
 		} else {
-			return Napi::Int8Array::New(info.Env(), sizeof(int8_t),
-										Napi::ArrayBuffer::New(info.Env(), v, len * sizeof(int8_t)),
-										0, napi_int8_array);
+			ret = Napi::Int8Array::New(info.Env(), sizeof(int8_t),
+									   Napi::ArrayBuffer::New(info.Env(), v, len * sizeof(int8_t)),
+									   0, napi_int8_array);
 		}
+		delete[] v;
+		return ret;
 	}
 	case NC_SHORT: {
-		int16_t v[len];
+		int16_t *v = new int16_t[len];
+		Napi::Value ret;
 		NC_CALL(nc_get_att(this->parent_id, this->var_id, this->name.c_str(), v));
 		if (len == 1) {
-			return Napi::Number::New(info.Env(), v[0]);
+			ret = Napi::Number::New(info.Env(), v[0]);
 		} else {
-			return Napi::Int16Array::New(
+			ret = Napi::Int16Array::New(
 				info.Env(), sizeof(int16_t),
 				Napi::ArrayBuffer::New(info.Env(), v, len * sizeof(int16_t)), 0, napi_int8_array);
 		}
+		delete[] v;
+		return ret;
 	}
 	case NC_INT: {
-		int32_t v[len];
+		int32_t *v = new int32_t[len];
+		Napi::Value ret;
 		NC_CALL(nc_get_att(this->parent_id, this->var_id, this->name.c_str(), v));
 		if (len == 1) {
-			return Napi::Number::New(info.Env(), v[0]);
+			ret = Napi::Number::New(info.Env(), v[0]);
 		} else {
-			return Napi::Int32Array::New(
+			ret = Napi::Int32Array::New(
 				info.Env(), sizeof(int32_t),
 				Napi::ArrayBuffer::New(info.Env(), v, len * sizeof(int32_t)), 0, napi_int8_array);
 		}
+		delete[] v;
+		return ret;
 	}
 	case NC_FLOAT: {
-		float v[len];
+		float *v = new float[len];
+		Napi::Value ret;
 		NC_CALL(nc_get_att(this->parent_id, this->var_id, this->name.c_str(), v));
 		if (len == 1) {
-			return Napi::Number::New(info.Env(), v[0]);
+			ret = Napi::Number::New(info.Env(), v[0]);
 		} else {
-			return Napi::Float32Array::New(
+			ret = Napi::Float32Array::New(
 				info.Env(), sizeof(float),
 				Napi::ArrayBuffer::New(info.Env(), v, len * sizeof(float)), 0, napi_int8_array);
 		}
+		delete[] v;
+		return ret;
 	}
 	case NC_DOUBLE: {
-		double v[len];
+		double *v = new double[len];
+		Napi::Value ret;
 		NC_CALL(nc_get_att(this->parent_id, this->var_id, this->name.c_str(), v));
 		if (len == 1) {
-			return Napi::Number::New(info.Env(), v[0]);
+			ret = Napi::Number::New(info.Env(), v[0]);
 		} else {
-			return Napi::Float64Array::New(
+			ret = Napi::Float64Array::New(
 				info.Env(), sizeof(double),
 				Napi::ArrayBuffer::New(info.Env(), v, len * sizeof(double)), 0, napi_int8_array);
 		}
+		delete[] v;
+		return ret;
 	}
 	case NC_UBYTE: {
-		uint8_t v[len];
+		uint8_t *v = new uint8_t[len];
 		NC_CALL(nc_get_att(this->parent_id, this->var_id, this->name.c_str(), v));
+		Napi::Value ret;
 		if (len == 1) {
-			return Napi::Number::New(info.Env(), v[0]);
+			ret = Napi::Number::New(info.Env(), v[0]);
 		} else {
-			return Napi::Uint8Array::New(
+			ret = Napi::Uint8Array::New(
 				info.Env(), sizeof(uint8_t),
 				Napi::ArrayBuffer::New(info.Env(), v, len * sizeof(uint8_t)), 0, napi_int8_array);
 		}
+		delete[] v;
+		return ret;
 	}
 	case NC_USHORT: {
-		uint16_t v[len];
+		uint16_t *v = new uint16_t[len];
+
 		NC_CALL(nc_get_att(this->parent_id, this->var_id, this->name.c_str(), v));
+		Napi::Value ret;
 		if (len == 1) {
-			return Napi::Number::New(info.Env(), v[0]);
+			ret = Napi::Number::New(info.Env(), v[0]);
 		} else {
-			return Napi::Uint16Array::New(
+			ret = Napi::Uint16Array::New(
 				info.Env(), sizeof(uint16_t),
 				Napi::ArrayBuffer::New(info.Env(), v, len * sizeof(uint16_t)), 0, napi_int8_array);
 		}
+		delete[] v;
+		return ret;
 	}
 	case NC_UINT: {
-		uint32_t v[len];
+		uint32_t *v = new uint32_t[len];
 		NC_CALL(nc_get_att(this->parent_id, this->var_id, this->name.c_str(), v));
+		Napi::Value ret;
 		if (len == 1) {
-			return Napi::Number::New(info.Env(), v[0]);
+			ret = Napi::Number::New(info.Env(), v[0]);
 		} else {
-			return Napi::Uint32Array::New(
+			ret = Napi::Uint32Array::New(
 				info.Env(), sizeof(uint32_t),
 				Napi::ArrayBuffer::New(info.Env(), v, len * sizeof(uint32_t)), 0, napi_int8_array);
 		}
+		delete[] v;
+		return ret;
 	}
 #if NODE_MAJOR_VERSION > 8
 	case NC_UINT64: {
-		uint64_t v[len];
+		uint64_t *v = new uint64_t[len];
+		Napi::Value ret;
 		NC_CALL(nc_get_att(this->parent_id, this->var_id, this->name.c_str(), v));
 		if (len == 1) {
-			return Napi::BigInt::New(info.Env(), v[0]);
+			ret = Napi::BigInt::New(info.Env(), v[0]);
 		} else {
-			return Napi::BigUint64Array::New(
+			ret = Napi::BigUint64Array::New(
 				info.Env(), sizeof(uint64_t),
 				Napi::ArrayBuffer::New(info.Env(), v, len * sizeof(uint64_t)), 0, napi_int8_array);
 		}
+		delete[] v;
+		return ret;
 	}
 	case NC_INT64: {
-		int64_t v[len];
+
+		int64_t *v = new int64_t[len];
+		Napi::Value ret;
 		NC_CALL(nc_get_att(this->parent_id, this->var_id, this->name.c_str(), v));
 		if (len == 1) {
-			return Napi::BigInt::New(info.Env(), v[0]);
+			ret = Napi::BigInt::New(info.Env(), v[0]);
 		} else {
-			return Napi::BigInt64Array::New(
+			ret = Napi::BigInt64Array::New(
 				info.Env(), sizeof(int64_t),
 				Napi::ArrayBuffer::New(info.Env(), v, len * sizeof(int64_t)), 0, napi_int8_array);
 		}
+		delete[] v;
+		return ret;
 	}
 #endif
 	case NC_CHAR:
 	case NC_STRING: {
-		char v[len + 1];
+		char *v = new char[len + 1];
 		v[len] = 0;
 		NC_CALL(nc_get_att_text(this->parent_id, this->var_id, this->name.c_str(), v));
-		return Napi::String::New(info.Env(), v);
+
+		auto ret = Napi::String::New(info.Env(), v);
+		delete[] v;
+		return ret;
 	}
 	default:
 		Napi::TypeError::New(info.Env(), "Variable type not supported yet")

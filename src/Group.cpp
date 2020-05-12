@@ -232,7 +232,7 @@ Napi::Value Group::GetId(const Napi::CallbackInfo &info) {
 Napi::Value Group::GetVariables(const Napi::CallbackInfo &info) {
 	int nvars;
 	NC_CALL(nc_inq_varids(this->id, &nvars, NULL));
-	int var_ids[nvars];
+	int *var_ids = new int[nvars];
 	NC_CALL(nc_inq_varids(this->id, NULL, var_ids));
 
 	Napi::Object vars = Napi::Object::New(info.Env());
@@ -246,14 +246,14 @@ Napi::Value Group::GetVariables(const Napi::CallbackInfo &info) {
 			vars.Set(name, var);
 		}
 	}
-
+	delete[] var_ids;
 	return vars;
 }
 
 Napi::Value Group::GetDimensions(const Napi::CallbackInfo &info) {
 	int ndims;
 	NC_CALL(nc_inq_dimids(this->id, &ndims, NULL, 0));
-	int dim_ids[ndims];
+	int *dim_ids = new int[ndims];
 	NC_CALL(nc_inq_dimids(this->id, NULL, dim_ids, 0));
 
 	Napi::Object dims = Napi::Object::New(info.Env());
@@ -267,7 +267,7 @@ Napi::Value Group::GetDimensions(const Napi::CallbackInfo &info) {
 			dims.Set(name, dim);
 		}
 	}
-
+	delete[] dim_ids;
 	return dims;
 }
 
@@ -356,7 +356,8 @@ Napi::Value Group::GetAttributes(const Napi::CallbackInfo &info) {
 Napi::Value Group::GetSubgroups(const Napi::CallbackInfo &info) {
 	int ngrps;
 	NC_CALL(nc_inq_grps(this->id, &ngrps, NULL));
-	int grp_ids[ngrps];
+	int *grp_ids = new int[ngrps];
+
 	NC_CALL(nc_inq_grps(this->id, NULL, grp_ids));
 
 	Napi::Object subgroups = Napi::Object::New(info.Env());
@@ -372,6 +373,7 @@ Napi::Value Group::GetSubgroups(const Napi::CallbackInfo &info) {
 		}
 	}
 
+	delete[] grp_ids;
 	return subgroups;
 }
 
@@ -384,10 +386,13 @@ Napi::Value Group::GetName(const Napi::CallbackInfo &info) {
 Napi::Value Group::GetFullname(const Napi::CallbackInfo &info) {
 	size_t len;
 	NC_CALL(nc_inq_grpname_len(this->id, &len));
-	char name[len + 1];
+	char *name = new char[len + 1];
+
 	name[len] = 0;
 	NC_CALL(nc_inq_grpname_full(this->id, NULL, name));
-	return Napi::String::New(info.Env(), name);
+	auto ret = Napi::String::New(info.Env(), name);
+	delete[] name;
+	return ret;
 }
 
 Napi::Value Group::Inspect(const Napi::CallbackInfo &info) {

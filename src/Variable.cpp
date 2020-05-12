@@ -459,8 +459,8 @@ Napi::Value Variable::ReadSlice(const Napi::CallbackInfo &info) {
 		return info.Env().Undefined();
 	}
 
-	size_t pos[this->ndims];
-	size_t size[this->ndims];
+	size_t *pos = new size_t[this->ndims];
+	size_t *size = new size_t[this->ndims];
 	size_t total_size = 1;
 
 	for (int i = 0; i < this->ndims; i++) {
@@ -518,6 +518,8 @@ Napi::Value Variable::ReadSlice(const Napi::CallbackInfo &info) {
 
 	NC_CALL(nc_get_vara(this->parent_id, this->id, pos, size, buffer.Data()));
 
+	delete[] pos;
+	delete[] size;
 	return result;
 }
 Napi::Value Variable::ReadStridedSlice(const Napi::CallbackInfo &info) {
