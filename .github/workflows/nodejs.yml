@@ -48,8 +48,11 @@ jobs:
           Expand-Archive -Path netCDF.4.7.4.zip -DestinationPath .
           Set-Item -Path Env:NETCDF_DIR -Value ("$(Get-Location)" + "\netCDF 4.7.4")
           npm install
+          dir D:\a\netcdf4\netcdf4\build\Release\
         if: ${{ matrix.os == 'windows-2019' }}
 
-      - run: npm test
+      - run: |
+          dir D:\a\netcdf4\netcdf4\build\Release\
+          npm test
         env:
           CI: true
