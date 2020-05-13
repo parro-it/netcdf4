@@ -56,7 +56,7 @@ Napi::Value Dimension::GetId(const Napi::CallbackInfo &info) {
 Napi::Value Dimension::GetLength(const Napi::CallbackInfo &info) {
 	size_t len;
 	NC_CALL(nc_inq_dimlen(this->parent_id, this->id, &len));
-	return Napi::Number::New(info.Env(), len);
+	return Napi::Number::From(info.Env(), len);
 }
 
 Napi::Value Dimension::GetName(const Napi::CallbackInfo &info) {

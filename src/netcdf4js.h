@@ -70,11 +70,10 @@ class File : public Napi::ObjectWrap<File> {
   public:
 	static Napi::Object Init(Napi::Env env, Napi::Object exports);
 	explicit File(const Napi::CallbackInfo &info);
+	~File();
 
   private:
 	static Napi::FunctionReference constructor;
-
-	~File();
 
 	bool open(const char *filename, const int &mode, const int &format);
 	// Napi::Value New(const Napi::CallbackInfo &info);

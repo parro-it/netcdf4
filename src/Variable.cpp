@@ -448,7 +448,7 @@ Napi::Value Variable::Read(const Napi::CallbackInfo &info) {
 }
 
 Napi::Value Variable::ReadSlice(const Napi::CallbackInfo &info) {
-	if (info.Length() != (size_t)(2 * this->ndims)) {
+	if (info.Length() != static_cast<size_t>(2 * this->ndims)) {
 		Napi::TypeError::New(info.Env(), "Wrong number of arguments").ThrowAsJavaScriptException();
 		return info.Env().Undefined();
 	}

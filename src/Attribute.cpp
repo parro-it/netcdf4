@@ -293,7 +293,7 @@ void Attribute::SetValue(const Napi::CallbackInfo &info, const Napi::Value &valu
 	} break;
 	case NC_FLOAT: {
 		if (value.IsNumber()) {
-			float v = value.As<Napi::Number>().DoubleValue();
+			float v = value.As<Napi::Number>().FloatValue();
 			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
 #if NODE_MAJOR_VERSION > 8
 		} else if (value.IsBigInt()) {
