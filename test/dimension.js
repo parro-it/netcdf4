@@ -1,18 +1,24 @@
 const expect = require("chai").expect;
 const netcdf4 = require("..");
+const { copyFileSync, unlinkSync } = require("fs");
+const { tmpdir } = require("os");
 const { join } = require("path");
 
 const fixture = join(__dirname, "test_hgroups.nc");
 
 describe("Dimension", function () {
-  let file, dim;
+  let file, dim, attr;
+  const tempFileName = join(tmpdir(), `${Date.now()}.rc`);
+
   before(function () {
-    file = new netcdf4.File(fixture, "r");
+    copyFileSync(fixture, tempFileName);
+    file = new netcdf4.File(tempFileName, "w");
     dim = file.root.dimensions["recNum"];
   });
 
   after(function () {
     file.close();
+    unlinkSync(tempFileName);
   });
 
   it("is an object", function () {

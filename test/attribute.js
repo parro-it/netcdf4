@@ -1,14 +1,19 @@
 const expect = require("chai").expect;
 const netcdf4 = require("..");
+const { copyFileSync, unlinkSync } = require("fs");
+const { tmpdir } = require("os");
 const { join } = require("path");
 
 const fixture = join(__dirname, "test_hgroups.nc");
-const fixture2 = join(__dirname, "test_hgroups2.nc");
 
 describe("Attribute", function () {
   let file, attributes, attr;
+  const tempFileName = join(tmpdir(), `${Date.now()}.rc`);
+
   before(function () {
-    file = new netcdf4.File(fixture, "w");
+    copyFileSync(fixture, tempFileName);
+    file = new netcdf4.File(tempFileName, "w");
+
     attributes =
       file.root.subgroups["mozaic_flight_2012030419144751_ascent"].attributes;
     attr = attributes["airport_dep"];
@@ -16,6 +21,7 @@ describe("Attribute", function () {
 
   after(function () {
     file.close();
+    unlinkSync(tempFileName);
   });
 
   it("is an object", function () {
@@ -43,7 +49,11 @@ describe("Attribute", function () {
   });
 
   it("name is writable", function () {
-    const file2 = new netcdf4.File(fixture2, "w");
+    const tempFileName = join(tmpdir(), `${Date.now()}.rc`);
+
+    copyFileSync(fixture, tempFileName);
+    const file2 = new netcdf4.File(tempFileName, "w");
+
     const attr =
       file2.root.subgroups.mozaic_flight_2012030419144751_ascent.attributes
         .airport_dep;
@@ -51,16 +61,23 @@ describe("Attribute", function () {
     expect(attr.name).equals("changed");
     attr.name = "airport_dep";
     expect(attr.name).equals("airport_dep");
+
     file2.close();
+    unlinkSync(tempFileName);
   });
 
   it("should read variable attribute name", function () {
-    var file2 = new netcdf4.File("test/test_hgroups.nc", "r");
+    const tempFileName = join(tmpdir(), `${Date.now()}.rc`);
+
+    copyFileSync(fixture, tempFileName);
+    const file2 = new netcdf4.File(tempFileName, "w");
+
     var attributes =
       file2.root.subgroups["mozaic_flight_2012030419144751_ascent"].variables[
         "air_press"
       ].attributes;
     expect(attributes["name"].value).to.equal("air_pressure");
     file2.close();
+    unlinkSync(tempFileName);
   });
 });

@@ -1,17 +1,23 @@
 const expect = require("chai").expect;
 const netcdf4 = require("..");
+const { copyFileSync, unlinkSync } = require("fs");
+const { tmpdir } = require("os");
 const { join } = require("path");
 
 const fixture = join(__dirname, "test_hgroups.nc");
 
 describe("Group", function () {
-  let file, dim;
+  let file;
+  const tempFileName = join(tmpdir(), `${Date.now()}.rc`);
+
   before(function () {
-    file = new netcdf4.File(fixture, "r");
+    copyFileSync(fixture, tempFileName);
+    file = new netcdf4.File(tempFileName, "w");
   });
 
   after(function () {
     file.close();
+    unlinkSync(tempFileName);
   });
 
   it("should read list of variables", function () {
