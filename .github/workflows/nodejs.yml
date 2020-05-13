@@ -52,7 +52,7 @@ jobs:
         if: ${{ matrix.os == 'windows-2019' }}
 
       - run: |
-          $env:Path += ";D:\a\netcdf4\netcdf4\netCDF 4.7.4"
+          $env:Path += ";D:\a\netcdf4\netcdf4\netCDF 4.7.4\bin;D:\a\netcdf4\netcdf4\netCDF 4.7.4\lib"
           dir D:\a\netcdf4\netcdf4\build\Release\
           npm test
         env:
