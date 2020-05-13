@@ -341,11 +341,9 @@ Napi::Value Group::GetAttributes(const Napi::CallbackInfo &info) {
 
 	Napi::Object attrs = Napi::Object::New(info.Env());
 
-	printf("ATTR TOT %d\n", natts);
 	char name[NC_MAX_NAME + 1];
 	for (int i = 0; i < natts; ++i) {
 		NC_CALL(nc_inq_attname(this->id, NC_GLOBAL, i, name));
-		printf("ATTR %s %d\n", name, i);
 		Napi::Object attr = Attribute::Build(info.Env(), name, NC_GLOBAL, this->id);
 		attrs.Set(name, attr);
 	}
@@ -362,12 +360,10 @@ Napi::Value Group::GetSubgroups(const Napi::CallbackInfo &info) {
 
 	Napi::Object subgroups = Napi::Object::New(info.Env());
 
-	printf("GROUPS TOT %d\n", ngrps);
 	char name[NC_MAX_NAME + 1];
 	for (int i = 0; i < ngrps; ++i) {
 		Napi::Object subgroup = Group::Build(info.Env(), grp_ids[i]);
 		int retval = nc_inq_grpname(grp_ids[i], name);
-		printf("GROUPS %s %d\n", name, i);
 		if (retval == NC_NOERR) {
 			subgroups.Set(name, subgroup);
 		}

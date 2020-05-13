@@ -17,10 +17,9 @@ jobs:
       fail-fast: false
       max-parallel: 2
       matrix:
-        #        node-version: [8.x, 10.x, 12.x, 14.x]
-        #        os: [ubuntu-16.04, ubuntu-18.04, macos-10.15, windows-2019]
-        node-version: [14.x]
-        os: [windows-2019]
+        node-version: [8.x, 10.x, 12.x, 14.x]
+        os: [ubuntu-16.04, ubuntu-18.04, macos-10.15, windows-2019]
+
     steps:
       - uses: actions/checkout@v2
       - name: Use Node.js ${{ matrix.node-version }}
@@ -33,6 +32,7 @@ jobs:
           sudo apt update
           sudo apt install -y libnetcdf-dev
           npm install
+          npm test
         if: ${{ matrix.os == 'ubuntu-16.04' || matrix.os == 'ubuntu-18.04' }}
 
       - name: MacOs netcdf install
@@ -40,6 +40,7 @@ jobs:
           /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
           brew install netcdf
           npm install
+          npm test
         if: ${{ matrix.os == 'macos-10.15' }}
 
       - name: Windows netcdf install
@@ -48,12 +49,6 @@ jobs:
           Expand-Archive -Path netCDF.4.7.4.zip -DestinationPath .
           Set-Item -Path Env:NETCDF_DIR -Value ("$(Get-Location)" + "\netCDF 4.7.4")
           npm install
-          dir D:\a\netcdf4\netcdf4\build\Release\
-        if: ${{ matrix.os == 'windows-2019' }}
-
-      - run: |
-          $env:Path += ";D:\a\netcdf4\netcdf4\netCDF 4.7.4\bin;$Env:NETCDF_DIR\netCDF 4.7.4\lib"
-          Write-Host "$Env:PATH"
+          $env:Path += ";D:\a\netcdf4\netcdf4\netCDF 4.7.4\bin;D:\a\netcdf4\netcdf4\netCDF 4.7.4\lib"
           npm test
-        env:
-          CI: true
+        if: ${{ matrix.os == 'windows-2019' }}
