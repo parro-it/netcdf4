@@ -13,7 +13,7 @@
                 '-Wunreachable-code',
                 '-Wold-style-cast',
                 '-Werror',
-                '-fno-exceptions'
+                '-fexceptions'
             ],
             "sources": [
                 "src/Group.cpp",
@@ -26,6 +26,7 @@
             "target_name": "netcdf4",
             "include_dirs": ["<!@(node -p \"require('node-addon-api').include\")"],
             "target_name": "netcdf4",
+            'defines': ['NAPI_CPP_EXCEPTIONS'],
             "conditions": [
                 ['OS=="mac"', {
                     'cflags+': ['-fvisibility=hidden'],
@@ -35,7 +36,7 @@
                         'CLANG_CXX_LIBRARY': 'libc++',
                         'MACOSX_DEPLOYMENT_TARGET': '10.7',
                     }
-                }]
+                }],
                 ['OS=="win"', {
                     "variables": {
                         "netcdf_dir%": "<!(echo %NETCDF_DIR%)"
