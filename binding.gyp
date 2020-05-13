@@ -12,7 +12,8 @@
                 '-Wuninitialized',
                 '-Wunreachable-code',
                 '-Wold-style-cast',
-                '-Werror'
+                '-Werror',
+                '-fno-exceptions'
             ],
             "sources": [
                 "src/Group.cpp",
@@ -25,8 +26,16 @@
             "target_name": "netcdf4",
             "include_dirs": ["<!@(node -p \"require('node-addon-api').include\")"],
             "target_name": "netcdf4",
-            'defines': ['NAPI_DISABLE_CPP_EXCEPTIONS'],
             "conditions": [
+                ['OS=="mac"', {
+                    'cflags+': ['-fvisibility=hidden'],
+                    'xcode_settings': {
+                        'GCC_SYMBOLS_PRIVATE_EXTERN': 'YES',  # -fvisibility=hidden
+                        'GCC_ENABLE_CPP_EXCEPTIONS': 'YES',
+                        'CLANG_CXX_LIBRARY': 'libc++',
+                        'MACOSX_DEPLOYMENT_TARGET': '10.7',
+                    }
+                }]
                 ['OS=="win"', {
                     "variables": {
                         "netcdf_dir%": "<!(echo %NETCDF_DIR%)"
@@ -35,6 +44,7 @@
                         "<(netcdf_dir)/include"
                     ],
                     "msvs_settings": {
+                        'VCCLCompilerTool': {'ExceptionHandling': 1},
                         "VCLinkerTool": {
                             "AdditionalLibraryDirectories": "<(netcdf_dir)/lib"
                         }
