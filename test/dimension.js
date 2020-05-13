@@ -5,8 +5,15 @@ const { join } = require("path");
 const fixture = join(__dirname, "test_hgroups.nc");
 
 describe("Dimension", function () {
-  const file = new netcdf4.File(fixture, "r");
-  const dim = file.root.dimensions["recNum"];
+  let file, dim;
+  before(function () {
+    file = new netcdf4.File(fixture, "r");
+    dim = file.root.dimensions["recNum"];
+  });
+
+  after(function () {
+    file.close();
+  });
 
   it("is an object", function () {
     expect(typeof dim).equals("object");

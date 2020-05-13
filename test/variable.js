@@ -9,6 +9,7 @@ describe("Variable", function () {
     var file = new netcdf4.File(fixture, "r");
     var results = Array.from(file.root.variables.var1.readSlice(0, 4));
     expect(results).to.deep.equal([420, 197, 391.5, 399]);
+    file.close();
   });
   /*
   it("should read a strided slice", function () {
