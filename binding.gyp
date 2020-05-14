@@ -31,6 +31,7 @@
                 ['OS=="mac"', {
                     'cflags+': ['-fvisibility=hidden'],
                     'xcode_settings': {
+                        'WARNING_CFLAGS!': ['-Wall', '-Wextra'],
                         'GCC_SYMBOLS_PRIVATE_EXTERN': 'YES',  # -fvisibility=hidden
                         'GCC_ENABLE_CPP_EXCEPTIONS': 'YES',
                         'CLANG_CXX_LIBRARY': 'libc++',
@@ -45,7 +46,11 @@
                         "<(netcdf_dir)/include"
                     ],
                     "msvs_settings": {
-                        'VCCLCompilerTool': {'ExceptionHandling': 1},
+                        'VCCLCompilerTool': {
+                            'WarningLevel': '3',
+                            'WarnAsError': 'false',
+                            'ExceptionHandling': 1
+                        },
                         "VCLinkerTool": {
                             "AdditionalLibraryDirectories": "<(netcdf_dir)/lib"
                         }
