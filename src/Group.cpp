@@ -340,14 +340,15 @@ Napi::Value Group::GetAttributes(const Napi::CallbackInfo &info) {
 	NC_CALL(nc_inq_natts(this->id, &natts));
 
 	Napi::Object attrs = Napi::Object::New(info.Env());
-
+	printf("natts %d\n", natts);
 	char name[NC_MAX_NAME + 1];
 	for (int i = 0; i < natts; ++i) {
 		NC_CALL(nc_inq_attname(this->id, NC_GLOBAL, i, name));
 		Napi::Object attr = Attribute::Build(info.Env(), name, NC_GLOBAL, this->id);
+		printf("ATTR %d %s\n", i, name);
 		attrs.Set(name, attr);
 	}
-
+	printf("return\n");
 	return attrs;
 }
 
