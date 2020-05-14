@@ -1,57 +1,84 @@
-var expect = require("chai").expect,
-    netcdf4 = require("../build/Release/netcdf4.node");
+const expect = require("chai").expect;
+const netcdf4 = require("..");
+const { copyFileSync, unlinkSync } = require("fs");
+const { tmpdir } = require("os");
+const { join } = require("path");
 
-describe('Group', function() {
-    describe('variables', function() {
-        it('should read list of variables', function() {
-            var file = new netcdf4.File("test/test_hgroups.nc", "r");
-            expect(file.root.variables).to.have.property("UTC_time");
-        });
-    });
+const fixture = join(__dirname, "test_hgroups.nc");
 
-    describe('dimensions', function() {
-        it('should read list of dimensions', function() {
-            var file = new netcdf4.File("test/test_hgroups.nc", "r");
-            expect(file.root.dimensions).to.have.property("recNum");
-        });
-    });
+describe("Group", function () {
+  let file;
+  const tempFileName = join(tmpdir(), `${Date.now()}.rc`);
 
-    describe('subgroups', function() {
-        it('should read list of subgroups', function() {
-            var file = new netcdf4.File("test/test_hgroups.nc", "r");
-            var subgroups = file.root.subgroups;
-            expect(subgroups).to.have.property("mozaic_flight_2012030319051051_descent");
-            expect(subgroups).to.have.property("mozaic_flight_2012030319051051_descent");
-            expect(subgroups).to.have.property("mozaic_flight_2012030321335035_descent");
-            expect(subgroups).to.have.property("mozaic_flight_2012030403540535_ascent");
-            expect(subgroups).to.have.property("mozaic_flight_2012030403540535_descent");
-            expect(subgroups).to.have.property("mozaic_flight_2012030412545335_ascent");
-            expect(subgroups).to.have.property("mozaic_flight_2012030419144751_ascent");
-            expect(subgroups["mozaic_flight_2012030419144751_ascent"].constructor.name).to.equal("Group");
-        });
-    });
+  before(function () {
+    copyFileSync(fixture, tempFileName);
+    file = new netcdf4.File(tempFileName, "w");
+  });
 
-    describe('attributes', function() {
-        it('should read list of attributes', function() {
-            var file = new netcdf4.File("test/test_hgroups.nc", "r");
-            var attributes = file.root.subgroups["mozaic_flight_2012030419144751_ascent"].attributes;
-            expect(attributes).to.have.property("airport_dep");
-            expect(attributes).to.have.property("flight");
-            expect(attributes).to.have.property("level");
-            expect(attributes).to.have.property("airport_arr");
-            expect(attributes).to.have.property("mission");
-            expect(attributes).to.have.property("time_dep");
-            expect(attributes).to.have.property("aircraft");
-            expect(attributes).to.have.property("link");
-            expect(attributes).to.have.property("phase");
-            expect(attributes).to.have.property("time_arr");
-        });
-    });
+  after(function () {
+    file.close();
+    unlinkSync(tempFileName);
+  });
 
-    describe('name', function() {
-        it('should read name', function() {
-            var file = new netcdf4.File("test/test_hgroups.nc", "r");
-            expect(file.root.name).to.equal("/");
-        });
-    });
+  it("should read list of variables", function () {
+    expect(file.root.variables).to.have.property("UTC_time");
+  });
+
+  it("should read list of dimensions", function () {
+    expect(file.root.dimensions).to.have.property("recNum");
+  });
+
+  it("should read list of attributes", function () {
+    var attributes =
+      file.root.subgroups["mozaic_flight_2012030419144751_ascent"].attributes;
+    expect(attributes).to.have.property("airport_dep");
+    expect(attributes).to.have.property("flight");
+    expect(attributes).to.have.property("level");
+    expect(attributes).to.have.property("airport_arr");
+    expect(attributes).to.have.property("mission");
+    expect(attributes).to.have.property("time_dep");
+    expect(attributes).to.have.property("aircraft");
+    expect(attributes).to.have.property("link");
+    expect(attributes).to.have.property("phase");
+    expect(attributes).to.have.property("time_arr");
+  });
+
+  it("should read list of subgroups", function () {
+    var subgroups = file.root.subgroups;
+    expect(subgroups).to.have.property(
+      "mozaic_flight_2012030319051051_descent"
+    );
+    expect(subgroups).to.have.property(
+      "mozaic_flight_2012030319051051_descent"
+    );
+    expect(subgroups).to.have.property(
+      "mozaic_flight_2012030321335035_descent"
+    );
+    expect(subgroups).to.have.property("mozaic_flight_2012030403540535_ascent");
+    expect(subgroups).to.have.property(
+      "mozaic_flight_2012030403540535_descent"
+    );
+    expect(subgroups).to.have.property("mozaic_flight_2012030412545335_ascent");
+    expect(subgroups).to.have.property("mozaic_flight_2012030419144751_ascent");
+    expect(
+      subgroups["mozaic_flight_2012030419144751_ascent"].constructor.name
+    ).to.equal("Group");
+  });
+
+  it("should read name", function () {
+    expect(file.root.name).to.equal("/");
+  });
+
+  it("should read full name", function () {
+    expect(file.root.fullname).to.equal("/");
+  });
+
+  it("should read id", function () {
+    expect(typeof file.root.id).eq("number");
+    expect(file.root.id).greaterThan(0);
+  });
+
+  it("has custom inspection", function () {
+    expect(file.root.inspect()).eq("[object Group]");
+  });
 });

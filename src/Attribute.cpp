@@ -1,239 +1,431 @@
-#include "Attribute.h"
-#include <inttypes.h>
 #include <netcdf.h>
-#include <iostream>
+#include <stdio.h>
+#include <string>
 #include "netcdf4js.h"
 
 namespace netcdf4js {
 
-v8::Persistent<v8::Function> Attribute::constructor;
+Napi::FunctionReference Attribute::constructor;
 
-Attribute::Attribute(const char* name_, int var_id_, int parent_id_) : name(name_), var_id(var_id_), parent_id(parent_id_) {
-    v8::Isolate* isolate = v8::Isolate::GetCurrent();
-    v8::Local<v8::Object> obj = v8::Local<v8::Function>::New(isolate, constructor)->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
-    Wrap(obj);
-    int retval = nc_inq_atttype(parent_id, var_id_, name_, &type);
-    if (retval != NC_NOERR) {
-        throw_netcdf_error(isolate, retval);
-    }
+Napi::Object Attribute::Build(Napi::Env env, std::string name, int var_id, int parent_id,
+							  int type) {
+	return constructor.New({
+		Napi::String::New(env, name),
+		Napi::Number::New(env, var_id),
+		Napi::Number::New(env, parent_id),
+		Napi::Number::New(env, type),
+	});
 }
 
-Attribute::Attribute(const char* name_, int var_id_, int parent_id_, int type_) : name(name_), var_id(var_id_), parent_id(parent_id_), type(type_) {
-    v8::Isolate* isolate = v8::Isolate::GetCurrent();
-    v8::Local<v8::Object> obj = v8::Local<v8::Function>::New(isolate, constructor)->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
-    Wrap(obj);
+Napi::Object Attribute::Build(Napi::Env env, std::string name, int var_id, int parent_id) {
+	return constructor.New({Napi::String::New(env, name), Napi::Number::New(env, var_id),
+							Napi::Number::New(env, parent_id)});
 }
 
-void Attribute::Init(v8::Local<v8::Object> exports) {
-    v8::Isolate* isolate = exports->GetIsolate();
-    v8::Local<v8::FunctionTemplate> tpl = v8::FunctionTemplate::New(isolate);
-    tpl->SetClassName(v8::String::NewFromUtf8(isolate, "Attribute", v8::NewStringType::kNormal).ToLocalChecked());
-    tpl->InstanceTemplate()->SetInternalFieldCount(1);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "delete", Attribute::Delete);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "inspect", Attribute::Inspect);
-    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "name", v8::NewStringType::kNormal).ToLocalChecked(), Attribute::GetName, Attribute::SetName);
-    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "value", v8::NewStringType::kNormal).ToLocalChecked(), Attribute::GetValue, Attribute::SetValue);
-    constructor.Reset(isolate, tpl->GetFunction(isolate->GetCurrentContext()).ToLocalChecked());
+Attribute::Attribute(const Napi::CallbackInfo &info) : Napi::ObjectWrap<Attribute>(info) {
+	if (info.Length() < 3) {
+		Napi::TypeError::New(info.Env(), "Wrong number of arguments").ThrowAsJavaScriptException();
+		return;
+	}
+
+	name = info[0].As<Napi::String>().Utf8Value();
+	var_id = info[1].As<Napi::Number>().Int32Value();
+	parent_id = info[2].As<Napi::Number>().Int32Value();
+
+	if (info.Length() > 3) {
+		type = info[3].As<Napi::Number>().Int32Value();
+	} else {
+		NC_CALL_VOID(nc_inq_atttype(parent_id, var_id, name.c_str(), &this->type));
+	}
+
+	NC_CALL_VOID(nc_inq_attid(parent_id, var_id, name.c_str(), &this->id));
 }
 
-void Attribute::GetName(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
-    v8::Isolate* isolate = info.GetIsolate();
-    Attribute* obj = node::ObjectWrap::Unwrap<Attribute>(info.Holder());
-    info.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, obj->name.c_str(), v8::NewStringType::kNormal).ToLocalChecked());
+Napi::Object Attribute::Init(Napi::Env env, Napi::Object exports) {
+	Napi::HandleScope scope(env);
+
+	auto properties = {
+		InstanceMethod("inspect", &Attribute::Inspect),
+		InstanceMethod("delete", &Attribute::Delete),
+		InstanceAccessor<&Attribute::GetValue, &Attribute::SetValue>("value"),
+		InstanceAccessor<&Attribute::GetName, &Attribute::SetName>("name"),
+	};
+
+	Napi::Function func = DefineClass(env, "Attribute", properties);
+	constructor = Napi::Persistent(func);
+	constructor.SuppressDestruct();
+
+	exports.Set("Attribute", func);
+	return exports;
 }
 
-void Attribute::SetName(v8::Local<v8::String> property, v8::Local<v8::Value> val, const v8::PropertyCallbackInfo<void>& info) {
-    v8::Isolate* isolate = v8::Isolate::GetCurrent();
-    Attribute* obj = node::ObjectWrap::Unwrap<Attribute>(info.Holder());
-    v8::String::Utf8Value new_name_(
-#if NODE_MAJOR_VERSION >= 8
-        isolate,
+Napi::Value Attribute::GetName(const Napi::CallbackInfo &info) {
+	return Napi::String::New(info.Env(), name);
+}
+
+void Attribute::SetName(const Napi::CallbackInfo &info, const Napi::Value &value) {
+
+	std::string new_name = value.As<Napi::String>().ToString();
+	NC_CALL_VOID(
+		nc_rename_att(this->parent_id, this->var_id, this->name.c_str(), new_name.c_str()));
+	this->name = new_name;
+}
+
+Napi::Value Attribute::GetValue(const Napi::CallbackInfo &info) {
+
+	size_t len;
+	NC_CALL(nc_inq_attlen(this->parent_id, this->var_id, this->name.c_str(), &len));
+
+	switch (this->type) {
+	case NC_BYTE: {
+		int8_t *v = new int8_t[len];
+		Napi::Value ret;
+		NC_CALL(nc_get_att(this->parent_id, this->var_id, this->name.c_str(), v));
+		if (len == 1) {
+			ret = Napi::Number::New(info.Env(), v[0]);
+		} else {
+			ret = Napi::Int8Array::New(info.Env(), sizeof(int8_t),
+									   Napi::ArrayBuffer::New(info.Env(), v, len * sizeof(int8_t)),
+									   0, napi_int8_array);
+		}
+		delete[] v;
+		return ret;
+	}
+
+	case NC_SHORT: {
+		int16_t *v = new int16_t[len];
+		Napi::Value ret;
+		NC_CALL(nc_get_att(this->parent_id, this->var_id, this->name.c_str(), v));
+		if (len == 1) {
+			ret = Napi::Number::New(info.Env(), v[0]);
+		} else {
+			ret = Napi::Int16Array::New(
+				info.Env(), sizeof(int16_t),
+				Napi::ArrayBuffer::New(info.Env(), v, len * sizeof(int16_t)), 0, napi_int8_array);
+		}
+		delete[] v;
+		return ret;
+	}
+	case NC_INT: {
+		int32_t *v = new int32_t[len];
+		Napi::Value ret;
+		NC_CALL(nc_get_att(this->parent_id, this->var_id, this->name.c_str(), v));
+		if (len == 1) {
+			ret = Napi::Number::New(info.Env(), v[0]);
+		} else {
+			ret = Napi::Int32Array::New(
+				info.Env(), sizeof(int32_t),
+				Napi::ArrayBuffer::New(info.Env(), v, len * sizeof(int32_t)), 0, napi_int8_array);
+		}
+		delete[] v;
+		return ret;
+	}
+	case NC_FLOAT: {
+		float *v = new float[len];
+		Napi::Value ret;
+		NC_CALL(nc_get_att(this->parent_id, this->var_id, this->name.c_str(), v));
+		if (len == 1) {
+			ret = Napi::Number::New(info.Env(), v[0]);
+		} else {
+			ret = Napi::Float32Array::New(
+				info.Env(), sizeof(float),
+				Napi::ArrayBuffer::New(info.Env(), v, len * sizeof(float)), 0, napi_int8_array);
+		}
+		delete[] v;
+		return ret;
+	}
+	case NC_DOUBLE: {
+		double *v = new double[len];
+		Napi::Value ret;
+		NC_CALL(nc_get_att(this->parent_id, this->var_id, this->name.c_str(), v));
+		if (len == 1) {
+			ret = Napi::Number::New(info.Env(), v[0]);
+		} else {
+			ret = Napi::Float64Array::New(
+				info.Env(), sizeof(double),
+				Napi::ArrayBuffer::New(info.Env(), v, len * sizeof(double)), 0, napi_int8_array);
+		}
+		delete[] v;
+		return ret;
+	}
+	case NC_UBYTE: {
+		uint8_t *v = new uint8_t[len];
+		NC_CALL(nc_get_att(this->parent_id, this->var_id, this->name.c_str(), v));
+		Napi::Value ret;
+		if (len == 1) {
+			ret = Napi::Number::New(info.Env(), v[0]);
+		} else {
+			ret = Napi::Uint8Array::New(
+				info.Env(), sizeof(uint8_t),
+				Napi::ArrayBuffer::New(info.Env(), v, len * sizeof(uint8_t)), 0, napi_int8_array);
+		}
+		delete[] v;
+		return ret;
+	}
+	case NC_USHORT: {
+		uint16_t *v = new uint16_t[len];
+
+		NC_CALL(nc_get_att(this->parent_id, this->var_id, this->name.c_str(), v));
+		Napi::Value ret;
+		if (len == 1) {
+			ret = Napi::Number::New(info.Env(), v[0]);
+		} else {
+			ret = Napi::Uint16Array::New(
+				info.Env(), sizeof(uint16_t),
+				Napi::ArrayBuffer::New(info.Env(), v, len * sizeof(uint16_t)), 0, napi_int8_array);
+		}
+		delete[] v;
+		return ret;
+	}
+	case NC_UINT: {
+		uint32_t *v = new uint32_t[len];
+		NC_CALL(nc_get_att(this->parent_id, this->var_id, this->name.c_str(), v));
+		Napi::Value ret;
+		if (len == 1) {
+			ret = Napi::Number::New(info.Env(), v[0]);
+		} else {
+			ret = Napi::Uint32Array::New(
+				info.Env(), sizeof(uint32_t),
+				Napi::ArrayBuffer::New(info.Env(), v, len * sizeof(uint32_t)), 0, napi_int8_array);
+		}
+		delete[] v;
+		return ret;
+	}
+#if NODE_MAJOR_VERSION > 8
+	case NC_UINT64: {
+		uint64_t *v = new uint64_t[len];
+		Napi::Value ret;
+		NC_CALL(nc_get_att(this->parent_id, this->var_id, this->name.c_str(), v));
+		if (len == 1) {
+			ret = Napi::BigInt::New(info.Env(), v[0]);
+		} else {
+			ret = Napi::BigUint64Array::New(
+				info.Env(), sizeof(uint64_t),
+				Napi::ArrayBuffer::New(info.Env(), v, len * sizeof(uint64_t)), 0, napi_int8_array);
+		}
+		delete[] v;
+		return ret;
+	}
+	case NC_INT64: {
+
+		int64_t *v = new int64_t[len];
+		Napi::Value ret;
+		NC_CALL(nc_get_att(this->parent_id, this->var_id, this->name.c_str(), v));
+		if (len == 1) {
+			ret = Napi::BigInt::New(info.Env(), v[0]);
+		} else {
+			ret = Napi::BigInt64Array::New(
+				info.Env(), sizeof(int64_t),
+				Napi::ArrayBuffer::New(info.Env(), v, len * sizeof(int64_t)), 0, napi_int8_array);
+		}
+		delete[] v;
+		return ret;
+	}
 #endif
-        val->ToString(isolate->GetCurrentContext()).ToLocalChecked());
-    int retval = nc_rename_att(obj->parent_id, obj->var_id, obj->name.c_str(), *new_name_);
-    if (retval != NC_NOERR) {
-        throw_netcdf_error(isolate, retval);
-        return;
-    }
-    obj->name = *new_name_;
+	case NC_CHAR:
+	case NC_STRING: {
+		char *v = new char[len + 1];
+		v[len] = 0;
+		NC_CALL(nc_get_att_text(this->parent_id, this->var_id, this->name.c_str(), v));
+
+		auto ret = Napi::String::New(info.Env(), v);
+		delete[] v;
+		return ret;
+	}
+	default:
+		Napi::TypeError::New(info.Env(), "Variable type not supported yet")
+			.ThrowAsJavaScriptException();
+		return info.Env().Undefined();
+	}
+
+	return info.Env().Undefined();
 }
 
-void Attribute::GetValue(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
-    v8::Isolate* isolate = info.GetIsolate();
-    Attribute* obj = node::ObjectWrap::Unwrap<Attribute>(info.Holder());
-
-    if ((obj->type < NC_BYTE || obj->type > NC_UINT64) && obj->type != NC_STRING) {
-        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Variable type not supported yet", v8::NewStringType::kNormal).ToLocalChecked()));
-        return;
-    }
-
-    size_t len;
-    int retval = nc_inq_attlen(obj->parent_id, obj->var_id, obj->name.c_str(), &len);
-    if (retval != NC_NOERR) {
-        throw_netcdf_error(isolate, retval);
-        return;
-    }
-
-    switch (obj->type) {
-        case NC_BYTE: {
-            int8_t* v = new int8_t[len];
-            retval = nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), v);
-            if (len == 1) {
-                info.GetReturnValue().Set(v8::Integer::New(isolate, v[0]));
-            } else {
-                info.GetReturnValue().Set(v8::Int8Array::New(v8::ArrayBuffer::New(isolate, v, len * 1), 0, len));
-            }
-            delete[] v;
-        } break;
-        case NC_SHORT: {
-            int16_t* v = new int16_t[len];
-            retval = nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), v);
-            if (len == 1) {
-                info.GetReturnValue().Set(v8::Integer::New(isolate, v[0]));
-            } else {
-                info.GetReturnValue().Set(v8::Int16Array::New(v8::ArrayBuffer::New(isolate, v, len * 2), 0, len));
-            }
-            delete[] v;
-        } break;
-        case NC_INT: {
-            int32_t* v = new int32_t[len];
-            retval = nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), v);
-            if (len == 1) {
-                info.GetReturnValue().Set(v8::Integer::New(isolate, v[0]));
-            } else {
-                info.GetReturnValue().Set(v8::Int32Array::New(v8::ArrayBuffer::New(isolate, v, len * 4), 0, len));
-            }
-            delete[] v;
-        } break;
-        case NC_FLOAT: {
-            float* v = new float[len];
-            retval = nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), v);
-            if (len == 1) {
-                info.GetReturnValue().Set(v8::Number::New(isolate, v[0]));
-            } else {
-                info.GetReturnValue().Set(v8::Float32Array::New(v8::ArrayBuffer::New(isolate, v, len * 4), 0, len));
-            }
-            delete[] v;
-        } break;
-        case NC_DOUBLE: {
-            double* v = new double[len];
-            retval = nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), v);
-            if (len == 1) {
-                info.GetReturnValue().Set(v8::Number::New(isolate, v[0]));
-            } else {
-                info.GetReturnValue().Set(v8::Float64Array::New(v8::ArrayBuffer::New(isolate, v, len * 8), 0, len));
-            }
-            delete[] v;
-        } break;
-        case NC_UBYTE: {
-            uint8_t* v = new uint8_t[len];
-            retval = nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), v);
-            if (len == 1) {
-                info.GetReturnValue().Set(v8::Integer::New(isolate, v[0]));
-            } else {
-                info.GetReturnValue().Set(v8::Uint8Array::New(v8::ArrayBuffer::New(isolate, v, len * 1), 0, len));
-            }
-            delete[] v;
-        } break;
-        case NC_USHORT: {
-            uint16_t* v = new uint16_t[len];
-            retval = nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), v);
-            if (len == 1) {
-                info.GetReturnValue().Set(v8::Integer::New(isolate, v[0]));
-            } else {
-                info.GetReturnValue().Set(v8::Uint16Array::New(v8::ArrayBuffer::New(isolate, v, len * 2), 0, len));
-            }
-            delete[] v;
-        } break;
-        case NC_UINT: {
-            uint32_t* v = new uint32_t[len];
-            retval = nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), v);
-            if (len == 1) {
-                info.GetReturnValue().Set(v8::Integer::NewFromUnsigned(isolate, v[0]));
-            } else {
-                info.GetReturnValue().Set(v8::Uint32Array::New(v8::ArrayBuffer::New(isolate, v, len * 4), 0, len));
-            }
-            delete[] v;
-        } break;
-        case NC_INT64: {
-            int64_t* v = new int64_t[len];
-            retval = nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), v);
-            if (len == 1) {
-                info.GetReturnValue().Set(v8::Integer::New(isolate, static_cast<int32_t>(v[0])));
-            } else {
-                info.GetReturnValue().Set(v8::Int32Array::New(v8::ArrayBuffer::New(isolate, v, len * 8), 0, len));
-            }
-            delete[] v;
-        } break;
-        case NC_UINT64: {
-            uint64_t* v = new uint64_t[len];
-            retval = nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), v);
-            if (len == 1) {
-                info.GetReturnValue().Set(v8::Integer::NewFromUnsigned(isolate, static_cast<uint32_t>(v[0])));
-            } else {
-                info.GetReturnValue().Set(v8::Uint32Array::New(v8::ArrayBuffer::New(isolate, v, len * 8), 0, len));
-            }
-            delete[] v;
-        } break;
-        case NC_CHAR:
-        case NC_STRING: {
-            char* v = new char[len + 1];
-            v[len] = 0;
-            retval = nc_get_att_text(obj->parent_id, obj->var_id, obj->name.c_str(), v);
-            info.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, v, v8::NewStringType::kNormal).ToLocalChecked());
-            delete[] v;
-        } break;
-    }
-    if (retval != NC_NOERR) {
-        throw_netcdf_error(isolate, retval);
-    }
-}
-
-void Attribute::SetValue(v8::Local<v8::String> property, v8::Local<v8::Value> val, const v8::PropertyCallbackInfo<void>& info) {
-    Attribute* obj = node::ObjectWrap::Unwrap<Attribute>(info.Holder());
-    obj->set_value(val);
-}
-
-void Attribute::set_value(const v8::Local<v8::Value>& val) {
-    v8::Isolate* isolate = v8::Isolate::GetCurrent();
-    if ((type < NC_BYTE || type > NC_UINT) && type != NC_STRING) {
-        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Variable type not supported yet", v8::NewStringType::kNormal).ToLocalChecked()));
-        return;
-    }
-
-    int retval;
-    if (val->IsUint32()) {
-        uint32_t v = val->Uint32Value(isolate->GetCurrentContext()).ToChecked();
-        retval = nc_put_att(parent_id, var_id, name.c_str(), NC_UINT, 1, &v);
-    } else if (val->IsInt32()) {
-        int32_t v = val->Int32Value(isolate->GetCurrentContext()).ToChecked();
-        retval = nc_put_att(parent_id, var_id, name.c_str(), NC_INT, 1, &v);
-    } else if (val->IsNumber()) {
-        double v = val->NumberValue(isolate->GetCurrentContext()).ToChecked();
-        retval = nc_put_att(parent_id, var_id, name.c_str(), NC_DOUBLE, 1, &v);
-    } else {
-        std::string v = *v8::String::Utf8Value(
-#if NODE_MAJOR_VERSION >= 8
-            isolate,
+void Attribute::SetValue(const Napi::CallbackInfo &info, const Napi::Value &value) {
+	switch (this->type) {
+	case NC_BYTE: {
+		if (value.IsNumber()) {
+			int8_t v = value.As<Napi::Number>().Int32Value();
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
+#if NODE_MAJOR_VERSION > 8
+		} else if (value.IsBigInt()) {
+			int8_t v = value.As<Napi::BigInt>().Int64Value(nullptr);
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
 #endif
-            val->ToString(isolate->GetCurrentContext()).ToLocalChecked());
-        retval = nc_put_att_text(parent_id, var_id, name.c_str(), v.length(), v.c_str());
-    }
-    if (retval != NC_NOERR) {
-        throw_netcdf_error(isolate, retval);
-    }
+		} else {
+			auto array = value.As<Napi::Int8Array>();
+			void *v = array.ArrayBuffer().Data();
+			size_t l = array.ElementLength();
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, l, &v));
+		}
+	} break;
+	case NC_SHORT: {
+		if (value.IsNumber()) {
+			int16_t v = value.As<Napi::Number>().Int32Value();
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
+#if NODE_MAJOR_VERSION > 8
+		} else if (value.IsBigInt()) {
+			int16_t v = value.As<Napi::BigInt>().Int64Value(nullptr);
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
+#endif
+		} else {
+			auto array = value.As<Napi::Int16Array>();
+			void *v = array.ArrayBuffer().Data();
+			size_t l = array.ElementLength();
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, l, &v));
+		}
+	} break;
+	case NC_INT: {
+		if (value.IsNumber()) {
+			int32_t v = value.As<Napi::Number>().Int32Value();
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
+#if NODE_MAJOR_VERSION > 8
+		} else if (value.IsBigInt()) {
+			int32_t v = value.As<Napi::BigInt>().Int64Value(nullptr);
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
+#endif
+		} else {
+			auto array = value.As<Napi::Int32Array>();
+			void *v = array.ArrayBuffer().Data();
+			size_t l = array.ElementLength();
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, l, &v));
+		}
+	} break;
+	case NC_FLOAT: {
+		if (value.IsNumber()) {
+			float v = value.As<Napi::Number>().FloatValue();
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
+#if NODE_MAJOR_VERSION > 8
+		} else if (value.IsBigInt()) {
+			float v = value.As<Napi::BigInt>().Int64Value(nullptr);
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
+#endif
+		} else {
+			auto array = value.As<Napi::Float32Array>();
+			void *v = array.ArrayBuffer().Data();
+			size_t l = array.ElementLength();
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, l, &v));
+		}
+	} break;
+	case NC_DOUBLE: {
+		if (value.IsNumber()) {
+			double v = value.As<Napi::Number>().DoubleValue();
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
+#if NODE_MAJOR_VERSION > 8
+		} else if (value.IsBigInt()) {
+			double v = value.As<Napi::BigInt>().Int64Value(nullptr);
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
+#endif
+		} else {
+			auto array = value.As<Napi::Float64Array>();
+			void *v = array.ArrayBuffer().Data();
+			size_t l = array.ElementLength();
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, l, &v));
+		}
+	} break;
+	case NC_UBYTE: {
+		if (value.IsNumber()) {
+			uint8_t v = value.As<Napi::Number>().Uint32Value();
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
+#if NODE_MAJOR_VERSION > 8
+		} else if (value.IsBigInt()) {
+			uint8_t v = value.As<Napi::BigInt>().Uint64Value(nullptr);
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
+#endif
+		} else {
+			auto array = value.As<Napi::Uint8Array>();
+			void *v = array.ArrayBuffer().Data();
+			size_t l = array.ElementLength();
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, l, &v));
+		}
+	} break;
+	case NC_USHORT: {
+		if (value.IsNumber()) {
+			uint16_t v = value.As<Napi::Number>().Uint32Value();
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
+#if NODE_MAJOR_VERSION > 8
+		} else if (value.IsBigInt()) {
+			uint16_t v = value.As<Napi::BigInt>().Uint64Value(nullptr);
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
+#endif
+		} else {
+			auto array = value.As<Napi::Uint16Array>();
+			void *v = array.ArrayBuffer().Data();
+			size_t l = array.ElementLength();
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, l, &v));
+		}
+	} break;
+	case NC_UINT: {
+		if (value.IsNumber()) {
+			uint32_t v = value.As<Napi::Number>().Uint32Value();
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
+#if NODE_MAJOR_VERSION > 8
+		} else if (value.IsBigInt()) {
+			uint32_t v = value.As<Napi::BigInt>().Uint64Value(nullptr);
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
+#endif
+		} else {
+			auto array = value.As<Napi::Uint32Array>();
+			void *v = array.ArrayBuffer().Data();
+			size_t l = array.ElementLength();
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, l, &v));
+		}
+	} break;
+#if NODE_MAJOR_VERSION > 8
+
+	case NC_UINT64: {
+		if (value.IsNumber()) {
+			uint64_t v = value.As<Napi::Number>().Uint32Value();
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
+		} else if (value.IsBigInt()) {
+			uint64_t v = value.As<Napi::BigInt>().Uint64Value(nullptr);
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
+		} else {
+			auto array = value.As<Napi::BigUint64Array>();
+			void *v = array.ArrayBuffer().Data();
+			size_t l = array.ElementLength();
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, l, &v));
+		}
+	} break;
+	case NC_INT64: {
+		if (value.IsNumber()) {
+			int64_t v = value.As<Napi::Number>().Uint32Value();
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
+		} else if (value.IsBigInt()) {
+			int64_t v = value.As<Napi::BigInt>().Uint64Value(nullptr);
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
+		} else {
+			auto array = value.As<Napi::BigInt64Array>();
+			void *v = array.ArrayBuffer().Data();
+			size_t l = array.ElementLength();
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, l, &v));
+		}
+	} break;
+#endif
+	case NC_CHAR:
+	case NC_STRING: {
+		std::string v = value.As<Napi::String>().ToString();
+		nc_put_att_text(parent_id, var_id, name.c_str(), v.length(), v.c_str());
+	} break;
+	default:
+		Napi::TypeError::New(info.Env(), "Variable type not supported yet")
+			.ThrowAsJavaScriptException();
+		return;
+	}
 }
 
-void Attribute::Delete(const v8::FunctionCallbackInfo<v8::Value>& args) {
-    Attribute* obj = node::ObjectWrap::Unwrap<Attribute>(args.Holder());
-    int retval = nc_del_att(obj->parent_id, obj->var_id, obj->name.c_str());
-    if (retval != NC_NOERR) {
-        throw_netcdf_error(args.GetIsolate(), retval);
-    }
+Napi::Value Attribute::Delete(const Napi::CallbackInfo &info) {
+	/*
+	Attribute *obj = node::ObjectWrap::Unwrap<Attribute>(args.Holder());
+	int retval = nc_del_att(obj->parent_id, obj->var_id, obj->name.c_str());
+	if (retval != NC_NOERR) {
+		throw_netcdf_error(args.GetIsolate(), retval);
+	}
+	*/
+	return info.Env().Undefined();
 }
 
-void Attribute::Inspect(const v8::FunctionCallbackInfo<v8::Value>& args) {
-    v8::Isolate* isolate = args.GetIsolate();
-    args.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, "[object Attribute]", v8::NewStringType::kNormal).ToLocalChecked());
+Napi::Value Attribute::Inspect(const Napi::CallbackInfo &info) {
+	return Napi::String::New(info.Env(), "[object Attribute]");
 }
-}  // namespace netcdf4js
+} // namespace netcdf4js
