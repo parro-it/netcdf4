@@ -29,9 +29,19 @@ You will need `libnetcdf` >= 4.x installed.
 ```
 $ sudo apt-get install libnetcdf-dev
 ```
-or download it [here](https://www.unidata.ucar.edu/downloads/netcdf/index.jsp)
+
+* on OSX:
+```
+$ brew install netcdf
+```
+
+* or download it [here](https://www.unidata.ucar.edu/downloads/netcdf/index.jsp)
 * Make sure your system fulfills all the prerequisites of [node-gyp](https://github.com/nodejs/node-gyp#on-unix)
 
+Finally, when running the install, make sure that your `LDFLAGS` and `CPPFLAGS` are set properly. For example with homebrew:
+```bash
+$ LDFLAGS="-L/opt/homebrew/opt/netcdf/lib" CPPFLAGS="-I/opt/homebrew/opt/netcdf/include" npm install netcdf4
+```
 ### On Windows:
 
 * Install NetCDF4 from [here](https://www.unidata.ucar.edu/downloads/netcdf/index.jsp)
