@@ -2,7 +2,8 @@
   "targets": [
     {
       "libraries": [
-        "-lnetcdf"
+        "-lnetcdf",
+        "-lhdf5"
       ],
       "sources": [
         "src/Group.cpp",

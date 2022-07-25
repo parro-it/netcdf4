@@ -76,104 +76,96 @@ void Attribute::GetValue(v8::Local<v8::String> property, const v8::PropertyCallb
 
     switch (obj->type) {
         case NC_BYTE: {
-            int8_t* v = new int8_t[len];
-            retval = nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), v);
+            std::unique_ptr<v8::BackingStore> v = v8::ArrayBuffer::NewBackingStore(isolate, len * sizeof(int8_t));
+            retval = nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), v->Data());
             if (len == 1) {
-                info.GetReturnValue().Set(v8::Integer::New(isolate, v[0]));
+                info.GetReturnValue().Set(v8::Integer::New(isolate, static_cast<int8_t *>(v->Data())[0]));
             } else {
-                info.GetReturnValue().Set(v8::Int8Array::New(v8::ArrayBuffer::New(isolate, v, len * 1), 0, len));
+                info.GetReturnValue().Set(v8::Int8Array::New(v8::ArrayBuffer::New(isolate, std::move(v)), 0, len));
             }
-            delete[] v;
         } break;
         case NC_SHORT: {
-            int16_t* v = new int16_t[len];
-            retval = nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), v);
+            std::unique_ptr<v8::BackingStore> v = v8::ArrayBuffer::NewBackingStore(isolate, len * sizeof(int16_t));
+            retval = nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), v->Data());
             if (len == 1) {
-                info.GetReturnValue().Set(v8::Integer::New(isolate, v[0]));
+                info.GetReturnValue().Set(v8::Integer::New(isolate, static_cast<int16_t *>(v->Data())[0]));
             } else {
-                info.GetReturnValue().Set(v8::Int16Array::New(v8::ArrayBuffer::New(isolate, v, len * 2), 0, len));
+                info.GetReturnValue().Set(v8::Int16Array::New(v8::ArrayBuffer::New(isolate, std::move(v)), 0, len));
             }
-            delete[] v;
         } break;
         case NC_INT: {
-            int32_t* v = new int32_t[len];
-            retval = nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), v);
+            std::unique_ptr<v8::BackingStore> v = v8::ArrayBuffer::NewBackingStore(isolate, len * sizeof(int32_t));
+            retval = nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), v->Data());
             if (len == 1) {
-                info.GetReturnValue().Set(v8::Integer::New(isolate, v[0]));
+                info.GetReturnValue().Set(v8::Integer::New(isolate, static_cast<int32_t *>(v->Data())[0]));
             } else {
-                info.GetReturnValue().Set(v8::Int32Array::New(v8::ArrayBuffer::New(isolate, v, len * 4), 0, len));
+                info.GetReturnValue().Set(v8::Int32Array::New(v8::ArrayBuffer::New(isolate, std::move(v)), 0, len));
             }
-            delete[] v;
         } break;
         case NC_FLOAT: {
-            float* v = new float[len];
-            retval = nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), v);
+            std::unique_ptr<v8::BackingStore> v = v8::ArrayBuffer::NewBackingStore(isolate, len * sizeof(float));
+            retval = nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), v->Data());
             if (len == 1) {
-                info.GetReturnValue().Set(v8::Number::New(isolate, v[0]));
+                info.GetReturnValue().Set(v8::Number::New(isolate, static_cast<float *>(v->Data())[0]));
             } else {
-                info.GetReturnValue().Set(v8::Float32Array::New(v8::ArrayBuffer::New(isolate, v, len * 4), 0, len));
+                info.GetReturnValue().Set(v8::Float32Array::New(v8::ArrayBuffer::New(isolate, std::move(v)), 0, len));
             }
-            delete[] v;
         } break;
         case NC_DOUBLE: {
-            double* v = new double[len];
-            retval = nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), v);
+            std::unique_ptr<v8::BackingStore> v = v8::ArrayBuffer::NewBackingStore(isolate, len * sizeof(double));
+            retval = nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), v->Data());
             if (len == 1) {
-                info.GetReturnValue().Set(v8::Number::New(isolate, v[0]));
+                info.GetReturnValue().Set(v8::Number::New(isolate, static_cast<double *>(v->Data())[0]));
             } else {
-                info.GetReturnValue().Set(v8::Float64Array::New(v8::ArrayBuffer::New(isolate, v, len * 8), 0, len));
+                info.GetReturnValue().Set(v8::Float64Array::New(v8::ArrayBuffer::New(isolate, std::move(v)), 0, len));
             }
-            delete[] v;
         } break;
         case NC_UBYTE: {
-            uint8_t* v = new uint8_t[len];
-            retval = nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), v);
+            std::unique_ptr<v8::BackingStore> v = v8::ArrayBuffer::NewBackingStore(isolate, len * sizeof(uint8_t));
+            retval = nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), v->Data());
             if (len == 1) {
-                info.GetReturnValue().Set(v8::Integer::New(isolate, v[0]));
+                info.GetReturnValue().Set(v8::Integer::New(isolate, static_cast<uint8_t *>(v->Data())[0]));
             } else {
-                info.GetReturnValue().Set(v8::Uint8Array::New(v8::ArrayBuffer::New(isolate, v, len * 1), 0, len));
+                info.GetReturnValue().Set(v8::Uint8Array::New(v8::ArrayBuffer::New(isolate, std::move(v)), 0, len));
             }
-            delete[] v;
         } break;
         case NC_USHORT: {
-            uint16_t* v = new uint16_t[len];
-            retval = nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), v);
+            std::unique_ptr<v8::BackingStore> v = v8::ArrayBuffer::NewBackingStore(isolate, len * sizeof(uint16_t));
+            retval = nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), v->Data());
             if (len == 1) {
-                info.GetReturnValue().Set(v8::Integer::New(isolate, v[0]));
+                info.GetReturnValue().Set(v8::Integer::New(isolate, static_cast<uint16_t *>(v->Data())[0]));
             } else {
-                info.GetReturnValue().Set(v8::Uint16Array::New(v8::ArrayBuffer::New(isolate, v, len * 2), 0, len));
+                info.GetReturnValue().Set(v8::Uint16Array::New(v8::ArrayBuffer::New(isolate, std::move(v)), 0, len));
             }
-            delete[] v;
         } break;
         case NC_UINT: {
-            uint32_t* v = new uint32_t[len];
-            retval = nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), v);
+            std::unique_ptr<v8::BackingStore> v = v8::ArrayBuffer::NewBackingStore(isolate, len * sizeof(uint32_t));
+            retval = nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), v->Data());
             if (len == 1) {
-                info.GetReturnValue().Set(v8::Integer::NewFromUnsigned(isolate, v[0]));
+                info.GetReturnValue().Set(v8::Integer::NewFromUnsigned(isolate, static_cast<uint32_t *>(v->Data())[0]));
             } else {
-                info.GetReturnValue().Set(v8::Uint32Array::New(v8::ArrayBuffer::New(isolate, v, len * 4), 0, len));
+                info.GetReturnValue().Set(v8::Uint32Array::New(v8::ArrayBuffer::New(isolate, std::move(v)), 0, len));
             }
-            delete[] v;
         } break;
         case NC_INT64: {
-            int64_t* v = new int64_t[len];
-            retval = nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), v);
+            std::unique_ptr<v8::BackingStore> v = v8::ArrayBuffer::NewBackingStore(isolate, len * sizeof(int64_t));
+            retval = nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), v->Data());
             if (len == 1) {
-                info.GetReturnValue().Set(v8::Integer::New(isolate, static_cast<int32_t>(v[0])));
+                info.GetReturnValue().Set(v8::Integer::New(isolate, static_cast<int64_t *>(v->Data())[0]));
             } else {
-                info.GetReturnValue().Set(v8::Int32Array::New(v8::ArrayBuffer::New(isolate, v, len * 8), 0, len));
+                // TODO: Should return BigInt64Array
+                info.GetReturnValue().Set(v8::Int32Array::New(v8::ArrayBuffer::New(isolate, std::move(v)), 0, len));
             }
-            delete[] v;
         } break;
         case NC_UINT64: {
-            uint64_t* v = new uint64_t[len];
-            retval = nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), v);
+            std::unique_ptr<v8::BackingStore> v = v8::ArrayBuffer::NewBackingStore(isolate, len * sizeof(uint64_t));
+            retval = nc_get_att(obj->parent_id, obj->var_id, obj->name.c_str(), v->Data());
             if (len == 1) {
-                info.GetReturnValue().Set(v8::Integer::NewFromUnsigned(isolate, static_cast<uint32_t>(v[0])));
+                info.GetReturnValue().Set(v8::Integer::NewFromUnsigned(isolate, static_cast<uint64_t *>(v->Data())[0]));
             } else {
-                info.GetReturnValue().Set(v8::Uint32Array::New(v8::ArrayBuffer::New(isolate, v, len * 8), 0, len));
+                // TODO: Should return BigInt64Array
+                info.GetReturnValue().Set(v8::Uint32Array::New(v8::ArrayBuffer::New(isolate, std::move(v)), 0, len));
             }
-            delete[] v;
         } break;
         case NC_CHAR:
         case NC_STRING: {

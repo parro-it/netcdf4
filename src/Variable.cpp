@@ -213,7 +213,7 @@ void Variable::WriteSlice(const v8::FunctionCallbackInfo<v8::Value>& args) {
         delete[] size;
         return;
     }
-    int retval = nc_put_vara(obj->parent_id, obj->id, pos, size, val->Buffer()->GetContents().Data());
+    int retval = nc_put_vara(obj->parent_id, obj->id, pos, size, val->Buffer()->GetBackingStore()->Data());
     if (retval != NC_NOERR) {
         throw_netcdf_error(isolate, retval);
     }
@@ -293,7 +293,7 @@ void Variable::WriteStridedSlice(const v8::FunctionCallbackInfo<v8::Value>& args
         delete[] stride;
         return;
     }
-    int retval = nc_put_vars(obj->parent_id, obj->id, pos, size, stride, val->Buffer()->GetContents().Data());
+    int retval = nc_put_vars(obj->parent_id, obj->id, pos, size, stride, val->Buffer()->GetBackingStore()->Data());
     if (retval != NC_NOERR) {
         throw_netcdf_error(isolate, retval);
     }
@@ -320,7 +320,7 @@ void Variable::Read(const v8::FunctionCallbackInfo<v8::Value>& args) {
         size[i] = 1;
     }
     v8::Local<v8::Value> result;
-    int retval;
+    int retval = NC_EVARMETA;
     switch (obj->type) {
         case NC_BYTE: {
             int8_t v;
@@ -400,7 +400,7 @@ void Variable::ReadSlice(const v8::FunctionCallbackInfo<v8::Value>& args) {
         total_size *= s;
     }
     v8::Local<v8::ArrayBuffer> buffer = v8::ArrayBuffer::New(isolate, total_size * type_sizes[obj->type]);
-    int retval = nc_get_vara(obj->parent_id, obj->id, pos, size, buffer->GetContents().Data());
+    int retval = nc_get_vara(obj->parent_id, obj->id, pos, size, buffer->GetBackingStore()->Data());
     if (retval != NC_NOERR) {
         throw_netcdf_error(isolate, retval);
         delete[] pos;
@@ -470,7 +470,7 @@ void Variable::ReadStridedSlice(const v8::FunctionCallbackInfo<v8::Value>& args)
         stride[i] = static_cast<ptrdiff_t>(args[3 * i + 2]->IntegerValue(isolate->GetCurrentContext()).ToChecked());
     }
     v8::Local<v8::ArrayBuffer> buffer = v8::ArrayBuffer::New(isolate, total_size * type_sizes[obj->type]);
-    int retval = nc_get_vars(obj->parent_id, obj->id, pos, size, stride, buffer->GetContents().Data());
+    int retval = nc_get_vars(obj->parent_id, obj->id, pos, size, stride, buffer->GetBackingStore()->Data());
     if (retval != NC_NOERR) {
         throw_netcdf_error(isolate, retval);
         delete[] pos;
