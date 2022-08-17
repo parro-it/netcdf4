@@ -3,15 +3,30 @@ const netcdf4 = require("..");
 const { join } = require("path");
 
 const fixture = join(__dirname, "testrh.nc");
+const fixture1 = join(__dirname, "test_hgroups.nc");
 
 describe("Variable", function () {
+  it("should read variable params", function() {
+    var file = new netcdf4.File(fixture1, "r");
+    console.log(Object.keys(file.root.variables))
+    console.log(file.root.variables.UTC_time.name)
+    console.log(file.root.variables.UTC_time.type)
+    console.log(file.root.variables.UTC_time.endianness)
+    console.log(file.root.variables.UTC_time.id)
+
+  });
   it("should read a slice", function () {
     var file = new netcdf4.File(fixture, "r");
-    var results = Array.from(file.root.variables.var1.readSlice(0, 4));
+    console.log(Object.keys(file.root.variables));
+    console.log(file.root.variables.var1.name)
+    console.log(file.root.variables.var1.type)
+    console.log(file.root.variables.var1.id)
+    var res = file.root.variables.var1.readSlice(0, 4)
+    var results = Array.from(res);
     expect(results).to.deep.equal([420, 197, 391.5, 399]);
+    console.log(res);
     file.close();
   });
-  /*
   it("should read a strided slice", function () {
     var file = new netcdf4.File(fixture, "r");
     var results = Array.from(
@@ -19,5 +34,4 @@ describe("Variable", function () {
     );
     expect(results).to.deep.equal([420, 391.5]);
   });
-  */
 });
