@@ -96,9 +96,15 @@ class File : public Napi::ObjectWrap<File> {
 	// Napi::Value New(const Napi::CallbackInfo &info);
 	Napi::Value Close(const Napi::CallbackInfo &info);
 	Napi::Value Sync(const Napi::CallbackInfo &info);
+	Napi::Value GetId(const Napi::CallbackInfo &info);
+	Napi::Value GetName(const Napi::CallbackInfo &info);
+	Napi::Value IsClosed(const Napi::CallbackInfo &info);
+	Napi::Value GetFormat(const Napi::CallbackInfo &info);
 	Napi::Value Inspect(const Napi::CallbackInfo &info);
 
 	int id;
+	std::string name;
+	std::string format;
 	bool closed;
 };
 

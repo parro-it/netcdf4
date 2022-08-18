@@ -17,20 +17,6 @@ const unsigned char Variable::type_sizes[] = {
 	4  // NC_UINT
 };
 
-/*
-const char *Variable::type_names[] = {
-	"unknown", // NC_NAT // unknown type
-	"byte",	   // NC_BYTE
-	"char",	   // NC_CHAR
-	"short",   // NC_SHORT
-	"int",	   // NC_INT / NC_LONG
-	"float",   // NC_FLOAT
-	"double",  // NC_DOUBLE
-	"ubyte",   // NC_UBYTE
-	"ushort",  // NC_USHORT
-	"uint"	   // NC_UINT
-};
-*/
 
 Napi::FunctionReference Variable::constructor;
 
@@ -664,15 +650,9 @@ Napi::Value Variable::GetAttributes(const Napi::CallbackInfo &info) {
 }
 
 Napi::Value Variable::GetType(const Napi::CallbackInfo &info) {
-	const char *res;
-	if (this->type < NC_BYTE || this->type > NC_UINT) {
-		res = "unsupported";
-	} else {
-		res = type_names[this->type];
-	}
+	const char *res=NC_TYPES(this->type);
 	return Napi::String::New(info.Env(),res);
 
-	return info.Env().Undefined();
 }
 
 Napi::Value Variable::GetName(const Napi::CallbackInfo &info) {
@@ -1214,7 +1194,7 @@ Napi::Value Variable::Inspect(const Napi::CallbackInfo &info) {
 		string_format(
 			"[Variable %s, type %s, %i dimension(s)]",
 			this->name.c_str(),
-			this->type < NC_BYTE || this->type > NC_UINT?"unsupported":type_names[this->type],
+			NC_TYPES(this->type),
 			this->ndims)
 	);
 }

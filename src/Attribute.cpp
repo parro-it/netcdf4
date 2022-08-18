@@ -431,7 +431,7 @@ Napi::Value Attribute::Inspect(const Napi::CallbackInfo &info) {
 		string_format(
 			"[Attribute %s, type %s]",
 			this->name.c_str(),
-			this->type < NC_BYTE || this->type > NC_UINT?"unsupported":type_names[this->type]
+			NC_TYPES(this->type)
 		)
 	);
 }

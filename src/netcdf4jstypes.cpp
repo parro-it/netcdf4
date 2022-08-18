@@ -13,4 +13,17 @@ namespace netcdf4js {
         "ushort",  // NC_USHORT
         "uint"	   // NC_UINT
     };
+    const char *format_names[] = {
+        "unknown", // NC_FORMATX_UNDEFINED
+        "netcdf3",	   // NC_FORMATX_NC3
+        "hdf5",	   // NC_FORMATX_HDF5
+        "hdf4",   // NC_FORMATX_HDF4 / NC_FORMATX_NC4
+        "pnetcdf", // NC_FORMATX_PNETCDF
+        "dap2",   // NC_FORMATX_DAP2
+        "dap4",  // NC_FORMATX_DAP4
+        "?",   // 
+        "udf0",  // NC_FORMATX_UDF0
+        "udf1",	   // NC_FORMATX_UDF1
+        "zarr"	   // NC_FORMATX_NCZARA
+    };
 }

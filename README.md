@@ -69,10 +69,14 @@ when set.
 #### File
 
 Properties:
-* `root` : Main `Group`-object in file
+* `root` : Main `Group`-object in file if `open`===true
+* `id` : Internal file id
+* `name` : File path
+* `type` : String representation of file type
+* `open` : =true if file is open, false otherwise
 
 Methods:
-* `close()` : Close file
+* `close()` : Close file, remove main `Group` form file
 * `sync()` : Sync (or "flush") file to disk
 
 #### Group
