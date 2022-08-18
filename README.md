@@ -45,6 +45,8 @@ C:\> set NETCDF_DIR=C:\Program Files\netCDF 4.6.1
 
 ## Usage
 
+**NB!** For now library did not support string types in netCDF
+
 Open files with
 ```
 var netcdf4 = require("netcdf4");

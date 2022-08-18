@@ -4,6 +4,7 @@
 #include <napi.h>
 #include <netcdf.h>
 #include <string>
+#include <memory>
 
 #define NC_CALL(FN)                                                                                \
 	do {                                                                                           \
@@ -66,6 +67,22 @@ inline int get_type(const std::string &type_str) {
 	}
 }
 
+
+/**
+ * printf like formatting for C++ with std::string
+ * Original source: https://stackoverflow.com/a/26221725/11722
+ */
+template<typename ... Args>
+std::string string_format( const std::string& format, Args ... args )
+{
+    int size_s = std::snprintf( nullptr, 0, format.c_str(), args ... ) + 1; // Extra space for '\0'
+    if( size_s <= 0 ){ throw std::runtime_error( "Error during formatting." ); }
+    auto size = static_cast<size_t>( size_s );
+    std::unique_ptr<char[]> buf( new char[ size ] );
+    std::snprintf( buf.get(), size, format.c_str(), args ... );
+    return std::string( buf.get(), buf.get() + size - 1 ); // We don't want the '\0' inside
+}
+
 class File : public Napi::ObjectWrap<File> {
   public:
 	static Napi::Object Init(Napi::Env env, Napi::Object exports);
@@ -126,6 +143,8 @@ class Dimension : public Napi::ObjectWrap<Dimension> {
 	Napi::Value Inspect(const Napi::CallbackInfo &info);
 	int id;
 	int parent_id;
+	std::string name;
+	size_t length;
 };
 
 class Attribute : public Napi::ObjectWrap<Attribute> {
@@ -193,11 +212,11 @@ class Variable : public Napi::ObjectWrap<Variable> {
 	static Napi::FunctionReference constructor;
 
 	static const unsigned char type_sizes[];
-	static const char *type_names[];
 	int id;
 	int parent_id;
 	nc_type type;
 	int ndims;
+	std::string name;
 };
 
 } // namespace netcdf4js

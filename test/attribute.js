@@ -38,7 +38,7 @@ describe("Attribute", function () {
   });
 
   it("with a custom inspect", function () {
-    expect(attr.inspect()).equals("[object Attribute]");
+    expect(attr.inspect()).equals("[Attribute airport_dep, type char]");
   });
 
   it("value is writable", function () {

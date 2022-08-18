@@ -18,6 +18,10 @@ Dimension::Dimension(const Napi::CallbackInfo &info) : Napi::ObjectWrap<Dimensio
 
 	parent_id = info[0].As<Napi::Number>().Int32Value();
 	id = info[1].As<Napi::Number>().Int32Value();
+	char varName[NC_MAX_NAME + 1];
+	NC_CALL_VOID(nc_inq_dim(parent_id, id, varName, &length));
+	name= std::string(varName);
+
 }
 
 Napi::Object Dimension::Init(Napi::Env env, Napi::Object exports) {
@@ -60,16 +64,24 @@ Napi::Value Dimension::GetLength(const Napi::CallbackInfo &info) {
 }
 
 Napi::Value Dimension::GetName(const Napi::CallbackInfo &info) {
-	char name[NC_MAX_NAME + 1];
-	NC_CALL(nc_inq_dimname(parent_id, id, name));
+//	char name[NC_MAX_NAME + 1];
+//	NC_CALL(nc_inq_dimname(parent_id, id, name));
 	return Napi::String::New(info.Env(), name);
 }
 
 void Dimension::SetName(const Napi::CallbackInfo &info, const Napi::Value &value) {
-	NC_CALL_VOID(nc_rename_dim(this->parent_id, this->id, value.ToString().Utf8Value().c_str()));
+	std::string new_name = value.As<Napi::String>().ToString();
+	NC_CALL_VOID(nc_rename_dim(this->parent_id, this->id, new_name.c_str()));
+	this->name = new_name;
 }
 
 Napi::Value Dimension::Inspect(const Napi::CallbackInfo &info) {
-	return Napi::String::New(info.Env(), "[object Dimension]");
+	return Napi::String::New(info.Env(), 
+		string_format(
+			"[Dimension %s, length %lu]",
+			this->name.c_str(),
+			this->length
+		)
+	);
 }
 } // namespace netcdf4js

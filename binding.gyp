@@ -21,7 +21,8 @@
                 "src/Variable.cpp",
                 "src/Dimension.cpp",
                 "src/Attribute.cpp",
-                "src/netcdf4js.cpp"
+                "src/netcdf4js.cpp",
+                "src/netcdf4jstypes.cpp"
             ],
             "target_name": "netcdf4",
             "include_dirs": ["<!@(node -p \"require('node-addon-api').include\")"],

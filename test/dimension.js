@@ -28,7 +28,7 @@ describe("Dimension", function () {
 
   it("with a custom inspect method", function () {
     expect(typeof dim.inspect).equals("function");
-    expect(dim.inspect()).equals("[object Dimension]");
+    expect(dim.inspect()).equals("[Dimension recNum, length 74]");
   });
 
   it("should read name", function () {

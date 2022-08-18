@@ -1,5 +1,6 @@
 #include <netcdf.h>
 #include "netcdf4js.h"
+#include "netcdf4jstypes.h"
 
 namespace netcdf4js {
 
@@ -16,6 +17,7 @@ const unsigned char Variable::type_sizes[] = {
 	4  // NC_UINT
 };
 
+/*
 const char *Variable::type_names[] = {
 	"unknown", // NC_NAT // unknown type
 	"byte",	   // NC_BYTE
@@ -28,6 +30,7 @@ const char *Variable::type_names[] = {
 	"ushort",  // NC_USHORT
 	"uint"	   // NC_UINT
 };
+*/
 
 Napi::FunctionReference Variable::constructor;
 
@@ -41,9 +44,11 @@ Variable::Variable(const Napi::CallbackInfo &info) : Napi::ObjectWrap<Variable>(
 		return;
 	}
 
+	char varName[NC_MAX_NAME + 1];
 	id = info[0].As<Napi::Number>().Int32Value();
 	parent_id = info[1].As<Napi::Number>().Int32Value();
-	NC_CALL_VOID(nc_inq_var(parent_id, id, NULL, &type, &ndims, NULL, NULL));
+	NC_CALL_VOID(nc_inq_var(parent_id, id, varName, &type, &ndims, NULL, NULL));
+	name = std::string(varName);
 }
 
 Napi::Object Variable::Init(Napi::Env env, Napi::Object exports) {
@@ -630,25 +635,16 @@ Napi::Value Variable::GetId(const Napi::CallbackInfo &info) {
 }
 
 Napi::Value Variable::GetDimensions(const Napi::CallbackInfo &info) {
-	/*
-	v8::Isolate *isolate = info.GetIsolate();
-	Variable *obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
-	int *dim_ids = new int[obj->ndims];
-	int retval = nc_inq_vardimid(obj->parent_id, obj->id, dim_ids);
-	if (retval != NC_NOERR) {
-		throw_netcdf_error(isolate, retval);
-		delete[] dim_ids;
-		return;
+
+	int *dim_ids = new int[this->ndims];
+	NC_CALL(nc_inq_vardimid(this->parent_id, this->id, dim_ids));
+	Napi::Array result = Napi::Array::New(info.Env());
+	for (int i = 0; i < this->ndims; i++) {
+		Napi::Object dim = Dimension::Build(info.Env(), this->parent_id, dim_ids[i]);
+		result.Set(i,dim);
 	}
-	v8::Local<v8::Array> result = v8::Array::New(isolate);
-	for (int i = 0; i < obj->ndims; i++) {
-		Dimension *d = new Dimension(dim_ids[i], obj->parent_id);
-		result->Set(isolate->GetCurrentContext(), i, d->handle());
-	}
-	info.GetReturnValue().Set(result);
 	delete[] dim_ids;
-	*/
-	return info.Env().Undefined();
+	return result;
 }
 
 Napi::Value Variable::GetAttributes(const Napi::CallbackInfo &info) {
@@ -680,8 +676,8 @@ Napi::Value Variable::GetType(const Napi::CallbackInfo &info) {
 }
 
 Napi::Value Variable::GetName(const Napi::CallbackInfo &info) {
-	char name[NC_MAX_NAME + 1];
-	NC_CALL(nc_inq_varname(this->parent_id, this->id, name));
+//	char name[NC_MAX_NAME + 1];
+//	NC_CALL(nc_inq_varname(this->parent_id, this->id, name));
 	return Napi::String::New(info.Env(), name);
 }
 
@@ -690,7 +686,7 @@ void Variable::SetName(const Napi::CallbackInfo &info, const Napi::Value &value)
 	NC_CALL_VOID(
 		nc_rename_var(this->parent_id, this->id,  new_name.c_str())
 	);
-
+	this->name = new_name;
 }
 
 Napi::Value Variable::GetEndianness(const Napi::CallbackInfo &info) {
@@ -1214,12 +1210,12 @@ void Variable::SetCompressionLevel(const Napi::CallbackInfo &info, const Napi::V
 }
 
 Napi::Value Variable::Inspect(const Napi::CallbackInfo &info) {
-	/*
-	v8::Isolate *isolate = args.GetIsolate();
-	args.GetReturnValue().Set(
-		v8::String::NewFromUtf8(isolate, "[object Variable]", v8::NewStringType::kNormal)
-			.ToLocalChecked());
-	*/
-	return info.Env().Undefined();
+	return Napi::String::New(info.Env(), 
+		string_format(
+			"[Variable %s, type %s, %i dimension(s)]",
+			this->name.c_str(),
+			this->type < NC_BYTE || this->type > NC_UINT?"unsupported":type_names[this->type],
+			this->ndims)
+	);
 }
 } // namespace netcdf4js

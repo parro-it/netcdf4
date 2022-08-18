@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string>
 #include "netcdf4js.h"
+#include "netcdf4jstypes.h"
 
 namespace netcdf4js {
 
@@ -426,6 +427,12 @@ Napi::Value Attribute::Delete(const Napi::CallbackInfo &info) {
 }
 
 Napi::Value Attribute::Inspect(const Napi::CallbackInfo &info) {
-	return Napi::String::New(info.Env(), "[object Attribute]");
+	return Napi::String::New(info.Env(), 
+		string_format(
+			"[Attribute %s, type %s]",
+			this->name.c_str(),
+			this->type < NC_BYTE || this->type > NC_UINT?"unsupported":type_names[this->type]
+		)
+	);
 }
 } // namespace netcdf4js
