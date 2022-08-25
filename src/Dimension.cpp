@@ -60,6 +60,7 @@ Napi::Value Dimension::GetId(const Napi::CallbackInfo &info) {
 Napi::Value Dimension::GetLength(const Napi::CallbackInfo &info) {
 	size_t len;
 	NC_CALL(nc_inq_dimlen(this->parent_id, this->id, &len));
+	this->length=len;
 	return Napi::Number::From(info.Env(), len);
 }
 
