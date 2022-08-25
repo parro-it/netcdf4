@@ -78,354 +78,284 @@ Napi::Object Variable::Init(Napi::Env env, Napi::Object exports) {
 	return exports;
 }
 Napi::Value Variable::Write(const Napi::CallbackInfo &info) {
-	/*
-	v8::Isolate *isolate = args.GetIsolate();
-	Variable *obj = node::ObjectWrap::Unwrap<Variable>(args.Holder());
-	if (args.Length() != obj->ndims + 1) {
-		isolate->ThrowException(
-			v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Wrong number of arguments",
-															 v8::NewStringType::kNormal)
-										 .ToLocalChecked()));
-		return;
+	if (info.Length() != static_cast<size_t>(this->ndims + 1)) {
+		Napi::TypeError::New(info.Env(), "Wrong number of arguments").ThrowAsJavaScriptException();
+		return info.Env().Undefined();
 	}
-	size_t *pos = new size_t[obj->ndims];
-	size_t *size = new size_t[obj->ndims];
-	for (int i = 0; i < obj->ndims; i++) {
-		pos[i] =
-			static_cast<size_t>(args[i]->IntegerValue(isolate->GetCurrentContext()).ToChecked());
+	size_t *pos = new size_t[this->ndims];
+	size_t *size = new size_t[this->ndims];
+	for (int i = 0; i < this->ndims; i++) {
+		pos[i] =info[i].As<Napi::Number>().Int64Value();
 		size[i] = 1;
 	}
-	int retval;
-	switch (obj->type) {
+	switch (this->type) {
 	case NC_BYTE:
 	case NC_CHAR: {
-		int8_t v = args[obj->ndims]->Int32Value(isolate->GetCurrentContext()).ToChecked();
-		retval = nc_put_vara(obj->parent_id, obj->id, pos, size, &v);
+		int8_t v = info[this->ndims].As<Napi::Number>().Int32Value();
+		NC_CALL(nc_put_vara(this->parent_id, this->id, pos, size, &v));
 	} break;
 	case NC_SHORT: {
-		int16_t v = args[obj->ndims]->Int32Value(isolate->GetCurrentContext()).ToChecked();
-		retval = nc_put_vara(obj->parent_id, obj->id, pos, size, &v);
+		int16_t v = info[this->ndims].As<Napi::Number>().Int32Value();
+		NC_CALL(nc_put_vara(this->parent_id, this->id, pos, size, &v));
 	} break;
 	case NC_INT: {
-		int32_t v = args[obj->ndims]->Int32Value(isolate->GetCurrentContext()).ToChecked();
-		retval = nc_put_vara(obj->parent_id, obj->id, pos, size, &v);
+		int32_t v = info[this->ndims].As<Napi::Number>().Int32Value();
+		NC_CALL(nc_put_vara(this->parent_id, this->id, pos, size, &v));
 	} break;
 	case NC_FLOAT: {
-		float v = static_cast<float>(
-			args[obj->ndims]->NumberValue(isolate->GetCurrentContext()).ToChecked());
-		retval = nc_put_vara(obj->parent_id, obj->id, pos, size, &v);
+		float v = info[this->ndims].As<Napi::Number>().FloatValue();
+		NC_CALL(nc_put_vara(this->parent_id, this->id, pos, size, &v));
 	} break;
 	case NC_DOUBLE: {
-		double v = args[obj->ndims]->NumberValue(isolate->GetCurrentContext()).ToChecked();
-		retval = nc_put_vara(obj->parent_id, obj->id, pos, size, &v);
+		double v = info[this->ndims].As<Napi::Number>().DoubleValue();
+		NC_CALL(nc_put_vara(this->parent_id, this->id, pos, size, &v));
 	} break;
 	case NC_UBYTE: {
-		uint8_t v = args[obj->ndims]->Uint32Value(isolate->GetCurrentContext()).ToChecked();
-		retval = nc_put_vara(obj->parent_id, obj->id, pos, size, &v);
+		uint8_t v = info[this->ndims].As<Napi::Number>().Uint32Value();
+		NC_CALL(nc_put_vara(this->parent_id, this->id, pos, size, &v));
 	} break;
 	case NC_USHORT: {
-		uint16_t v = args[obj->ndims]->Uint32Value(isolate->GetCurrentContext()).ToChecked();
-		retval = nc_put_vara(obj->parent_id, obj->id, pos, size, &v);
+		uint16_t v = info[this->ndims].As<Napi::Number>().Uint32Value();
+		NC_CALL(nc_put_vara(this->parent_id, this->id, pos, size, &v));
 	} break;
 	case NC_UINT: {
-		uint32_t v = args[obj->ndims]->Uint32Value(isolate->GetCurrentContext()).ToChecked();
-		retval = nc_put_vara(obj->parent_id, obj->id, pos, size, &v);
+		uint32_t v = info[this->ndims].As<Napi::Number>().Uint32Value();
+		NC_CALL(nc_put_vara(this->parent_id, this->id, pos, size, &v));
 	} break;
-	default:
-		isolate->ThrowException(v8::Exception::TypeError(
-			v8::String::NewFromUtf8(isolate, "Variable type not supported yet",
-									v8::NewStringType::kNormal)
-				.ToLocalChecked()));
+	default: {
+		Napi::TypeError::New(info.Env(), "Variable type not supported yet").ThrowAsJavaScriptException();
+		
 		delete[] pos;
 		delete[] size;
-		return;
+		return info.Env().Undefined();
 	}
-	if (retval != NC_NOERR) {
-		throw_netcdf_error(isolate, retval);
 	}
+	
 	delete[] pos;
 	delete[] size;
-	*/
 	return info.Env().Undefined();
 }
 
 Napi::Value Variable::WriteSlice(const Napi::CallbackInfo &info) {
-	/*
-	v8::Isolate *isolate = args.GetIsolate();
-	Variable *obj = node::ObjectWrap::Unwrap<Variable>(args.Holder());
-	if (args.Length() != 2 * obj->ndims + 1) {
-		isolate->ThrowException(
-			v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Wrong number of arguments",
-															 v8::NewStringType::kNormal)
-										 .ToLocalChecked()));
-		return;
+	
+	if (info.Length() != static_cast<size_t>(2 * this->ndims + 1)) {
+		Napi::TypeError::New(info.Env(), "Wrong number of arguments").ThrowAsJavaScriptException();
+		return info.Env().Undefined();
 	}
-	if (!args[2 * obj->ndims]->IsTypedArray()) {
-		isolate->ThrowException(v8::Exception::TypeError(
-			v8::String::NewFromUtf8(isolate, "Expecting a typed array", v8::NewStringType::kNormal)
-				.ToLocalChecked()));
-		return;
+	if (!info[2 * this->ndims].IsTypedArray()) {
+		Napi::TypeError::New(info.Env(), "Expecting a typed array").ThrowAsJavaScriptException();
+		return info.Env().Undefined();
 	}
-	size_t *pos = new size_t[obj->ndims];
-	size_t *size = new size_t[obj->ndims];
+	size_t *pos = new size_t[this->ndims];
+	size_t *size = new size_t[this->ndims];
 	size_t total_size = 1;
-	for (int i = 0; i < obj->ndims; i++) {
-		pos[i] = static_cast<size_t>(
-			args[2 * i]->IntegerValue(isolate->GetCurrentContext()).ToChecked());
-		size_t s = static_cast<size_t>(
-			args[2 * i + 1]->IntegerValue(isolate->GetCurrentContext()).ToChecked());
+	for (int i = 0; i < this->ndims; i++) {
+		pos[i] = info[2 * i].As<Napi::Number>().Int32Value();
+		size_t s = info[2 * i + 1].As<Napi::Number>().Int32Value();
 		size[i] = s;
 		total_size *= s;
 	}
-	v8::Local<v8::TypedArray> val = v8::Local<v8::TypedArray>::Cast(args[2 * obj->ndims]);
-	if (val->Length() != total_size) {
-		isolate->ThrowException(v8::Exception::TypeError(
-			v8::String::NewFromUtf8(isolate, "Wrong size of array", v8::NewStringType::kNormal)
-				.ToLocalChecked()));
-		delete[] pos;
-		delete[] size;
-		return;
-	}
 
-	bool correct_type;
-	switch (obj->type) {
+	Napi::TypedArray val;
+	switch (this->type) {
 	case NC_BYTE:
 	case NC_CHAR:
-		correct_type = val->IsInt8Array();
+		val = info[2 * this->ndims].As<Napi::Int8Array>();
 		break;
 	case NC_SHORT:
-		correct_type = val->IsInt16Array();
+		val = info[2 * this->ndims].As<Napi::Int16Array>();
 		break;
 	case NC_INT:
-		correct_type = val->IsInt32Array();
+		val = info[2 * this->ndims].As<Napi::Int32Array>();
 		break;
 	case NC_FLOAT:
-		correct_type = val->IsFloat32Array();
+		val = info[2 * this->ndims].As<Napi::Float32Array>();
 		break;
 	case NC_DOUBLE:
-		correct_type = val->IsFloat64Array();
+		val = info[2 * this->ndims].As<Napi::Float64Array>();
 		break;
 	case NC_UBYTE:
-		correct_type = val->IsUint8Array();
+		val = info[2 * this->ndims].As<Napi::Uint8Array>();
 		break;
 	case NC_USHORT:
-		correct_type = val->IsUint16Array();
+		val = info[2 * this->ndims].As<Napi::Uint16Array>();
 		break;
 	case NC_UINT:
-		correct_type = val->IsUint32Array();
+		val = info[2 * this->ndims].As<Napi::Uint32Array>();
 		break;
 	default:
-		isolate->ThrowException(v8::Exception::TypeError(
-			v8::String::NewFromUtf8(isolate, "Variable type not supported yet",
-									v8::NewStringType::kNormal)
-				.ToLocalChecked()));
+		Napi::TypeError::New(info.Env(), "Variable type not supported yet").ThrowAsJavaScriptException();
 		delete[] pos;
 		delete[] size;
-		return;
+		return info.Env().Undefined();
+
 	}
-	if (!correct_type) {
-		isolate->ThrowException(v8::Exception::TypeError(
-			v8::String::NewFromUtf8(isolate, "Wrong array type", v8::NewStringType::kNormal)
-				.ToLocalChecked()));
+	if (val.ElementLength() != total_size) {
+		Napi::TypeError::New(info.Env(), "Wrong size of array").ThrowAsJavaScriptException();
 		delete[] pos;
 		delete[] size;
-		return;
+		return info.Env().Undefined();
 	}
-	int retval =
-		nc_put_vara(obj->parent_id, obj->id, pos, size, val->Buffer()->GetContents().Data());
-	if (retval != NC_NOERR) {
-		throw_netcdf_error(isolate, retval);
-	}
+	NC_CALL(nc_put_vara(this->parent_id, this->id, pos, size, val));
 	delete[] pos;
 	delete[] size;
-	*/
 	return info.Env().Undefined();
 }
 
 Napi::Value Variable::WriteStridedSlice(const Napi::CallbackInfo &info) {
-	/*
-	v8::Isolate *isolate = args.GetIsolate();
-	Variable *obj = node::ObjectWrap::Unwrap<Variable>(args.Holder());
-	if (args.Length() != 3 * obj->ndims + 1) {
-		isolate->ThrowException(
-			v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Wrong number of arguments",
-															 v8::NewStringType::kNormal)
-										 .ToLocalChecked()));
-		return;
+	if (info.Length() != static_cast<size_t>(3 * this->ndims + 1)) {
+		Napi::TypeError::New(info.Env(), "Wrong number of arguments").ThrowAsJavaScriptException();
+		return info.Env().Undefined();
 	}
-	if (!args[3 * obj->ndims]->IsTypedArray()) {
-		isolate->ThrowException(v8::Exception::TypeError(
-			v8::String::NewFromUtf8(isolate, "Expecting a typed array", v8::NewStringType::kNormal)
-				.ToLocalChecked()));
-		return;
+	if (!info[3 * this->ndims].IsTypedArray()) {
+		Napi::TypeError::New(info.Env(), "Expecting a typed array").ThrowAsJavaScriptException();
+		return info.Env().Undefined();
 	}
-	size_t *pos = new size_t[obj->ndims];
-	size_t *size = new size_t[obj->ndims];
-	ptrdiff_t *stride = new ptrdiff_t[obj->ndims];
+	size_t *pos = new size_t[this->ndims];
+	size_t *size = new size_t[this->ndims];
+	ptrdiff_t *stride = new ptrdiff_t[this->ndims];
 	size_t total_size = 1;
-	for (int i = 0; i < obj->ndims; i++) {
-		pos[i] = static_cast<size_t>(
-			args[3 * i]->IntegerValue(isolate->GetCurrentContext()).ToChecked());
-		size_t s = static_cast<size_t>(
-			args[3 * i + 1]->IntegerValue(isolate->GetCurrentContext()).ToChecked());
+	for (int i = 0; i < this->ndims; i++) {
+		pos[i] = info[3 * i].As<Napi::Number>().Int32Value();
+		size_t s = info[3 * i + 1].As<Napi::Number>().Int32Value();
 		size[i] = s;
 		total_size *= s;
-		stride[i] = static_cast<ptrdiff_t>(
-			args[3 * i + 2]->IntegerValue(isolate->GetCurrentContext()).ToChecked());
-	}
-	v8::Local<v8::TypedArray> val = v8::Local<v8::TypedArray>::Cast(args[3 * obj->ndims]);
-	if (val->Length() != total_size) {
-		isolate->ThrowException(v8::Exception::TypeError(
-			v8::String::NewFromUtf8(isolate, "Wrong size of array", v8::NewStringType::kNormal)
-				.ToLocalChecked()));
-		delete[] pos;
-		delete[] size;
-		delete[] stride;
-		return;
+		stride[i] = info[3 * i + 2].As<Napi::Number>().Int32Value();
 	}
 
-	bool correct_type;
-	switch (obj->type) {
+	Napi::TypedArray val;
+	switch (this->type) {
 	case NC_BYTE:
 	case NC_CHAR:
-		correct_type = val->IsInt8Array();
+		val = info[3 * this->ndims].As<Napi::Int8Array>();
 		break;
 	case NC_SHORT:
-		correct_type = val->IsInt16Array();
+		val = info[3 * this->ndims].As<Napi::Int16Array>();
 		break;
 	case NC_INT:
-		correct_type = val->IsInt32Array();
+		val = info[3 * this->ndims].As<Napi::Int32Array>();
 		break;
 	case NC_FLOAT:
-		correct_type = val->IsFloat32Array();
+		val = info[3 * this->ndims].As<Napi::Float32Array>();
 		break;
 	case NC_DOUBLE:
-		correct_type = val->IsFloat64Array();
+		val = info[3 * this->ndims].As<Napi::Float64Array>();
 		break;
 	case NC_UBYTE:
-		correct_type = val->IsUint8Array();
+		val = info[3 * this->ndims].As<Napi::Uint8Array>();
 		break;
 	case NC_USHORT:
-		correct_type = val->IsUint16Array();
+		val = info[3 * this->ndims].As<Napi::Uint16Array>();
 		break;
 	case NC_UINT:
-		correct_type = val->IsUint32Array();
+		val = info[3 * this->ndims].As<Napi::Uint32Array>();
 		break;
 	default:
-		isolate->ThrowException(v8::Exception::TypeError(
-			v8::String::NewFromUtf8(isolate, "Variable type not supported yet",
-									v8::NewStringType::kNormal)
-				.ToLocalChecked()));
+		Napi::TypeError::New(info.Env(), "Variable type not supported yet").ThrowAsJavaScriptException();
 		delete[] pos;
 		delete[] size;
 		delete[] stride;
-		return;
+		return info.Env().Undefined();
 	}
-	if (!correct_type) {
-		isolate->ThrowException(v8::Exception::TypeError(
-			v8::String::NewFromUtf8(isolate, "Wrong array type", v8::NewStringType::kNormal)
-				.ToLocalChecked()));
+	if (val.ElementLength() != total_size) {
+		Napi::TypeError::New(info.Env(), "Wrong size of array").ThrowAsJavaScriptException();
 		delete[] pos;
 		delete[] size;
 		delete[] stride;
-		return;
+		return info.Env().Undefined();
+		
 	}
-	int retval = nc_put_vars(obj->parent_id, obj->id, pos, size, stride,
-							 val->Buffer()->GetContents().Data());
-	if (retval != NC_NOERR) {
-		throw_netcdf_error(isolate, retval);
-	}
+	NC_CALL(nc_put_vars(this->parent_id, this->id, pos, size, stride, val));
+	
 	delete[] pos;
 	delete[] size;
 	delete[] stride;
-	*/
 	return info.Env().Undefined();
 }
 
 Napi::Value Variable::Read(const Napi::CallbackInfo &info) {
-	/*
-	v8::Isolate *isolate = args.GetIsolate();
-	Variable *obj = node::ObjectWrap::Unwrap<Variable>(args.Holder());
-	if (args.Length() != obj->ndims) {
-		isolate->ThrowException(
-			v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Wrong number of arguments",
-															 v8::NewStringType::kNormal)
-										 .ToLocalChecked()));
-		return;
+	
+	
+	if (info.Length() != static_cast<size_t>(this->ndims)) {
+		Napi::TypeError::New(info.Env(), "Wrong number of arguments").ThrowAsJavaScriptException();
+		return info.Env().Undefined();
 	}
-	if (obj->type < NC_BYTE || obj->type > NC_UINT) {
-		isolate->ThrowException(v8::Exception::TypeError(
-			v8::String::NewFromUtf8(isolate, "Variable type not supported yet",
-									v8::NewStringType::kNormal)
-				.ToLocalChecked()));
-		return;
-	}
-	size_t *pos = new size_t[obj->ndims];
-	size_t *size = new size_t[obj->ndims];
-	for (int i = 0; i < obj->ndims; i++) {
-		pos[i] =
-			static_cast<size_t>(args[i]->IntegerValue(isolate->GetCurrentContext()).ToChecked());
+	
+	size_t *pos = new size_t[this->ndims];
+	size_t *size = new size_t[this->ndims];
+	for (int i = 0; i < this->ndims; i++) {
+		pos[i] = info[i].As<Napi::Number>().Int64Value();
 		size[i] = 1;
 	}
-	v8::Local<v8::Value> result;
-	int retval;
-	switch (obj->type) {
+	Napi::ArrayBuffer buffer;
+	Napi::Value result;
+
+
+	switch (this->type) {
 	case NC_BYTE: {
 		int8_t v;
-		retval = nc_get_vara(obj->parent_id, obj->id, pos, size, &v);
-		result = v8::Integer::New(isolate, v);
+		NC_CALL(nc_get_vara(this->parent_id, this->id, pos, size, &v));
+		result = Napi::Number::New(info.Env(), v);
 	} break;
 	case NC_CHAR: {
 		char v[2];
 		v[1] = 0;
-		retval = nc_get_vara(obj->parent_id, obj->id, pos, size, &v);
-		result = v8::String::NewFromUtf8(isolate, v, v8::NewStringType::kNormal).ToLocalChecked();
+		NC_CALL(nc_get_vara(this->parent_id, this->id, pos, size, &v));
+		result = Napi::String::New(info.Env(), v);
 	} break;
 	case NC_SHORT: {
 		int16_t v;
-		retval = nc_get_vara(obj->parent_id, obj->id, pos, size, &v);
-		result = v8::Integer::New(isolate, v);
+		NC_CALL(nc_get_vara(this->parent_id, this->id, pos, size, &v));
+		result = Napi::Number::New(info.Env(), v);
 	} break;
 	case NC_INT: {
 		int32_t v;
-		retval = nc_get_vara(obj->parent_id, obj->id, pos, size, &v);
-		result = v8::Integer::New(isolate, v);
+		NC_CALL(nc_get_vara(this->parent_id, this->id, pos, size, &v));
+		result = Napi::Number::New(info.Env(), v);
 	} break;
 	case NC_FLOAT: {
 		float v;
-		retval = nc_get_vara(obj->parent_id, obj->id, pos, size, &v);
-		result = v8::Number::New(isolate, v);
+		NC_CALL(nc_get_vara(this->parent_id, this->id, pos, size, &v));
+		result = Napi::Number::New(info.Env(), v);
 	} break;
 	case NC_DOUBLE: {
 		double v;
-		retval = nc_get_vara(obj->parent_id, obj->id, pos, size, &v);
-		result = v8::Number::New(isolate, v);
+		NC_CALL(nc_get_vara(this->parent_id, this->id, pos, size, &v));
+		result = Napi::Number::New(info.Env(), v);
 	} break;
 	case NC_UBYTE: {
 		uint8_t v;
-		retval = nc_get_vara(obj->parent_id, obj->id, pos, size, &v);
-		result = v8::Integer::New(isolate, v);
+		NC_CALL(nc_get_vara(this->parent_id, this->id, pos, size, &v));
+		result = Napi::Number::New(info.Env(), v);
 	} break;
 	case NC_USHORT: {
 		uint16_t v;
-		retval = nc_get_vara(obj->parent_id, obj->id, pos, size, &v);
-		result = v8::Integer::New(isolate, v);
+		NC_CALL(nc_get_vara(this->parent_id, this->id, pos, size, &v));
+		result = Napi::Number::New(info.Env(), v);
 	} break;
 	case NC_UINT: {
 		uint32_t v;
-		retval = nc_get_vara(obj->parent_id, obj->id, pos, size, &v);
-		result = v8::Integer::New(isolate, v);
+		NC_CALL(nc_get_vara(this->parent_id, this->id, pos, size, &v));
+		result = Napi::Number::New(info.Env(), v);
 	} break;
+	case NC_STRING: {
+		std::string v;
+		NC_CALL(nc_get_vara(this->parent_id, this->id, pos, size, &v));
+		result = Napi::String::New(info.Env(), v);
+	} break;
+	default: {
+		Napi::TypeError::New(info.Env(), "Variable type not supported yet").ThrowAsJavaScriptException();
+		
+		delete[] pos;
+		delete[] size;
+		return info.Env().Undefined();
 	}
-	if (retval != NC_NOERR) {
-		throw_netcdf_error(isolate, retval);
-	} else {
-		args.GetReturnValue().Set(result);
 	}
+	 
 	delete[] pos;
 	delete[] size;
-	*/
-	return info.Env().Undefined();
+
+	return result;
 }
 
 Napi::Value Variable::ReadSlice(const Napi::CallbackInfo &info) {
@@ -585,35 +515,25 @@ Napi::Value Variable::ReadStridedSlice(const Napi::CallbackInfo &info) {
 }
 
 Napi::Value Variable::AddAttribute(const Napi::CallbackInfo &info) {
-	/*
-	v8::Isolate *isolate = args.GetIsolate();
-	Variable *obj = node::ObjectWrap::Unwrap<Variable>(args.Holder());
-	if (args.Length() < 3) {
-		isolate->ThrowException(
-			v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Wrong number of
-arguments", v8::NewStringType::kNormal) .ToLocalChecked())); return;
+	
+	if (info.Length() < 3) {
+		Napi::Error::New(info.Env(), "Wrong number ofarguments").ThrowAsJavaScriptException(); 
+		return info.Env().Undefined();
 	}
-	std::string type_str = *v8::String::Utf8Value(
-#if NODE_MAJOR_VERSION >= 8
-		isolate,
-#endif
-		args[1]);
+	std::string type_str = info[1].As<Napi::String>().ToString();
+	std::string name_ = info[0].As<Napi::String>().ToString();
 	int type = get_type(type_str);
 	if (type == NC2_ERR) {
-		isolate->ThrowException(v8::Exception::TypeError(
-			v8::String::NewFromUtf8(isolate, "Unknown variable type",
-v8::NewStringType::kNormal) .ToLocalChecked())); return;
+		Napi::Error::New(info.Env(), "Unknown variable type").ThrowAsJavaScriptException(); 
+		return info.Env().Undefined();
 	}
-	Attribute *res = new Attribute(*v8::String::Utf8Value(
-#if NODE_MAJOR_VERSION >= 8
-									   isolate,
-#endif
-									   args[0]),
-								   obj->id, obj->parent_id, type);
-	res->set_value(args[2]);
-	args.GetReturnValue().Set(res->handle());
-	*/
-	return info.Env().Undefined();
+
+	Napi::Object object = Attribute::Build(info.Env(), name_, this->id, this->parent_id, type);
+	
+	Attribute *attribute =  Napi::ObjectWrap<Attribute>::Unwrap(object);
+	attribute->SetValue(info, info[2]);
+
+	return attribute->GetValue(info);
 }
 
 Napi::Value Variable::GetId(const Napi::CallbackInfo &info) {
@@ -656,8 +576,9 @@ Napi::Value Variable::GetType(const Napi::CallbackInfo &info) {
 }
 
 Napi::Value Variable::GetName(const Napi::CallbackInfo &info) {
-//	char name[NC_MAX_NAME + 1];
-//	NC_CALL(nc_inq_varname(this->parent_id, this->id, name));
+	char name_[NC_MAX_NAME + 1];
+	NC_CALL(nc_inq_varname(this->parent_id, this->id, name_));
+	name = std::string(name_);
 	return Napi::String::New(info.Env(), name);
 }
 
@@ -707,15 +628,9 @@ void Variable::SetEndianness(const Napi::CallbackInfo &info, const Napi::Value &
 }
 
 Napi::Value Variable::GetChecksumMode(const Napi::CallbackInfo &info) {
-	/*
-	v8::Isolate *isolate = info.GetIsolate();
-	Variable *obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
 	int v;
-	int retval = nc_inq_var_fletcher32(obj->parent_id, obj->id, &v);
-	if (retval != NC_NOERR) {
-		throw_netcdf_error(isolate, retval);
-		return;
-	}
+	NC_CALL(nc_inq_var_fletcher32(this->parent_id, this->id, &v));
+	
 	const char *res;
 	switch (v) {
 	case NC_NOCHECKSUM:
@@ -728,50 +643,28 @@ Napi::Value Variable::GetChecksumMode(const Napi::CallbackInfo &info) {
 		res = "unknown";
 		break;
 	}
-	info.GetReturnValue().Set(
-		v8::String::NewFromUtf8(isolate, res, v8::NewStringType::kNormal).ToLocalChecked());
-	*/
-	return info.Env().Undefined();
+	
+	return Napi::String::New(info.Env(), res);
 }
 
 void Variable::SetChecksumMode(const Napi::CallbackInfo &info, const Napi::Value &value) {
-	/*
-	v8::Isolate *isolate = info.GetIsolate();
-	Variable *obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
-	std::string arg = *v8::String::Utf8Value(
-#if NODE_MAJOR_VERSION >= 8
-		isolate,
-#endif
-		val->ToString(isolate->GetCurrentContext()).ToLocalChecked());
+	std::string arg = value.ToString().Utf8Value();
 	int v;
 	if (arg == "none") {
 		v = NC_NOCHECKSUM;
 	} else if (arg == "fletcher32") {
 		v = NC_FLETCHER32;
 	} else {
-		isolate->ThrowException(v8::Exception::TypeError(
-			v8::String::NewFromUtf8(isolate, "Unknown value", v8::NewStringType::kNormal)
-				.ToLocalChecked()));
+		Napi::Error::New(info.Env(), "Unknown value").ThrowAsJavaScriptException();    
 		return;
 	}
-	int retval = nc_def_var_fletcher32(obj->parent_id, obj->id, v);
-	if (retval != NC_NOERR) {
-		throw_netcdf_error(isolate, retval);
-		return;
-	}
-	*/
+	NC_CALL_VOID(nc_def_var_fletcher32(this->parent_id, this->id, v));
 }
 
 Napi::Value Variable::GetChunkMode(const Napi::CallbackInfo &info) {
-	/*
-	v8::Isolate *isolate = info.GetIsolate();
-	Variable *obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
 	int v;
-	int retval = nc_inq_var_chunking(obj->parent_id, obj->id, &v, NULL);
-	if (retval != NC_NOERR) {
-		throw_netcdf_error(isolate, retval);
-		return;
-	}
+	NC_CALL(nc_inq_var_chunking(this->parent_id, this->id, &v, NULL));
+	
 	const char *res;
 	switch (v) {
 	case NC_CONTIGUOUS:
@@ -784,409 +677,254 @@ Napi::Value Variable::GetChunkMode(const Napi::CallbackInfo &info) {
 		res = "unknown";
 		break;
 	}
-	info.GetReturnValue().Set(
-		v8::String::NewFromUtf8(isolate, res, v8::NewStringType::kNormal).ToLocalChecked());
-	*/
-	return info.Env().Undefined();
+
+	return Napi::String::New(info.Env(), res);
 }
 
 void Variable::SetChunkMode(const Napi::CallbackInfo &info, const Napi::Value &value) {
-	/*
-	v8::Isolate *isolate = info.GetIsolate();
-	Variable *obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
-	std::string arg = *v8::String::Utf8Value(
-#if NODE_MAJOR_VERSION >= 8
-		isolate,
-#endif
-		val->ToString(isolate->GetCurrentContext()).ToLocalChecked());
+	std::string arg = value.ToString().Utf8Value();
 	int v;
 	if (arg == "contiguous") {
 		v = NC_CONTIGUOUS;
 	} else if (arg == "chunked") {
 		v = NC_CHUNKED;
 	} else {
-		isolate->ThrowException(v8::Exception::TypeError(
-			v8::String::NewFromUtf8(isolate, "Unknown value", v8::NewStringType::kNormal)
-				.ToLocalChecked()));
+		Napi::Error::New(info.Env(), "Unknown value").ThrowAsJavaScriptException();  
 		return;
 	}
+
 	int len;
-	int retval = nc_inq_varndims(obj->parent_id, obj->id, &len);
-	if (retval != NC_NOERR) {
-		throw_netcdf_error(isolate, retval);
-		return;
-	}
+	NC_CALL_VOID(nc_inq_varndims(this->parent_id, this->id, &len));
+	
 	size_t *sizes = new size_t[len];
-	retval = nc_inq_var_chunking(obj->parent_id, obj->id, NULL, sizes);
-	if (retval != NC_NOERR) {
-		throw_netcdf_error(isolate, retval);
-		delete[] sizes;
-		return;
-	}
-	retval = nc_def_var_chunking(obj->parent_id, obj->id, v, sizes);
-	if (retval != NC_NOERR) {
-		throw_netcdf_error(isolate, retval);
-	}
+	NC_CALL_VOID(nc_inq_var_chunking(this->parent_id, this->id, NULL, sizes));
+	NC_CALL_VOID(nc_def_var_chunking(this->parent_id, this->id, v, sizes));
+	
 	delete[] sizes;
-	*/
 }
 
 Napi::Value Variable::GetChunkSizes(const Napi::CallbackInfo &info) {
-	/*
-	v8::Isolate *isolate = info.GetIsolate();
-	Variable *obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
-	size_t *sizes = new size_t[obj->ndims];
-	int retval = nc_inq_var_chunking(obj->parent_id, obj->id, NULL, sizes);
-	if (retval != NC_NOERR) {
-		throw_netcdf_error(isolate, retval);
-		delete[] sizes;
-		return;
+	size_t *sizes = new size_t[this->ndims];
+	
+	NC_CALL(nc_inq_var_chunking(this->parent_id, this->id, NULL, sizes));
+	Napi::Array result = Napi::Array::New(info.Env(), this->ndims);
+	for (int i = 0; i < this->ndims; i++) {
+		result[i] = Napi::Number::New(info.Env(), sizes[i]);
 	}
-	v8::Local<v8::Array> result = v8::Array::New(isolate);
-	for (int i = 0; i < obj->ndims; i++) {
-		result->Set(isolate->GetCurrentContext(), i, v8::Integer::New(isolate, i));
-	}
-	info.GetReturnValue().Set(result);
+	
 	delete[] sizes;
-	*/
-	return info.Env().Undefined();
+	return result;
 }
 
 void Variable::SetChunkSizes(const Napi::CallbackInfo &info, const Napi::Value &value) {
-	/*
-	v8::Isolate *isolate = info.GetIsolate();
-	Variable *obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
-	if (!val->IsArray()) {
-		isolate->ThrowException(v8::Exception::TypeError(
-			v8::String::NewFromUtf8(isolate, "Expecting an array", v8::NewStringType::kNormal)
-				.ToLocalChecked()));
+	if (!value.IsArray()) {
+		Napi::Error::New(info.Env(), "Expecting an array").ThrowAsJavaScriptException();  
 		return;
 	}
-	v8::Local<v8::Object> array = val->ToObject(isolate->GetCurrentContext()).ToLocalChecked();
-	if (array
-			->Get(isolate->GetCurrentContext(),
-				  v8::String::NewFromUtf8(isolate, "length", v8::NewStringType::kNormal)
-					  .ToLocalChecked())
-			.ToLocalChecked()
-			->Int32Value(isolate->GetCurrentContext())
-			.ToChecked() != obj->ndims) {
-		isolate->ThrowException(v8::Exception::TypeError(
-			v8::String::NewFromUtf8(isolate, "Wrong array size", v8::NewStringType::kNormal)
-				.ToLocalChecked()));
+	Napi::Uint32Array array = value.As<Napi::Uint32Array>();
+	if (array.ElementLength() != static_cast<size_t>(this->ndims)) {
+		Napi::Error::New(info.Env(), "Wrong array size").ThrowAsJavaScriptException(); 
 		return;
 	}
 	int v;
-	int retval = nc_inq_var_chunking(obj->parent_id, obj->id, &v, NULL);
-	if (retval != NC_NOERR) {
-		throw_netcdf_error(isolate, retval);
-		return;
+	NC_CALL_VOID(nc_inq_var_chunking(this->parent_id, this->id, &v, NULL));
+	
+	size_t *sizes = new size_t[this->ndims];
+	for (int i = 0; i < this->ndims; i++) {
+		sizes[i] = array[i];
 	}
-	size_t *sizes = new size_t[obj->ndims];
-	for (int i = 0; i < obj->ndims; i++) {
-		sizes[i] = array->Get(isolate->GetCurrentContext(), i)
-					   .ToLocalChecked()
-					   ->Uint32Value(isolate->GetCurrentContext())
-					   .ToChecked();
-	}
-	retval = nc_def_var_chunking(obj->parent_id, obj->id, v, sizes);
-	if (retval != NC_NOERR) {
-		throw_netcdf_error(isolate, retval);
-	}
+
+	NC_CALL_VOID(nc_def_var_chunking(this->parent_id, this->id, v, sizes));
 	delete[] sizes;
-	*/
 }
 
 Napi::Value Variable::GetFillMode(const Napi::CallbackInfo &info) {
-	/*
-	v8::Isolate *isolate = info.GetIsolate();
-	Variable *obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
 	int v;
-	int retval = nc_inq_var_fill(obj->parent_id, obj->id, &v, NULL);
-	if (retval != NC_NOERR) {
-		throw_netcdf_error(isolate, retval);
-		return;
-	}
-	info.GetReturnValue().Set(v8::Boolean::New(isolate, v == 1));
-	*/
-	return info.Env().Undefined();
+	NC_CALL(nc_inq_var_fill(this->parent_id, this->id, &v, NULL));
+	
+	return Napi::Boolean::New(info.Env(), v==1);
 }
 
 void Variable::SetFillMode(const Napi::CallbackInfo &info, const Napi::Value &value) {
-	/*
-	v8::Isolate *isolate = info.GetIsolate();
-	Variable *obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
-	if (!val->IsBoolean()) {
-		isolate->ThrowException(v8::Exception::TypeError(
-			v8::String::NewFromUtf8(isolate, "Expecting a boolean", v8::NewStringType::kNormal)
-				.ToLocalChecked()));
+	
+	if (!value.IsBoolean()) {
+		Napi::Error::New(info.Env(), "Expecting a boolean").ThrowAsJavaScriptException();
 		return;
 	}
-#if NODE_MAJOR_VERSION > 11
-	int v = val->BooleanValue(isolate) ? 1 : 0;
-#else
-	int v = val->BooleanValue() ? 1 : 0;
-#endif
-	if (obj->type < NC_BYTE || obj->type > NC_UINT) {
-		isolate->ThrowException(v8::Exception::TypeError(
-			v8::String::NewFromUtf8(isolate, "Variable type not supported yet",
-									v8::NewStringType::kNormal)
-				.ToLocalChecked()));
-		return;
-	}
-	uint8_t *value = new uint8_t[type_sizes[obj->type]];
-	int retval = nc_inq_var_fill(obj->parent_id, obj->id, NULL, value);
-	if (retval != NC_NOERR) {
-		throw_netcdf_error(isolate, retval);
-		delete[] value;
-		return;
-	}
-	retval = nc_def_var_fill(obj->parent_id, obj->id, v, value);
-	if (retval != NC_NOERR) {
-		throw_netcdf_error(isolate, retval);
-	}
-	delete[] value;
-	*/
+	int v = value.As<Napi::Boolean>();
+	// if (obj->type < NC_BYTE || obj->type > NC_UINT) {
+	// 	isolate->ThrowException(v8::Exception::TypeError(
+	// 		v8::String::NewFromUtf8(isolate, "Variable type not supported yet",
+	// 								v8::NewStringType::kNormal)
+	// 			.ToLocalChecked()));
+	// 	return;
+	// }
+	uint8_t *_value = new uint8_t[type_sizes[this->type]];
+	NC_CALL_VOID(nc_inq_var_fill(this->parent_id, this->id, NULL, _value));
+	
+	NC_CALL_VOID(nc_def_var_fill(this->parent_id, this->id, v, _value));
+	delete[] _value;
 }
 
 Napi::Value Variable::GetFillValue(const Napi::CallbackInfo &info) {
-	/*
-	v8::Isolate *isolate = info.GetIsolate();
-	Variable *obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
-	v8::Local<v8::Value> result;
-	int retval;
-	switch (obj->type) {
+	Napi::Value result;
+	switch (this->type) {
 	case NC_BYTE: {
 		int8_t v;
-		retval = nc_inq_var_fill(obj->parent_id, obj->id, NULL, &v);
-		result = v8::Integer::New(isolate, v);
+		NC_CALL(nc_inq_var_fill(this->parent_id, this->id, NULL, &v));
+		result = Napi::Number::New(info.Env(), v);
 	} break;
 	case NC_CHAR: {
 		char v[2];
 		v[1] = 0;
-		retval = nc_inq_var_fill(obj->parent_id, obj->id, NULL, &v);
-		result = v8::String::NewFromUtf8(isolate, v,
-	v8::NewStringType::kNormal).ToLocalChecked(); } break; case NC_SHORT: { int16_t v; retval =
-	nc_inq_var_fill(obj->parent_id, obj->id, NULL, &v); result = v8::Integer::New(isolate, v);
+		NC_CALL(nc_inq_var_fill(this->parent_id, this->id, NULL, &v));
+		result = Napi::String::New(info.Env(), v); 
+	} break;
+	case NC_SHORT: { 
+		int16_t v;
+		NC_CALL(nc_inq_var_fill(this->parent_id, this->id, NULL, &v));
+		result = Napi::Number::New(info.Env(), v);
 	} break;
 	case NC_INT: {
 		int32_t v;
-		retval = nc_inq_var_fill(obj->parent_id, obj->id, NULL, &v);
-		result = v8::Integer::New(isolate, v);
+		NC_CALL(nc_inq_var_fill(this->parent_id, this->id, NULL, &v));
+		result = Napi::Number::New(info.Env(), v);
 	} break;
 	case NC_FLOAT: {
 		float v;
-		retval = nc_inq_var_fill(obj->parent_id, obj->id, NULL, &v);
-		result = v8::Number::New(isolate, v);
+		NC_CALL(nc_inq_var_fill(this->parent_id, this->id, NULL, &v));
+		result = Napi::Number::New(info.Env(), v);
 	} break;
 	case NC_DOUBLE: {
 		double v;
-		retval = nc_inq_var_fill(obj->parent_id, obj->id, NULL, &v);
-		result = v8::Number::New(isolate, v);
+		NC_CALL(nc_inq_var_fill(this->parent_id, this->id, NULL, &v));
+		result = Napi::Number::New(info.Env(), v);
 	} break;
 	case NC_UBYTE: {
 		uint8_t v;
-		retval = nc_inq_var_fill(obj->parent_id, obj->id, NULL, &v);
-		result = v8::Integer::New(isolate, v);
+		NC_CALL(nc_inq_var_fill(this->parent_id, this->id, NULL, &v));
+		result = Napi::Number::New(info.Env(), v);
 	} break;
 	case NC_USHORT: {
 		uint16_t v;
-		retval = nc_inq_var_fill(obj->parent_id, obj->id, NULL, &v);
-		result = v8::Integer::New(isolate, v);
+		NC_CALL(nc_inq_var_fill(this->parent_id, this->id, NULL, &v));
+		result = Napi::Number::New(info.Env(), v);
 	} break;
 	case NC_UINT: {
 		uint32_t v;
-		retval = nc_inq_var_fill(obj->parent_id, obj->id, NULL, &v);
-		result = v8::Integer::New(isolate, v);
+		NC_CALL(nc_inq_var_fill(this->parent_id, this->id, NULL, &v));
+		result = Napi::Number::New(info.Env(), v);
 	} break;
 	default:
-		isolate->ThrowException(v8::Exception::TypeError(
-			v8::String::NewFromUtf8(isolate, "Variable type not supported yet",
-									v8::NewStringType::kNormal)
-				.ToLocalChecked()));
-		return;
+		Napi::Error::New(info.Env(), "Variable type not supported yet").ThrowAsJavaScriptException(); 
+		return info.Env().Undefined(); 
 	}
-	if (retval != NC_NOERR) {
-		throw_netcdf_error(isolate, retval);
-		return;
-	}
-	info.GetReturnValue().Set(result);
-	*/
-	return info.Env().Undefined();
+		
+	return result;
 }
 
 void Variable::SetFillValue(const Napi::CallbackInfo &info, const Napi::Value &value) {
-	/*
-	v8::Isolate *isolate = info.GetIsolate();
-	Variable *obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
 	int mode;
-	int retval = nc_inq_var_fill(obj->parent_id, obj->id, &mode, NULL);
-	if (retval != NC_NOERR) {
-		throw_netcdf_error(isolate, retval);
-		return;
-	}
-	switch (obj->type) {
+	NC_CALL_VOID(nc_inq_var_fill(this->parent_id, this->id, &mode, NULL));
+	
+	switch (this->type) {
 	case NC_BYTE:
 	case NC_CHAR: {
-		int8_t v = val->Int32Value(isolate->GetCurrentContext()).ToChecked();
-		retval = nc_def_var_fill(obj->parent_id, obj->id, mode, &v);
+		int8_t v = value.ToNumber().Int32Value();
+		NC_CALL_VOID(nc_def_var_fill(this->parent_id, this->id, mode, &v));
 	} break;
 	case NC_SHORT: {
-		int16_t v = val->Int32Value(isolate->GetCurrentContext()).ToChecked();
-		retval = nc_def_var_fill(obj->parent_id, obj->id, mode, &v);
+		int16_t v = value.ToNumber().Int32Value();
+		NC_CALL_VOID(nc_def_var_fill(this->parent_id, this->id, mode, &v));
 	} break;
 	case NC_INT: {
-		int32_t v = val->Int32Value(isolate->GetCurrentContext()).ToChecked();
-		retval = nc_def_var_fill(obj->parent_id, obj->id, mode, &v);
+		int32_t v = value.ToNumber().Int32Value();
+		NC_CALL_VOID(nc_def_var_fill(this->parent_id, this->id, mode, &v));
 	} break;
 	case NC_FLOAT: {
-		float v =
-	static_cast<float>(val->NumberValue(isolate->GetCurrentContext()).ToChecked()); retval =
-	nc_def_var_fill(obj->parent_id, obj->id, mode, &v); } break; case NC_DOUBLE: { double v =
-	val->NumberValue(isolate->GetCurrentContext()).ToChecked(); retval =
-	nc_def_var_fill(obj->parent_id, obj->id, mode, &v); } break; case NC_UBYTE: { uint8_t v =
-	val->Uint32Value(isolate->GetCurrentContext()).ToChecked(); retval =
-	nc_def_var_fill(obj->parent_id, obj->id, mode, &v); } break; case NC_USHORT: { uint16_t v =
-	val->Uint32Value(isolate->GetCurrentContext()).ToChecked(); retval =
-	nc_def_var_fill(obj->parent_id, obj->id, mode, &v); } break; case NC_UINT: { uint32_t v =
-	val->Uint32Value(isolate->GetCurrentContext()).ToChecked(); retval =
-	nc_def_var_fill(obj->parent_id, obj->id, mode, &v); } break; default:
-		isolate->ThrowException(v8::Exception::TypeError(
-			v8::String::NewFromUtf8(isolate, "Variable type not supported yet",
-									v8::NewStringType::kNormal)
-				.ToLocalChecked()));
+		float v = value.ToNumber().FloatValue();
+		NC_CALL_VOID(nc_def_var_fill(this->parent_id, this->id, mode, &v));
+	} break;
+	case NC_DOUBLE: { 
+		double v = value.ToNumber().DoubleValue();
+		NC_CALL_VOID(nc_def_var_fill(this->parent_id, this->id, mode, &v)); 
+	} break;
+	case NC_UBYTE: { 
+		uint8_t v = value.ToNumber().Uint32Value();
+		NC_CALL_VOID(nc_def_var_fill(this->parent_id, this->id, mode, &v)); 
+	} break;
+	case NC_USHORT: {
+		uint16_t v = value.ToNumber().Uint32Value();
+		NC_CALL_VOID(nc_def_var_fill(this->parent_id, this->id, mode, &v)); 
+	} break; 
+	case NC_UINT: { 
+		uint32_t v = value.ToNumber().Uint32Value(); 
+		NC_CALL_VOID(nc_def_var_fill(this->parent_id, this->id, mode, &v)); 
+	} break; 
+	default:
+		Napi::Error::New(info.Env(), "Variable type not supported yet").ThrowAsJavaScriptException();
 		return;
 	}
-	if (retval != NC_NOERR) {
-		throw_netcdf_error(isolate, retval);
-	}
-	* / return info.Env().Undefined();
-	*/
 }
 
 Napi::Value Variable::GetCompressionShuffle(const Napi::CallbackInfo &info) {
-	/*
-	v8::Isolate *isolate = info.GetIsolate();
-	Variable *obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
 	int v;
-	int retval = nc_inq_var_deflate(obj->parent_id, obj->id, &v, NULL, NULL);
-	if (retval != NC_NOERR) {
-		throw_netcdf_error(isolate, retval);
-		return;
-	}
-	info.GetReturnValue().Set(v8::Boolean::New(isolate, v == 1));
-	*/
-	return info.Env().Undefined();
+	NC_CALL(nc_inq_var_deflate(this->parent_id, this->id, &v, NULL, NULL));
+		
+	return Napi::Boolean::New(info.Env(), v == 1);
 }
 
 void Variable::SetCompressionShuffle(const Napi::CallbackInfo &info, const Napi::Value &value) {
-	/*
-	v8::Isolate *isolate = info.GetIsolate();
-	Variable *obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
-	if (!val->IsBoolean()) {
-		isolate->ThrowException(v8::Exception::TypeError(
-			v8::String::NewFromUtf8(isolate, "Expecting a boolean", v8::NewStringType::kNormal)
-				.ToLocalChecked()));
+	
+	if (!value.IsBoolean()) {
+		Napi::Error::New(info.Env(), "Expecting a boolean").ThrowAsJavaScriptException();
 		return;
 	}
-#if NODE_MAJOR_VERSION > 11
-	int v = val->BooleanValue(isolate) ? 1 : 0;
-#else
-	int v = val->BooleanValue() ? 1 : 0;
-#endif
+	int v = value.ToBoolean() ? 1 : 0;
 	int v1, v2;
-	int retval = nc_inq_var_deflate(obj->parent_id, obj->id, NULL, &v1, &v2);
-	if (retval != NC_NOERR) {
-		throw_netcdf_error(isolate, retval);
-		return;
-	}
-	retval = nc_def_var_deflate(obj->parent_id, obj->id, v, v1, v2);
-	if (retval != NC_NOERR) {
-		throw_netcdf_error(isolate, retval);
-	}
-	*/
+	NC_CALL_VOID(nc_inq_var_deflate(this->parent_id, this->id, NULL, &v1, &v2));
+	NC_CALL_VOID(nc_def_var_deflate(this->parent_id, this->id, v, v1, v2));
 }
 
 Napi::Value Variable::GetCompressionDeflate(const Napi::CallbackInfo &info) {
-	/*
-	v8::Isolate *isolate = info.GetIsolate();
-	Variable *obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
 	int v;
-	int retval = nc_inq_var_deflate(obj->parent_id, obj->id, NULL, &v, NULL);
-	if (retval != NC_NOERR) {
-		throw_netcdf_error(isolate, retval);
-		return;
-	}
-	info.GetReturnValue().Set(v8::Boolean::New(isolate, v == 1));
-	*/
-	return info.Env().Undefined();
+	NC_CALL(nc_inq_var_deflate(this->parent_id, this->id, NULL, &v, NULL));
+	return Napi::Boolean::New(info.Env(), v == 1);
 }
 
 void Variable::SetCompressionDeflate(const Napi::CallbackInfo &info, const Napi::Value &value) {
-	/*
-	v8::Isolate *isolate = info.GetIsolate();
-	Variable *obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
-	if (!val->IsBoolean()) {
-		isolate->ThrowException(v8::Exception::TypeError(
-			v8::String::NewFromUtf8(isolate, "Expecting a boolean", v8::NewStringType::kNormal)
-				.ToLocalChecked()));
+	
+	if (!value.IsBoolean()) {
+		Napi::Error::New(info.Env(), "Expecting a boolean").ThrowAsJavaScriptException();
 		return;
 	}
-#if NODE_MAJOR_VERSION > 11
-	int v = val->BooleanValue(isolate) ? 1 : 0;
-#else
-	int v = val->BooleanValue() ? 1 : 0;
-#endif
+
+	int v = value.ToBoolean() ? 1 : 0;
+
 	int v1, v2;
-	int retval = nc_inq_var_deflate(obj->parent_id, obj->id, &v1, NULL, &v2);
-	if (retval != NC_NOERR) {
-		throw_netcdf_error(isolate, retval);
-		return;
-	}
-	retval = nc_def_var_deflate(obj->parent_id, obj->id, v1, v, v2);
-	if (retval != NC_NOERR) {
-		throw_netcdf_error(isolate, retval);
-	}
-	*/
+	NC_CALL_VOID(nc_inq_var_deflate(this->parent_id, this->id, &v1, NULL, &v2));
+	
+	NC_CALL_VOID(nc_def_var_deflate(this->parent_id, this->id, v1, v, v2));
 }
 
 Napi::Value Variable::GetCompressionLevel(const Napi::CallbackInfo &info) {
-	/*
-	v8::Isolate *isolate = info.GetIsolate();
-	Variable *obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
 	int v;
-	int retval = nc_inq_var_deflate(obj->parent_id, obj->id, NULL, NULL, &v);
-	if (retval != NC_NOERR) {
-		throw_netcdf_error(isolate, retval);
-		return;
-	}
-	info.GetReturnValue().Set(v8::Integer::New(isolate, v));
-	*/
-	return info.Env().Undefined();
+	NC_CALL(nc_inq_var_deflate(this->parent_id, this->id, NULL, NULL, &v));
+	
+	return Napi::Number::New(info.Env(), v);
 }
 
 void Variable::SetCompressionLevel(const Napi::CallbackInfo &info, const Napi::Value &value) {
-	/*
-	v8::Isolate *isolate = info.GetIsolate();
-	Variable *obj = node::ObjectWrap::Unwrap<Variable>(info.Holder());
-	if (!val->IsUint32()) {
-		isolate->ThrowException(v8::Exception::TypeError(
-			v8::String::NewFromUtf8(isolate, "Expecting a non-negative integer",
-									v8::NewStringType::kNormal)
-				.ToLocalChecked()));
+	if (!value.IsNumber()) {
+		Napi::Error::New(info.Env(), "Expecting a non-negative integer").ThrowAsJavaScriptException();
 		return;
 	}
-	int v = static_cast<int>(val->IntegerValue(isolate->GetCurrentContext()).ToChecked());
+	int v = value.ToNumber().Uint32Value();
 	int v1, v2;
-	int retval = nc_inq_var_deflate(obj->parent_id, obj->id, &v1, &v2, NULL);
-	if (retval != NC_NOERR) {
-		throw_netcdf_error(isolate, retval);
-		return;
-	}
-	retval = nc_def_var_deflate(obj->parent_id, obj->id, v1, v2, v);
-	if (retval != NC_NOERR) {
-		throw_netcdf_error(isolate, retval);
-	}
-	*/
+	NC_CALL_VOID(nc_inq_var_deflate(this->parent_id, this->id, &v1, &v2, NULL));
+	
+	NC_CALL_VOID(nc_def_var_deflate(this->parent_id, this->id, v1, v2, v));
+	
 }
 
 Napi::Value Variable::Inspect(const Napi::CallbackInfo &info) {

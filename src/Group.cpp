@@ -47,19 +47,9 @@ Napi::Object Group::Init(Napi::Env env, Napi::Object exports) {
 	exports.Set("Group", func);
 	return exports;
 }
-/*
-bool Group::get_name(char *name) const {
-	int retval = nc_inq_grpname(id, name);
-	if (retval != NC_NOERR) {
-		throw_netcdf_error(v8::Isolate::GetCurrent(), retval);
-		return false;
-	}
-	return true;
-}
-*/
+
 Napi::Value Group::AddAttribute(const Napi::CallbackInfo &info) {
 	/*
-
 	v8::Isolate *isolate = args.GetIsolate();
 	Group *obj = node::ObjectWrap::Unwrap<Group>(args.Holder());
 	if (args.Length() < 3) {
@@ -86,6 +76,7 @@ Napi::Value Group::AddAttribute(const Napi::CallbackInfo &info) {
 	res->set_value(args[2]);
 	args.GetReturnValue().Set(res->handle());
 	*/
+	
 	return info.Env().Undefined();
 }
 
@@ -272,40 +263,23 @@ Napi::Value Group::GetDimensions(const Napi::CallbackInfo &info) {
 }
 
 Napi::Value Group::GetUnlimited(const Napi::CallbackInfo &info) {
-	/*
-	v8::Isolate *isolate = info.GetIsolate();
-	Group *obj = node::ObjectWrap::Unwrap<Group>(info.Holder());
+	
 	int ndims;
-	int retval = nc_inq_unlimdims(obj->id, &ndims, NULL);
-	if (retval != NC_NOERR) {
-		throw_netcdf_error(isolate, retval);
-		return;
-	}
+	NC_CALL(nc_inq_unlimdims(this->id, &ndims, NULL));
+	
 	int *dim_ids = new int[ndims];
-	retval = nc_inq_unlimdims(obj->id, NULL, dim_ids);
-	if (retval != NC_NOERR) {
-		throw_netcdf_error(isolate, retval);
-		delete[] dim_ids;
-		return;
-	}
-	v8::Local<v8::Object> result = v8::Object::New(isolate);
-	char name[NC_MAX_NAME + 1];
+	NC_CALL(nc_inq_unlimdims(this->id, NULL, dim_ids));
+	
+	Napi::Object dims = Napi::Object::New(info.Env());
+    char name[NC_MAX_NAME + 1];
 	for (int i = 0; i < ndims; ++i) {
-		Dimension *d = new Dimension(dim_ids[i], obj->id);
-		if (d->get_name(name)) {
-			result->Set(
-				isolate->GetCurrentContext(),
-				v8::String::NewFromUtf8(isolate, name, v8::NewStringType::kNormal).ToLocalChecked(),
-				d->handle());
-		} else {
-			delete[] dim_ids;
-			return;
-		}
+		Napi::Object dim = Dimension::Build(info.Env(), this->id, dim_ids[i]);
+		NC_CALL(nc_inq_dimname(this->id, dim_ids[i], name));
+		dims.Set(name, dim);
 	}
-	info.GetReturnValue().Set(result);
+	
 	delete[] dim_ids;
-	*/
-	return info.Env().Undefined();
+	return dims;
 }
 /*
 void Group::GetAttributes(v8::Local<v8::String> property,

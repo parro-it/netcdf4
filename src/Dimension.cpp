@@ -42,16 +42,6 @@ Napi::Object Dimension::Init(Napi::Env env, Napi::Object exports) {
 	exports.Set("Dimension", func);
 	return exports;
 }
-/*
-bool Dimension::get_name(char *name) const {
-	int retval = nc_inq_dimname(parent_id, id, name);
-	if (retval != NC_NOERR) {
-		throw_netcdf_error(v8::Isolate::GetCurrent(), retval);
-		return false;
-	}
-	return true;
-}
-*/
 
 Napi::Value Dimension::GetId(const Napi::CallbackInfo &info) {
 	return Napi::Number::New(info.Env(), id);
@@ -64,8 +54,8 @@ Napi::Value Dimension::GetLength(const Napi::CallbackInfo &info) {
 }
 
 Napi::Value Dimension::GetName(const Napi::CallbackInfo &info) {
-//	char name[NC_MAX_NAME + 1];
-//	NC_CALL(nc_inq_dimname(parent_id, id, name));
+	char name[NC_MAX_NAME + 1];
+	NC_CALL(nc_inq_dimname(parent_id, id, name));
 	return Napi::String::New(info.Env(), name);
 }
 

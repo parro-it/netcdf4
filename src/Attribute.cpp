@@ -416,13 +416,8 @@ void Attribute::SetValue(const Napi::CallbackInfo &info, const Napi::Value &valu
 }
 
 Napi::Value Attribute::Delete(const Napi::CallbackInfo &info) {
-	/*
-	Attribute *obj = node::ObjectWrap::Unwrap<Attribute>(args.Holder());
-	int retval = nc_del_att(obj->parent_id, obj->var_id, obj->name.c_str());
-	if (retval != NC_NOERR) {
-		throw_netcdf_error(args.GetIsolate(), retval);
-	}
-	*/
+	
+	NC_CALL(nc_del_att(this->parent_id, this->var_id, this->name.c_str());)
 	return info.Env().Undefined();
 }
 
