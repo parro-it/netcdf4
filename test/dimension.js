@@ -7,35 +7,40 @@ const { join } = require("path");
 const fixture = join(__dirname, "test_hgroups.nc");
 
 describe("Dimension", function () {
-  let file, dim, attr;
+  let file;
   const tempFileName = join(tmpdir(), `${Date.now()}.rc`);
 
-  before(function () {
+  beforeEach(function () {
     copyFileSync(fixture, tempFileName);
     file = new netcdf4.File(tempFileName, "w");
-    dim = file.root.dimensions["recNum"];
   });
 
-  after(function () {
+  afterEach(function () {
     file.close();
     unlinkSync(tempFileName);
   });
 
-  it("is an object", function () {
+  it("is an object with a name and length properties and custorm inspect method", function () {
+    const dim = file.root.dimensions["recNum"];
     expect(typeof dim).equals("object");
     expect(dim).not.null;
-  });
-
-  it("with a custom inspect method", function () {
+    expect(dim.name).to.equal("recNum");
+    expect(file.root.dimensions["recNum"].length).to.equal(74);
     expect(typeof dim.inspect).equals("function");
     expect(dim.inspect()).equals("[Dimension recNum, length 74]");
   });
 
-  it("should read name", function () {
+  it("can change a name properties and custorm inspect also changed", function () {
+    let dim = file.root.dimensions["recNum"];
     expect(dim.name).to.equal("recNum");
+    dim.name="recs";
+    expect(dim.name).to.equal("recs");
+    expect(dim.inspect()).equals("[Dimension recs, length 74]");
+    file.close();
+    file = new netcdf4.File(tempFileName, "r");
+    dim = file.root.dimensions["recs"];
+    expect(dim.inspect()).equals("[Dimension recs, length 74]");
   });
 
-  it("should read length", function () {
-    expect(file.root.dimensions["recNum"].length).to.equal(74);
-  });
+
 });

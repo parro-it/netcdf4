@@ -7,77 +7,72 @@ const { join } = require("path");
 const fixture = join(__dirname, "test_hgroups.nc");
 
 describe("Attribute", function () {
-  let file, attributes, attr;
+  let file;
   const tempFileName = join(tmpdir(), `${Date.now()}.rc`);
 
-  before(function () {
+  beforeEach(function () {
     copyFileSync(fixture, tempFileName);
     file = new netcdf4.File(tempFileName, "w");
 
-    attributes =
-      file.root.subgroups["mozaic_flight_2012030419144751_ascent"].attributes;
-    attr = attributes["airport_dep"];
   });
 
-  after(function () {
+  afterEach(function () {
     file.close();
     unlinkSync(tempFileName);
   });
 
-  it("is an object", function () {
+  it("is an object and have a name and a value", function () {
+    const attributes = file.root.subgroups["mozaic_flight_2012030419144751_ascent"].attributes;
+    const attr = attributes["airport_dep"];
     expect(typeof attr).equals("object");
     expect(attr).be.not.null;
-  });
-
-  it("with a name", function () {
     expect(attr.name).equals("airport_dep");
-  });
-
-  it("with a value", function () {
     expect(attr.value).equals("FRA");
   });
 
   it("with a custom inspect", function () {
+    const attributes = file.root.subgroups["mozaic_flight_2012030419144751_ascent"].attributes;
+    const attr = attributes["airport_dep"];
     expect(attr.inspect()).equals("[Attribute airport_dep, type char]");
   });
 
   it("value is writable", function () {
+    let attributes = file.root.subgroups["mozaic_flight_2012030419144751_ascent"].attributes;
+    let attr = attributes["airport_dep"];
+    expect(attr.value).equals("FRA");
     attr.value = "ciao";
     expect(attr.value).equals("ciao");
-    attr.value = "FRA";
-    expect(attr.value).equals("FRA");
+    attr.value = "FRQ";
+    expect(attr.value).equals("FRQ");
+    file.close();
+    file = new netcdf4.File(tempFileName, "r");
+    attributes = file.root.subgroups["mozaic_flight_2012030419144751_ascent"].attributes;
+    attr = attributes["airport_dep"];
+    expect(attr.value).equals("FRQ");
+
   });
 
-  it("name is writable", function () {
-    const tempFileName = join(tmpdir(), `${Date.now()}.rc`);
-
-    copyFileSync(fixture, tempFileName);
-    const file2 = new netcdf4.File(tempFileName, "w");
-
-    const attr =
-      file2.root.subgroups.mozaic_flight_2012030419144751_ascent.attributes
+  it("name is writable and inspect value is changed", function () {
+    let attr =
+      file.root.subgroups.mozaic_flight_2012030419144751_ascent.attributes
         .airport_dep;
     attr.name = "changed";
     expect(attr.name).equals("changed");
-    attr.name = "airport_dep";
-    expect(attr.name).equals("airport_dep");
-
-    file2.close();
-    unlinkSync(tempFileName);
+    expect(attr.inspect()).equals("[Attribute changed, type char]");
+    file.close();
+    file = new netcdf4.File(tempFileName, "r");
+    attr =
+    file.root.subgroups.mozaic_flight_2012030419144751_ascent.attributes
+      .changed;
+    expect(attr.name).equals("changed");
+    expect(attr.inspect()).equals("[Attribute changed, type char]");
   });
 
   it("should read variable attribute name", function () {
-    const tempFileName = join(tmpdir(), `${Date.now()}.rc`);
-
-    copyFileSync(fixture, tempFileName);
-    const file2 = new netcdf4.File(tempFileName, "w");
-
     var attributes =
-      file2.root.subgroups["mozaic_flight_2012030419144751_ascent"].variables[
+      file.root.subgroups["mozaic_flight_2012030419144751_ascent"].variables[
         "air_press"
       ].attributes;
     expect(attributes["name"].value).to.equal("air_pressure");
-    file2.close();
-    unlinkSync(tempFileName);
   });
 });

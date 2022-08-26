@@ -8,6 +8,181 @@ namespace netcdf4js {
 
 Napi::FunctionReference Attribute::constructor;
 
+void Attribute::set_value(const Napi::CallbackInfo &info,int parent_id,int var_id,const std::string attribute_name,int type,const Napi::Value &value) {
+	const char *name=attribute_name.c_str();
+	switch (type) {
+	case NC_BYTE: {
+		if (value.IsNumber()) {
+			int8_t v = value.As<Napi::Number>().Int32Value();
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name, type, 1, &v));
+#if NODE_MAJOR_VERSION > 8
+		} else if (value.IsBigInt()) {
+			int8_t v = value.As<Napi::BigInt>().Int64Value(nullptr);
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name, type, 1, &v));
+#endif
+		} else {
+			auto array = value.As<Napi::Int8Array>();
+			void *v = array.ArrayBuffer().Data();
+			size_t l = array.ElementLength();
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name, type, l, &v));
+		}
+	} break;
+	case NC_SHORT: {
+		if (value.IsNumber()) {
+			int16_t v = value.As<Napi::Number>().Int32Value();
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name, type, 1, &v));
+#if NODE_MAJOR_VERSION > 8
+		} else if (value.IsBigInt()) {
+			int16_t v = value.As<Napi::BigInt>().Int64Value(nullptr);
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name, type, 1, &v));
+#endif
+		} else {
+			auto array = value.As<Napi::Int16Array>();
+			void *v = array.ArrayBuffer().Data();
+			size_t l = array.ElementLength();
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name, type, l, &v));
+		}
+	} break;
+	case NC_INT: {
+		if (value.IsNumber()) {
+			int32_t v = value.As<Napi::Number>().Int32Value();
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name,type, 1, &v));
+#if NODE_MAJOR_VERSION > 8
+		} else if (value.IsBigInt()) {
+			int32_t v = value.As<Napi::BigInt>().Int64Value(nullptr);
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name,type, 1, &v));
+#endif
+		} else {
+			auto array = value.As<Napi::Int32Array>();
+			void *v = array.ArrayBuffer().Data();
+			size_t l = array.ElementLength();
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name,type, l, &v));
+		}
+	} break;
+	case NC_FLOAT: {
+		if (value.IsNumber()) {
+			float v = value.As<Napi::Number>().FloatValue();
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name,type, 1, &v));
+#if NODE_MAJOR_VERSION > 8
+		} else if (value.IsBigInt()) {
+			float v = value.As<Napi::BigInt>().Int64Value(nullptr);
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name,type, 1, &v));
+#endif
+		} else {
+			auto array = value.As<Napi::Float32Array>();
+			void *v = array.ArrayBuffer().Data();
+			size_t l = array.ElementLength();
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name,type, l, &v));
+		}
+	} break;
+	case NC_DOUBLE: {
+		if (value.IsNumber()) {
+			double v = value.As<Napi::Number>().DoubleValue();
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name,type, 1, &v));
+#if NODE_MAJOR_VERSION > 8
+		} else if (value.IsBigInt()) {
+			double v = value.As<Napi::BigInt>().Int64Value(nullptr);
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name,type, 1, &v));
+#endif
+		} else {
+			auto array = value.As<Napi::Float64Array>();
+			void *v = array.ArrayBuffer().Data();
+			size_t l = array.ElementLength();
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name,type, l, &v));
+		}
+	} break;
+	case NC_UBYTE: {
+		if (value.IsNumber()) {
+			uint8_t v = value.As<Napi::Number>().Uint32Value();
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name,type, 1, &v));
+#if NODE_MAJOR_VERSION > 8
+		} else if (value.IsBigInt()) {
+			uint8_t v = value.As<Napi::BigInt>().Uint64Value(nullptr);
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name,type, 1, &v));
+#endif
+		} else {
+			auto array = value.As<Napi::Uint8Array>();
+			void *v = array.ArrayBuffer().Data();
+			size_t l = array.ElementLength();
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name,type, l, &v));
+		}
+	} break;
+	case NC_USHORT: {
+		if (value.IsNumber()) {
+			uint16_t v = value.As<Napi::Number>().Uint32Value();
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name,type, 1, &v));
+#if NODE_MAJOR_VERSION > 8
+		} else if (value.IsBigInt()) {
+			uint16_t v = value.As<Napi::BigInt>().Uint64Value(nullptr);
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name,type, 1, &v));
+#endif
+		} else {
+			auto array = value.As<Napi::Uint16Array>();
+			void *v = array.ArrayBuffer().Data();
+			size_t l = array.ElementLength();
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name,type, l, &v));
+		}
+	} break;
+	case NC_UINT: {
+		if (value.IsNumber()) {
+			uint32_t v = value.As<Napi::Number>().Uint32Value();
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name,type, 1, &v));
+#if NODE_MAJOR_VERSION > 8
+		} else if (value.IsBigInt()) {
+			uint32_t v = value.As<Napi::BigInt>().Uint64Value(nullptr);
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name,type, 1, &v));
+#endif
+		} else {
+			auto array = value.As<Napi::Uint32Array>();
+			void *v = array.ArrayBuffer().Data();
+			size_t l = array.ElementLength();
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name,type, l, &v));
+		}
+	} break;
+#if NODE_MAJOR_VERSION > 8
+
+	case NC_UINT64: {
+		if (value.IsNumber()) {
+			uint64_t v = value.As<Napi::Number>().Uint32Value();
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name,type, 1, &v));
+		} else if (value.IsBigInt()) {
+			uint64_t v = value.As<Napi::BigInt>().Uint64Value(nullptr);
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name,type, 1, &v));
+		} else {
+			auto array = value.As<Napi::BigUint64Array>();
+			void *v = array.ArrayBuffer().Data();
+			size_t l = array.ElementLength();
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name,type, l, &v));
+		}
+	} break;
+	case NC_INT64: {
+		if (value.IsNumber()) {
+			int64_t v = value.As<Napi::Number>().Uint32Value();
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name,type, 1, &v));
+		} else if (value.IsBigInt()) {
+			int64_t v = value.As<Napi::BigInt>().Uint64Value(nullptr);
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name,type, 1, &v));
+		} else {
+			auto array = value.As<Napi::BigInt64Array>();
+			void *v = array.ArrayBuffer().Data();
+			size_t l = array.ElementLength();
+			NC_CALL_VOID(nc_put_att(parent_id, var_id, name,type, l, &v));
+		}
+	} break;
+#endif
+	case NC_CHAR:
+	case NC_STRING: {
+		std::string v = value.As<Napi::String>().ToString();
+		nc_put_att_text(parent_id, var_id, name, v.length(), v.c_str());
+	} break;
+	default:
+		Napi::TypeError::New(info.Env(), "Variable type not supported yet")
+			.ThrowAsJavaScriptException();
+		return;
+	}
+}
+
+
 Napi::Object Attribute::Build(Napi::Env env, std::string name, int var_id, int parent_id,
 							  int type) {
 	return constructor.New({
@@ -243,176 +418,7 @@ Napi::Value Attribute::GetValue(const Napi::CallbackInfo &info) {
 }
 
 void Attribute::SetValue(const Napi::CallbackInfo &info, const Napi::Value &value) {
-	switch (this->type) {
-	case NC_BYTE: {
-		if (value.IsNumber()) {
-			int8_t v = value.As<Napi::Number>().Int32Value();
-			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
-#if NODE_MAJOR_VERSION > 8
-		} else if (value.IsBigInt()) {
-			int8_t v = value.As<Napi::BigInt>().Int64Value(nullptr);
-			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
-#endif
-		} else {
-			auto array = value.As<Napi::Int8Array>();
-			void *v = array.ArrayBuffer().Data();
-			size_t l = array.ElementLength();
-			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, l, &v));
-		}
-	} break;
-	case NC_SHORT: {
-		if (value.IsNumber()) {
-			int16_t v = value.As<Napi::Number>().Int32Value();
-			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
-#if NODE_MAJOR_VERSION > 8
-		} else if (value.IsBigInt()) {
-			int16_t v = value.As<Napi::BigInt>().Int64Value(nullptr);
-			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
-#endif
-		} else {
-			auto array = value.As<Napi::Int16Array>();
-			void *v = array.ArrayBuffer().Data();
-			size_t l = array.ElementLength();
-			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, l, &v));
-		}
-	} break;
-	case NC_INT: {
-		if (value.IsNumber()) {
-			int32_t v = value.As<Napi::Number>().Int32Value();
-			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
-#if NODE_MAJOR_VERSION > 8
-		} else if (value.IsBigInt()) {
-			int32_t v = value.As<Napi::BigInt>().Int64Value(nullptr);
-			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
-#endif
-		} else {
-			auto array = value.As<Napi::Int32Array>();
-			void *v = array.ArrayBuffer().Data();
-			size_t l = array.ElementLength();
-			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, l, &v));
-		}
-	} break;
-	case NC_FLOAT: {
-		if (value.IsNumber()) {
-			float v = value.As<Napi::Number>().FloatValue();
-			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
-#if NODE_MAJOR_VERSION > 8
-		} else if (value.IsBigInt()) {
-			float v = value.As<Napi::BigInt>().Int64Value(nullptr);
-			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
-#endif
-		} else {
-			auto array = value.As<Napi::Float32Array>();
-			void *v = array.ArrayBuffer().Data();
-			size_t l = array.ElementLength();
-			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, l, &v));
-		}
-	} break;
-	case NC_DOUBLE: {
-		if (value.IsNumber()) {
-			double v = value.As<Napi::Number>().DoubleValue();
-			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
-#if NODE_MAJOR_VERSION > 8
-		} else if (value.IsBigInt()) {
-			double v = value.As<Napi::BigInt>().Int64Value(nullptr);
-			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
-#endif
-		} else {
-			auto array = value.As<Napi::Float64Array>();
-			void *v = array.ArrayBuffer().Data();
-			size_t l = array.ElementLength();
-			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, l, &v));
-		}
-	} break;
-	case NC_UBYTE: {
-		if (value.IsNumber()) {
-			uint8_t v = value.As<Napi::Number>().Uint32Value();
-			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
-#if NODE_MAJOR_VERSION > 8
-		} else if (value.IsBigInt()) {
-			uint8_t v = value.As<Napi::BigInt>().Uint64Value(nullptr);
-			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
-#endif
-		} else {
-			auto array = value.As<Napi::Uint8Array>();
-			void *v = array.ArrayBuffer().Data();
-			size_t l = array.ElementLength();
-			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, l, &v));
-		}
-	} break;
-	case NC_USHORT: {
-		if (value.IsNumber()) {
-			uint16_t v = value.As<Napi::Number>().Uint32Value();
-			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
-#if NODE_MAJOR_VERSION > 8
-		} else if (value.IsBigInt()) {
-			uint16_t v = value.As<Napi::BigInt>().Uint64Value(nullptr);
-			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
-#endif
-		} else {
-			auto array = value.As<Napi::Uint16Array>();
-			void *v = array.ArrayBuffer().Data();
-			size_t l = array.ElementLength();
-			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, l, &v));
-		}
-	} break;
-	case NC_UINT: {
-		if (value.IsNumber()) {
-			uint32_t v = value.As<Napi::Number>().Uint32Value();
-			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
-#if NODE_MAJOR_VERSION > 8
-		} else if (value.IsBigInt()) {
-			uint32_t v = value.As<Napi::BigInt>().Uint64Value(nullptr);
-			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
-#endif
-		} else {
-			auto array = value.As<Napi::Uint32Array>();
-			void *v = array.ArrayBuffer().Data();
-			size_t l = array.ElementLength();
-			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, l, &v));
-		}
-	} break;
-#if NODE_MAJOR_VERSION > 8
-
-	case NC_UINT64: {
-		if (value.IsNumber()) {
-			uint64_t v = value.As<Napi::Number>().Uint32Value();
-			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
-		} else if (value.IsBigInt()) {
-			uint64_t v = value.As<Napi::BigInt>().Uint64Value(nullptr);
-			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
-		} else {
-			auto array = value.As<Napi::BigUint64Array>();
-			void *v = array.ArrayBuffer().Data();
-			size_t l = array.ElementLength();
-			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, l, &v));
-		}
-	} break;
-	case NC_INT64: {
-		if (value.IsNumber()) {
-			int64_t v = value.As<Napi::Number>().Uint32Value();
-			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
-		} else if (value.IsBigInt()) {
-			int64_t v = value.As<Napi::BigInt>().Uint64Value(nullptr);
-			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, 1, &v));
-		} else {
-			auto array = value.As<Napi::BigInt64Array>();
-			void *v = array.ArrayBuffer().Data();
-			size_t l = array.ElementLength();
-			NC_CALL_VOID(nc_put_att(parent_id, var_id, name.c_str(), this->type, l, &v));
-		}
-	} break;
-#endif
-	case NC_CHAR:
-	case NC_STRING: {
-		std::string v = value.As<Napi::String>().ToString();
-		nc_put_att_text(parent_id, var_id, name.c_str(), v.length(), v.c_str());
-	} break;
-	default:
-		Napi::TypeError::New(info.Env(), "Variable type not supported yet")
-			.ThrowAsJavaScriptException();
-		return;
-	}
+	Attribute::set_value(info,this->parent_id,this->var_id,this->name,this->type,value);
 }
 
 Napi::Value Attribute::Delete(const Napi::CallbackInfo &info) {

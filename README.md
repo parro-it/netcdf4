@@ -94,7 +94,7 @@ Properties:
 Methods:
 * `addVariable(name, type, dimensions)` : Add a new variable in
   group. `type` is one of `"byte", "char", "short", "int", "ubyte", "ushort",
-  "uint", "float", "double"`. `dimensions` is an array of ids of dimensions
+  "uint", "float", "double"`. `dimensions` is an array of ids or names of dimensions
   for the new variable. Returns new variable.
 * `addDimension(name, length)` : Add new dimension of length `length`
   (can be `"unlimited"` for unlimited dimension). Returns new dimension.

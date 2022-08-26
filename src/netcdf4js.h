@@ -125,6 +125,7 @@ class Group : public Napi::ObjectWrap<Group> {
 	Napi::Value GetAttributes(const Napi::CallbackInfo &info);
 	Napi::Value GetSubgroups(const Napi::CallbackInfo &info);
 	Napi::Value GetName(const Napi::CallbackInfo &info);
+	void SetName(const Napi::CallbackInfo &info, const Napi::Value &value);
 	Napi::Value GetFullname(const Napi::CallbackInfo &info);
 	Napi::Value AddAttribute(const Napi::CallbackInfo &info);
 	Napi::Value AddDimension(const Napi::CallbackInfo &info);
@@ -132,6 +133,7 @@ class Group : public Napi::ObjectWrap<Group> {
 	Napi::Value AddVariable(const Napi::CallbackInfo &info);
 	Napi::Value Inspect(const Napi::CallbackInfo &info);
 	int id;
+	std::string name;
 };
 
 class Dimension : public Napi::ObjectWrap<Dimension> {
@@ -156,11 +158,12 @@ class Dimension : public Napi::ObjectWrap<Dimension> {
 
 class Attribute : public Napi::ObjectWrap<Attribute> {
   public:
+    static void set_value(const Napi::CallbackInfo &info,int parent_id,int var_id,std::string name,int type,const Napi::Value &value);
 	static Napi::Object Init(Napi::Env env, Napi::Object exports);
 	static Napi::Object Build(Napi::Env env, std::string name, int var_id, int parent_id, int type);
 	static Napi::Object Build(Napi::Env env, std::string name, int var_id, int parent_id);
 	Attribute(const Napi::CallbackInfo &info);
-	void set_value(Napi::Value &val);
+//	void set_value(Napi::Value &val);
 	Napi::Value GetValue(const Napi::CallbackInfo &info);
 	void SetValue(const Napi::CallbackInfo &info, const Napi::Value &value);
 
@@ -169,8 +172,8 @@ class Attribute : public Napi::ObjectWrap<Attribute> {
 	Napi::Value Delete(const Napi::CallbackInfo &info);
 	Napi::Value GetName(const Napi::CallbackInfo &info);
 	void SetName(const Napi::CallbackInfo &info, const Napi::Value &value);
-	// Napi::Value GetValue(const Napi::CallbackInfo &info);
-	// void SetValue(const Napi::CallbackInfo &info, const Napi::Value &value);
+//	Napi::Value GetValue(const Napi::CallbackInfo &info);
+//	void SetValue(const Napi::CallbackInfo &info, const Napi::Value &value);
 	Napi::Value Inspect(const Napi::CallbackInfo &info);
 	std::string name;
 	int id;
