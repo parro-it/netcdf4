@@ -55,9 +55,10 @@ Napi::Value Dimension::GetLength(const Napi::CallbackInfo &info) {
 }
 
 Napi::Value Dimension::GetName(const Napi::CallbackInfo &info) {
-	char name[NC_MAX_NAME + 1];
-	NC_CALL(nc_inq_dimname(parent_id, id, name));
-	return Napi::String::New(info.Env(), name);
+	char new_name[NC_MAX_NAME + 1];
+	NC_CALL(nc_inq_dimname(parent_id, id, new_name));
+	this->name=std::string(new_name);
+	return Napi::String::New(info.Env(), this->name);
 }
 
 void Dimension::SetName(const Napi::CallbackInfo &info, const Napi::Value &value) {
