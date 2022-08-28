@@ -24,6 +24,6 @@ namespace netcdf4js {
         "?",   // 
         "udf0",  // NC_FORMATX_UDF0
         "udf1",	   // NC_FORMATX_UDF1
-        "zarr"	   // NC_FORMATX_NCZARA
+        "zarr"	   // NC_FORMATX_NCZARR
     };
 }
