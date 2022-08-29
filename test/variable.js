@@ -62,6 +62,13 @@ describe("Variable", function () {
 //    console.log(res);
   });
 
+  it("should read a strided slice", function () {
+    var res = fileold.root.variables.var1.readStridedSlice(0, 2, 2)
+    var results = Array.from(res);
+    expect(results).to.deep.equal([420, 391.5]);
+  });
+
+
   it("should write an existing", function () {
     fileold.root.variables.var1.write(0,42);
     var res = fileold.root.variables.var1.read(0)
@@ -85,7 +92,8 @@ describe("Variable", function () {
     var results = Array.from(res);
     expect(results).to.deep.equal([10,10.5,20,20.5]);
   });
-  it("should read a strided slice", function () {
+
+  it("should write a strided slice", function () {
     const varr=new Float32Array([30,20.5])
     fileold.root.variables.var1.writeStridedSlice(0, 2, 2,varr)
     var results = Array.from(
