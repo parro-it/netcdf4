@@ -49,12 +49,30 @@ describe("Variable", function () {
     expect(fileold.root.variables.var1.dimensions).to.have.length(1)
     expect(fileold.root.variables.var1.dimensions[0].inspect()).to.be.equal('[Dimension dim1, length 10000]');
   });
+
+  it("should read an existing", function () {
+    var res = fileold.root.variables.var1.read(0)
+    expect(res).to.be.equal(420);
+  });
+
   it("should read a slice of existing", function () {
     var res = fileold.root.variables.var1.readSlice(0, 4)
     var results = Array.from(res);
     expect(results).to.deep.equal([420, 197, 391.5, 399]);
 //    console.log(res);
   });
+
+  it("should write an existing", function () {
+    fileold.root.variables.var1.write(0,42);
+    var res = fileold.root.variables.var1.read(0)
+    expect(res).to.be.equal(42);
+    fileold.close();
+    fileold = new netcdf4.File(tempFileOldName, "w");
+    res = fileold.root.variables.var1.read(0)
+    expect(res).to.be.equal(42);
+  });
+
+
   it("should write a slice of existing", function () {
     const varr=new Float32Array([10,10.5,20,20.5])
     fileold.root.variables.var1.writeSlice(0, 4,varr)
