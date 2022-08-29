@@ -60,6 +60,10 @@ inline int get_type(const std::string &type_str) {
 		return NC_USHORT;
 	} else if (type_str == "uint") {
 		return NC_UINT;
+	} else if (type_str == "uint64") {
+		return NC_UINT64;
+	} else if (type_str == "int64") {
+		return NC_INT64;
 	} else if (type_str == "string") {
 		return NC_STRING;
 	} else {

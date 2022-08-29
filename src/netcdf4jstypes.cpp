@@ -11,7 +11,9 @@ namespace netcdf4js {
         "double",  // NC_DOUBLE
         "ubyte",   // NC_UBYTE
         "ushort",  // NC_USHORT
-        "uint"	   // NC_UINT
+        "uint",	   // NC_UINT
+        "int64",	   // NC_INT64
+        "uint64",	   // NC_UINT64
     };
     const char *format_names[] = {
         "unknown", // NC_FORMATX_UNDEFINED

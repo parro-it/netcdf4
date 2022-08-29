@@ -122,6 +122,38 @@ Napi::Value Variable::Write(const Napi::CallbackInfo &info) {
 		uint32_t v = info[this->ndims].As<Napi::Number>().Uint32Value();
 		NC_CALL(nc_put_vara(this->parent_id, this->id, pos, size, &v));
 	} break;
+#if NODE_MAJOR_VERSION >= 10
+	case NC_UINT64: {
+		if (value.IsNumber()) {
+			uint64_t v = value.As<Napi::Number>().Uint32Value();
+			NC_CALL_VOID(nc_put_vara(this->parent_id, this->id, pos, size, &v));
+		} else if (value.IsBigInt()) {
+			uint64_t v = value.As<Napi::BigInt>().Uint64Value(nullptr);
+			NC_CALL_VOID(nc_put_vara(this->parent_id, this->id, pos, size, &v));
+		} else {
+			auto array = value.As<Napi::BigUint64Array>();
+			void *v = array.ArrayBuffer().Data();
+			size_t l = array.ElementLength();
+			NC_CALL_VOID(nc_put_vara(this->parent_id, this->id, pos, size, &v));
+		}
+	} 
+	break;
+	case NC_INT64: {
+		if (value.IsNumber()) {
+			int64_t v = value.As<Napi::Number>().Uint32Value();
+			NC_CALL_VOID(nc_put_vara(this->parent_id, this->id, pos, size, &v));
+		} else if (value.IsBigInt()) {
+			int64_t v = value.As<Napi::BigInt>().Int64Value(nullptr);
+			NC_CALL_VOID(nc_put_vara(this->parent_id, this->id, pos, size, &v));
+		} else {
+			auto array = value.As<Napi::BigInt64Array>();
+			void *v = array.ArrayBuffer().Data();
+			size_t l = array.ElementLength();
+			NC_CALL_VOID(nc_put_vara(this->parent_id, this->id, pos, size, &v));
+		}
+	} 
+	break;
+#endif
 	default: {
 		Napi::TypeError::New(info.Env(), "Variable type not supported yet").ThrowAsJavaScriptException();
 		
@@ -183,6 +215,14 @@ Napi::Value Variable::WriteSlice(const Napi::CallbackInfo &info) {
 	case NC_UINT:
 		val = info[2 * this->ndims].As<Napi::Uint32Array>();
 		break;
+#if NODE_MAJOR_VERSION >= 10
+	case NC_UINT64:
+		val = info[3 * this->ndims].As<Napi::BigUint64Array>();
+		break;
+	case NC_INT64:
+		val = info[3 * this->ndims].As<Napi::BigInt64Array>();
+		break;
+#endif
 	default:
 		Napi::TypeError::New(info.Env(), "Variable type not supported yet").ThrowAsJavaScriptException();
 		delete[] pos;
@@ -250,6 +290,14 @@ Napi::Value Variable::WriteStridedSlice(const Napi::CallbackInfo &info) {
 	case NC_UINT:
 		val = info[3 * this->ndims].As<Napi::Uint32Array>();
 		break;
+#if NODE_MAJOR_VERSION >= 10
+	case NC_UINT64:
+		val = info[3 * this->ndims].As<Napi::BigUint64Array>();
+		break;
+	case NC_INT64:
+		val = info[3 * this->ndims].As<Napi::BigInt64Array>();
+		break;
+#endif
 	default:
 		Napi::TypeError::New(info.Env(), "Variable type not supported yet").ThrowAsJavaScriptException();
 		delete[] pos;
@@ -338,6 +386,18 @@ Napi::Value Variable::Read(const Napi::CallbackInfo &info) {
 		NC_CALL(nc_get_vara(this->parent_id, this->id, pos, size, &v));
 		result = Napi::Number::New(info.Env(), v);
 	} break;
+#if NODE_MAJOR_VERSION >= 10
+	case NC_UINT64:
+		uint64_t v;
+		NC_CALL(nc_get_vara(this->parent_id, this->id, pos, size, &v));
+		result = Napi::BigInt::New(info.Env(), v);
+		break;
+	case NC_INT64:
+		int64_t v;
+		NC_CALL(nc_get_vara(this->parent_id, this->id, pos, size, &v));
+		result = Napi::BigInt::New(info.Env(), v);
+		break;
+#endif
 	case NC_STRING: {
 		std::string v;
 		NC_CALL(nc_get_vara(this->parent_id, this->id, pos, size, &v));
@@ -364,7 +424,11 @@ Napi::Value Variable::ReadSlice(const Napi::CallbackInfo &info) {
 		return info.Env().Undefined();
 	}
 
+#if NODE_MAJOR_VERSION >= 10
+	if (this->type < NC_BYTE || this->type > NC_INT64) {
+#else
 	if (this->type < NC_BYTE || this->type > NC_UINT) {
+#endif		
 		Napi::TypeError::New(info.Env(), "Variable type not supported yet")
 			.ThrowAsJavaScriptException();
 		return info.Env().Undefined();
@@ -425,6 +489,18 @@ Napi::Value Variable::ReadSlice(const Napi::CallbackInfo &info) {
 		buffer = array.ArrayBuffer();
 		result = array;
 	} break;
+#if NODE_MAJOR_VERSION >= 10
+	case NC_UINT64:
+		auto array = Napi::Uint64Array::New(info.Env(), total_size);
+		buffer = array.ArrayBuffer();
+		result = array;
+		break;
+	case NC_INT64:
+		auto array = Napi::Int64Array::New(info.Env(), total_size);
+		buffer = array.ArrayBuffer();
+		result = array;
+		break;
+#endif
 	}
 
 	NC_CALL(nc_get_vara(this->parent_id, this->id, pos, size, buffer.Data()));
@@ -439,7 +515,11 @@ Napi::Value Variable::ReadStridedSlice(const Napi::CallbackInfo &info) {
 		return info.Env().Undefined();
 	}
 
+#if NODE_MAJOR_VERSION >= 10
+	if (this->type < NC_BYTE || this->type > NC_INT64) {
+#else
 	if (this->type < NC_BYTE || this->type > NC_UINT) {
+#endif		
 		Napi::TypeError::New(info.Env(), "Variable type not supported yet")
 			.ThrowAsJavaScriptException();
 		return info.Env().Undefined();
@@ -504,6 +584,18 @@ Napi::Value Variable::ReadStridedSlice(const Napi::CallbackInfo &info) {
 		buffer = array.ArrayBuffer();
 		result = array;
 	} break;
+#if NODE_MAJOR_VERSION >= 10
+	case NC_UINT64:
+		auto array = Napi::Uint64Array::New(info.Env(), total_size);
+		buffer = array.ArrayBuffer();
+		result = array;
+		break;
+	case NC_INT64:
+		auto array = Napi::Int64Array::New(info.Env(), total_size);
+		buffer = array.ArrayBuffer();
+		result = array;
+		break;
+#endif
 	}
 
 	NC_CALL(nc_get_vars(this->parent_id, this->id, pos, size, stride, buffer.Data()));
