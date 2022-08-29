@@ -174,66 +174,44 @@ describe("Variable", function () {
   };
   testSuiteOld.forEach(v=>testFunc('hdf5',v[0],v[1],v[2]));
 
-
-  
-
-
-  it("shuold add a Atribute", function() {
-    var newVar=tempFileNewName.root.addVariable('test_variable','byte',[tempFileNewName.root.dimensions.recNum.id]);
-    newVar.addAttribute('lenth', 'int', 42);
-    console.log(tempFileNewName.root.variables.test_variable.attributes)
-    
-  });
   it("name", function(){
     fileold.root.variables.var1.name = "var2";
     expect(fileold.root.variables).to.have.property("var2");
   });
-  it("endianness", function() {
-    console.log(filenew.root.variables.UTC_time.endianness);
-    filenew.root.variables.UTC_time.endianness = "big";
-    console.log(filenew.root.variables.UTC_time.endianness);
-    expect(filenew.root.variables.UTC_time.endianness).to.equal("big");
-  });
 
-  it("checksummode", function() {
-    console.log(filenew.root.variables.UTC_time.checksummode);
-    filenew.root.variables.UTC_time.checksummode = "fletcher32";
-    console.log(filenew.root.variables.UTC_time.checksummode);
+  it("should add new Variable whith set all parametrs", function(){
+    console.log(filenew.root.dimensions);
+    expect(filenew.root.variables).to.not.have.property("test_variable");
+    var newVar=filenew.root.addVariable('test_variable','byte',[filenew.root.dimensions.recNum.id]);
+    expect(newVar.inspect(),'[Variable test_variable, type byte, 1 dimension(s)]');
+    expect(filenew.root.variables).to.have.property("test_variable");
+    expect(filenew.root.variables.test_variable.inspect(),'[Variable test_variable, type byte, 1 dimension(s)]');
+    newVar.endianness = "little";
+    newVar.checksummode = "fletcher32";
+    newVar.chunkmode = "chunked";
+    newVar.chunksizes = new Uint32Array([8]);
+    newVar.fillmode = true;
+    newVar.fillvalue = 8;
+    newVar.compressionshuffle = true;
+    newVar.compressiondeflate = true;
+    newVar.compressionlevel = 8;
+    newVar.addAttribute("len", "int", 42);
+    filenew.close();
+  
+    filenew = new netcdf4.File(tempFileNewName, "r");
+    console.log(filenew.root.variables);
+    expect(filenew.root.variables).to.have.property("test_variable");
+    expect(filenew.root.variables.test_variable.inspect(),'[Variable test_variable, type byte, 1 dimension(s)]');
+    newVar = filenew.root.variables.test_variable;
+    expect(newVar.endianness).to.equal("little");
+    expect(newVar.checksummode).to.equal("fletcher32");
+    expect(newVar.chunkmode).to.equal("chunked");
+    expect(newVar.chunksizes).to.deep.equal([8]);
+    expect(newVar.fillmode).to.equal(true);
+    expect(newVar.compressionshuffle).to.equal(true);
+    expect(newVar.compressiondeflate).to.equal(true);
+    expect(newVar.compressionlevel).to.equal(8);
+    expect(newVar.attributes).to.have.property("test_variable");
+    console.log(newVar.attributes);
   });
-  it("chunkmode", function() {
-    console.log(filenew.root.variables.UTC_time.chunkmode);
-    filenew.root.variables.UTC_time.chunkmode = "chunked";
-    console.log(filenew.root.variables.UTC_time.chunkmode);
-  });
-  it.only("chunksizes", function() {
-    console.log(filenew.root.variables.UTC_time.chunksizes);
-    filenew.root.variables.UTC_time.chunksizes = "chunked";
-    console.log(filenew.root.variables.UTC_time.chunksizes);
-  });
-  it("chunksizes", function() {
-    console.log(filenew.root.variables.UTC_time.chunksizes);
-    filenew.root.variables.UTC_time.chunksizes = "chunked";
-    console.log(filenew.root.variables.UTC_time.chunksizes);
-  });
-  it("fillvalue", function() {
-    console.log(filenew.root.variables.UTC_time.fillvalue);
-    filenew.root.variables.UTC_time.fillvalue = "chunked";
-    console.log(filenew.root.variables.UTC_time.fillvalue);
-  });
-  it("compressionshuffle", function() {
-    console.log(filenew.root.variables.UTC_time.compressionshuffle);
-    filenew.root.variables.UTC_time.compressionshuffle = "chunked";
-    console.log(filenew.root.variables.UTC_time.compressionshuffle);
-  })
-  it("compressiondeflate", function() {
-    console.log(filenew.root.variables.UTC_time.compressiondeflate);
-    filenew.root.variables.UTC_time.compressiondeflate = "chunked";
-    console.log(filenew.root.variables.UTC_time.compressiondeflate);
-  });
-  it("compressionlevel", function() {
-    console.log(filenew.root.variables.UTC_time.compressionlevel);
-    filenew.root.variables.UTC_time.compressionlevel = "chunked";
-    console.log(filenew.root.variables.UTC_time.compressionlevel);
-  });
-
 });

@@ -618,24 +618,25 @@ Napi::Value Variable::ReadStridedSlice(const Napi::CallbackInfo &info) {
 }
 
 Napi::Value Variable::AddAttribute(const Napi::CallbackInfo &info) {
-	printf("parent_id = %d, id = %d", this->parent_id, this->id);
+	printf("parent_id = %d, id = %d\n", this->parent_id, this->id);
 
 	if (info.Length() < 3) {
 		Napi::Error::New(info.Env(), "Wrong number ofarguments").ThrowAsJavaScriptException(); 
 		return info.Env().Undefined();
 	}
 	std::string type_str = info[1].As<Napi::String>().ToString();
-	std::string name_ = info[0].As<Napi::String>().Utf8Value();
-	printf("type_str = %s, name= %s", type_str.c_str(), name.c_str());
+	std::string name_ = info[0].As<Napi::String>().ToString();
+	printf("type_str = %s, name= %s\n", type_str.c_str(), name.c_str());
 	int type = get_type(type_str);
 	if (type == NC2_ERR) {
 		Napi::Error::New(info.Env(), "Unknown variable type").ThrowAsJavaScriptException(); 
 		return info.Env().Undefined();
 	}
 
-	printf("parent_id = %d, id = %d, name= %s", this->parent_id, this->id, name.c_str());
+	printf("parent_id = %d, id = %d, name= %s\n", this->parent_id, this->id, name.c_str());
 	Attribute::set_value(info,this->parent_id,this->id,name,type,info[2]);
-	return Attribute::Build(info.Env(),name,NC_GLOBAL,this->id,type);
+	printf("set attribute\n");
+	return Attribute::Build(info.Env(),name,this->id, this->parent_id, type);
 
 	// Napi::Object object = Attribute::Build(info.Env(), name_, this->id, this->parent_id, type);
 	
@@ -705,7 +706,7 @@ Napi::Value Variable::GetEndianness(const Napi::CallbackInfo &info) {
 	NC_CALL(nc_inq_var_endian(this->parent_id, this->id, &v));
 	switch (v) {
 	case NC_ENDIAN_LITTLE:
-		res = "litte";
+		res = "little";
 		break;
 	case NC_ENDIAN_BIG:
 		res = "big";
@@ -826,7 +827,7 @@ Napi::Value Variable::GetChunkSizes(const Napi::CallbackInfo &info) {
 }
 
 void Variable::SetChunkSizes(const Napi::CallbackInfo &info, const Napi::Value &value) {
-	if (!value.IsArray()) {
+	if (!value.IsTypedArray()) {
 		Napi::Error::New(info.Env(), "Expecting an array").ThrowAsJavaScriptException();  
 		return;
 	}
