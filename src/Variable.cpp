@@ -189,6 +189,7 @@ Napi::Value Variable::WriteSlice(const Napi::CallbackInfo &info) {
 	}
 
 	Napi::TypedArray val;
+
 	switch (this->type) {
 	case NC_BYTE:
 	case NC_CHAR:
@@ -236,7 +237,7 @@ Napi::Value Variable::WriteSlice(const Napi::CallbackInfo &info) {
 		delete[] size;
 		return info.Env().Undefined();
 	}
-	NC_CALL(nc_put_vara(this->parent_id, this->id, pos, size, val));
+	NC_CALL(nc_put_vara(this->parent_id, this->id, pos, size, val.ArrayBuffer().Data()));
 	delete[] pos;
 	delete[] size;
 	return info.Env().Undefined();
@@ -313,7 +314,7 @@ Napi::Value Variable::WriteStridedSlice(const Napi::CallbackInfo &info) {
 		return info.Env().Undefined();
 		
 	}
-	NC_CALL(nc_put_vars(this->parent_id, this->id, pos, size, stride, val));
+	NC_CALL(nc_put_vars(this->parent_id, this->id, pos, size, stride, val.ArrayBuffer().Data()));
 	
 	delete[] pos;
 	delete[] size;
