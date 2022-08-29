@@ -618,25 +618,21 @@ Napi::Value Variable::ReadStridedSlice(const Napi::CallbackInfo &info) {
 }
 
 Napi::Value Variable::AddAttribute(const Napi::CallbackInfo &info) {
-	printf("parent_id = %d, id = %d\n", this->parent_id, this->id);
 
 	if (info.Length() < 3) {
 		Napi::Error::New(info.Env(), "Wrong number ofarguments").ThrowAsJavaScriptException(); 
 		return info.Env().Undefined();
 	}
 	std::string type_str = info[1].As<Napi::String>().ToString();
-	std::string name_ = info[0].As<Napi::String>().ToString();
-	printf("type_str = %s, name= %s\n", type_str.c_str(), name.c_str());
+	std::string attribute_name = info[0].As<Napi::String>().ToString();
 	int type = get_type(type_str);
 	if (type == NC2_ERR) {
 		Napi::Error::New(info.Env(), "Unknown variable type").ThrowAsJavaScriptException(); 
 		return info.Env().Undefined();
 	}
 
-	printf("parent_id = %d, id = %d, name= %s\n", this->parent_id, this->id, name.c_str());
-	Attribute::set_value(info,this->parent_id,this->id,name,type,info[2]);
-	printf("set attribute\n");
-	return Attribute::Build(info.Env(),name,this->id, this->parent_id, type);
+	Attribute::set_value(info,this->parent_id,this->id,attribute_name,type,info[2]);
+	return Attribute::Build(info.Env(),attribute_name,this->id, this->parent_id, type);
 
 	// Napi::Object object = Attribute::Build(info.Env(), name_, this->id, this->parent_id, type);
 	
@@ -672,8 +668,9 @@ Napi::Value Variable::GetAttributes(const Napi::CallbackInfo &info) {
 	char name[NC_MAX_NAME + 1];
 	for (int i = 0; i < natts; ++i) {
 		NC_CALL(nc_inq_attname(this->parent_id, this->id, i, name));
-		Napi::Object attr = Attribute::Build(info.Env(), name, this->id, this->parent_id);
-		attrs.Set(name, attr);
+		const std::string att_name = std::string(name);
+		Napi::Object attr = Attribute::Build(info.Env(), att_name, this->id, this->parent_id);
+		attrs.Set(att_name, attr);
 	}
 
 	return attrs;

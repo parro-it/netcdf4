@@ -180,7 +180,7 @@ describe("Variable", function () {
   });
 
   it("should add new Variable whith set all parametrs", function(){
-    console.log(filenew.root.dimensions);
+//    console.log(filenew.root.dimensions);
     expect(filenew.root.variables).to.not.have.property("test_variable");
     var newVar=filenew.root.addVariable('test_variable','byte',[filenew.root.dimensions.recNum.id]);
     expect(newVar.inspect(),'[Variable test_variable, type byte, 1 dimension(s)]');
@@ -196,10 +196,10 @@ describe("Variable", function () {
     newVar.compressiondeflate = true;
     newVar.compressionlevel = 8;
     newVar.addAttribute("len", "int", 42);
+    expect(newVar.attributes).to.have.property("len");
     filenew.close();
   
     filenew = new netcdf4.File(tempFileNewName, "r");
-    console.log(filenew.root.variables);
     expect(filenew.root.variables).to.have.property("test_variable");
     expect(filenew.root.variables.test_variable.inspect(),'[Variable test_variable, type byte, 1 dimension(s)]');
     newVar = filenew.root.variables.test_variable;
@@ -211,7 +211,6 @@ describe("Variable", function () {
     expect(newVar.compressionshuffle).to.equal(true);
     expect(newVar.compressiondeflate).to.equal(true);
     expect(newVar.compressionlevel).to.equal(8);
-    expect(newVar.attributes).to.have.property("test_variable");
-    console.log(newVar.attributes);
+    expect(newVar.attributes).to.have.property("len");
   });
 });
