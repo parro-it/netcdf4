@@ -2,9 +2,13 @@
 #define NETCDF4JSTYPES_H
 
 #include <netcdf.h>
+#include <node_version.h>
 
-
+#if NODE_MAJOR_VERSION > 9
+#define NC_TYPES(ID) ID < NC_BYTE || ID > NC_UINT64?"unsupported":netcdf4js::type_names[ID]
+#else
 #define NC_TYPES(ID) ID < NC_BYTE || ID > NC_UINT?"unsupported":netcdf4js::type_names[ID]
+#endif
 
 // Ubuntu 22.04 and Ubuntu 20.04 have a different name for NCZARR file type constant
 // So....

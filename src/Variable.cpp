@@ -1,6 +1,7 @@
 #include <netcdf.h>
 #include "netcdf4js.h"
 #include "netcdf4jstypes.h"
+#include <node_version.h>
 
 namespace netcdf4js {
 
@@ -124,32 +125,36 @@ Napi::Value Variable::Write(const Napi::CallbackInfo &info) {
 	} break;
 #if NODE_MAJOR_VERSION >= 10
 	case NC_UINT64: {
+		auto value=info[this->ndims];
 		if (value.IsNumber()) {
 			uint64_t v = value.As<Napi::Number>().Uint32Value();
-			NC_CALL_VOID(nc_put_vara(this->parent_id, this->id, pos, size, &v));
+			NC_CALL(nc_put_vara(this->parent_id, this->id, pos, size, &v));
 		} else if (value.IsBigInt()) {
-			uint64_t v = value.As<Napi::BigInt>().Uint64Value(nullptr);
-			NC_CALL_VOID(nc_put_vara(this->parent_id, this->id, pos, size, &v));
+			bool lossless=0;		
+			uint64_t v = value.As<Napi::BigInt>().Uint64Value(&lossless);
+			NC_CALL(nc_put_vara(this->parent_id, this->id, pos, size, &v));
 		} else {
 			auto array = value.As<Napi::BigUint64Array>();
 			void *v = array.ArrayBuffer().Data();
-			size_t l = array.ElementLength();
-			NC_CALL_VOID(nc_put_vara(this->parent_id, this->id, pos, size, &v));
+//			size_t l = array.ElementLength();
+			NC_CALL(nc_put_vara(this->parent_id, this->id, pos, size, &v));
 		}
 	} 
 	break;
 	case NC_INT64: {
+		auto value=info[this->ndims];
 		if (value.IsNumber()) {
 			int64_t v = value.As<Napi::Number>().Uint32Value();
-			NC_CALL_VOID(nc_put_vara(this->parent_id, this->id, pos, size, &v));
+			NC_CALL(nc_put_vara(this->parent_id, this->id, pos, size, &v));
 		} else if (value.IsBigInt()) {
-			int64_t v = value.As<Napi::BigInt>().Int64Value(nullptr);
-			NC_CALL_VOID(nc_put_vara(this->parent_id, this->id, pos, size, &v));
+			bool lossless=0;		
+			int64_t v = value.As<Napi::BigInt>().Int64Value(&lossless);
+			NC_CALL(nc_put_vara(this->parent_id, this->id, pos, size, &v));
 		} else {
 			auto array = value.As<Napi::BigInt64Array>();
 			void *v = array.ArrayBuffer().Data();
-			size_t l = array.ElementLength();
-			NC_CALL_VOID(nc_put_vara(this->parent_id, this->id, pos, size, &v));
+//			size_t l = array.ElementLength();
+			NC_CALL(nc_put_vara(this->parent_id, this->id, pos, size, &v));
 		}
 	} 
 	break;
@@ -339,7 +344,6 @@ Napi::Value Variable::Read(const Napi::CallbackInfo &info) {
 	Napi::ArrayBuffer buffer;
 	Napi::Value result;
 
-
 	switch (this->type) {
 	case NC_BYTE: {
 		int8_t v;
@@ -387,17 +391,19 @@ Napi::Value Variable::Read(const Napi::CallbackInfo &info) {
 		NC_CALL(nc_get_vara(this->parent_id, this->id, pos, size, &v));
 		result = Napi::Number::New(info.Env(), v);
 	} break;
-#if NODE_MAJOR_VERSION >= 10
-	case NC_UINT64:
+#if NODE_MAJOR_VERSION > 9
+	case NC_UINT64:{
 		uint64_t v;
 		NC_CALL(nc_get_vara(this->parent_id, this->id, pos, size, &v));
 		result = Napi::BigInt::New(info.Env(), v);
-		break;
-	case NC_INT64:
+	}
+	break;
+	case NC_INT64:{
 		int64_t v;
 		NC_CALL(nc_get_vara(this->parent_id, this->id, pos, size, &v));
 		result = Napi::BigInt::New(info.Env(), v);
-		break;
+	}
+	break;
 #endif
 	case NC_STRING: {
 		std::string v;
@@ -491,16 +497,18 @@ Napi::Value Variable::ReadSlice(const Napi::CallbackInfo &info) {
 		result = array;
 	} break;
 #if NODE_MAJOR_VERSION >= 10
-	case NC_UINT64:
-		auto array = Napi::Uint64Array::New(info.Env(), total_size);
+	case NC_UINT64: {
+		auto array = Napi::BigUint64Array::New(info.Env(), total_size);
 		buffer = array.ArrayBuffer();
 		result = array;
-		break;
-	case NC_INT64:
-		auto array = Napi::Int64Array::New(info.Env(), total_size);
+	}
+	break;
+	case NC_INT64:{
+		auto array = Napi::BigInt64Array::New(info.Env(), total_size);
 		buffer = array.ArrayBuffer();
 		result = array;
-		break;
+	}
+	break;
 #endif
 	}
 
@@ -586,16 +594,18 @@ Napi::Value Variable::ReadStridedSlice(const Napi::CallbackInfo &info) {
 		result = array;
 	} break;
 #if NODE_MAJOR_VERSION >= 10
-	case NC_UINT64:
-		auto array = Napi::Uint64Array::New(info.Env(), total_size);
+	case NC_UINT64: {
+		auto array = Napi::BigUint64Array::New(info.Env(), total_size);
 		buffer = array.ArrayBuffer();
 		result = array;
-		break;
-	case NC_INT64:
-		auto array = Napi::Int64Array::New(info.Env(), total_size);
+	}
+	break;
+	case NC_INT64:{
+		auto array = Napi::BigInt64Array::New(info.Env(), total_size);
 		buffer = array.ArrayBuffer();
 		result = array;
-		break;
+	}
+	break;
 #endif
 	}
 
@@ -914,6 +924,20 @@ Napi::Value Variable::GetFillValue(const Napi::CallbackInfo &info) {
 		NC_CALL(nc_inq_var_fill(this->parent_id, this->id, NULL, &v));
 		result = Napi::Number::New(info.Env(), v);
 	} break;
+#if NODE_MAJOR_VERSION > 9
+	case NC_UINT64:{
+		uint64_t v;
+		NC_CALL(nc_inq_var_fill(this->parent_id, this->id, NULL, &v));
+		result = Napi::BigInt::New(info.Env(), v);
+	}
+	break;
+	case NC_INT64:{
+		int64_t v;
+		NC_CALL(nc_inq_var_fill(this->parent_id, this->id, NULL, &v));
+		result = Napi::BigInt::New(info.Env(), v);
+	}
+	break;
+#endif
 	default:
 		Napi::Error::New(info.Env(), "Variable type not supported yet").ThrowAsJavaScriptException(); 
 		return info.Env().Undefined(); 
