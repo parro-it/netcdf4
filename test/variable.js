@@ -113,4 +113,63 @@ describe("Variable", function () {
     results = Array.from(res);
     expect(results).to.deep.equal([30,197,20.5,399]);
   });
+
+  it("shuold add a Atribute", function() {
+    var newVar=tempFileNewName.root.addVariable('test_variable','byte',[tempFileNewName.root.dimensions.recNum.id]);
+    newVar.addAttribute('lenth', 'int', 42);
+    console.log(tempFileNewName.root.variables.test_variable.attributes)
+    
+  });
+  it("name", function(){
+    fileold.root.variables.var1.name = "var2";
+    expect(fileold.root.variables).to.have.property("var2");
+  });
+  it("endianness", function() {
+    console.log(filenew.root.variables.UTC_time.endianness);
+    filenew.root.variables.UTC_time.endianness = "big";
+    console.log(filenew.root.variables.UTC_time.endianness);
+    expect(filenew.root.variables.UTC_time.endianness).to.equal("big");
+  });
+
+  it("checksummode", function() {
+    console.log(filenew.root.variables.UTC_time.checksummode);
+    filenew.root.variables.UTC_time.checksummode = "fletcher32";
+    console.log(filenew.root.variables.UTC_time.checksummode);
+  });
+  it("chunkmode", function() {
+    console.log(filenew.root.variables.UTC_time.chunkmode);
+    filenew.root.variables.UTC_time.chunkmode = "chunked";
+    console.log(filenew.root.variables.UTC_time.chunkmode);
+  });
+  it.only("chunksizes", function() {
+    console.log(filenew.root.variables.UTC_time.chunksizes);
+    filenew.root.variables.UTC_time.chunksizes = "chunked";
+    console.log(filenew.root.variables.UTC_time.chunksizes);
+  });
+  it("chunksizes", function() {
+    console.log(filenew.root.variables.UTC_time.chunksizes);
+    filenew.root.variables.UTC_time.chunksizes = "chunked";
+    console.log(filenew.root.variables.UTC_time.chunksizes);
+  });
+  it("fillvalue", function() {
+    console.log(filenew.root.variables.UTC_time.fillvalue);
+    filenew.root.variables.UTC_time.fillvalue = "chunked";
+    console.log(filenew.root.variables.UTC_time.fillvalue);
+  });
+  it("compressionshuffle", function() {
+    console.log(filenew.root.variables.UTC_time.compressionshuffle);
+    filenew.root.variables.UTC_time.compressionshuffle = "chunked";
+    console.log(filenew.root.variables.UTC_time.compressionshuffle);
+  })
+  it("compressiondeflate", function() {
+    console.log(filenew.root.variables.UTC_time.compressiondeflate);
+    filenew.root.variables.UTC_time.compressiondeflate = "chunked";
+    console.log(filenew.root.variables.UTC_time.compressiondeflate);
+  });
+  it("compressionlevel", function() {
+    console.log(filenew.root.variables.UTC_time.compressionlevel);
+    filenew.root.variables.UTC_time.compressionlevel = "chunked";
+    console.log(filenew.root.variables.UTC_time.compressionlevel);
+  });
+
 });

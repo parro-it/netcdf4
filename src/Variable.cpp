@@ -608,25 +608,31 @@ Napi::Value Variable::ReadStridedSlice(const Napi::CallbackInfo &info) {
 }
 
 Napi::Value Variable::AddAttribute(const Napi::CallbackInfo &info) {
-	
+	printf("parent_id = %d, id = %d", this->parent_id, this->id);
+
 	if (info.Length() < 3) {
 		Napi::Error::New(info.Env(), "Wrong number ofarguments").ThrowAsJavaScriptException(); 
 		return info.Env().Undefined();
 	}
 	std::string type_str = info[1].As<Napi::String>().ToString();
-	std::string name_ = info[0].As<Napi::String>().ToString();
+	std::string name_ = info[0].As<Napi::String>().Utf8Value();
+	printf("type_str = %s, name= %s", type_str.c_str(), name.c_str());
 	int type = get_type(type_str);
 	if (type == NC2_ERR) {
 		Napi::Error::New(info.Env(), "Unknown variable type").ThrowAsJavaScriptException(); 
 		return info.Env().Undefined();
 	}
 
-	Napi::Object object = Attribute::Build(info.Env(), name_, this->id, this->parent_id, type);
-	
-	Attribute *attribute =  Napi::ObjectWrap<Attribute>::Unwrap(object);
-	attribute->SetValue(info, info[2]);
+	printf("parent_id = %d, id = %d, name= %s", this->parent_id, this->id, name.c_str());
+	Attribute::set_value(info,this->parent_id,this->id,name,type,info[2]);
+	return Attribute::Build(info.Env(),name,NC_GLOBAL,this->id,type);
 
-	return attribute->GetValue(info);
+	// Napi::Object object = Attribute::Build(info.Env(), name_, this->id, this->parent_id, type);
+	
+	// Attribute *attribute =  Napi::ObjectWrap<Attribute>::Unwrap(object);
+	// attribute->SetValue(info, info[2]);
+
+	// return attribute->GetValue(info);
 }
 
 Napi::Value Variable::GetId(const Napi::CallbackInfo &info) {
@@ -717,7 +723,7 @@ void Variable::SetEndianness(const Napi::CallbackInfo &info, const Napi::Value &
 		Napi::Error::New(info.Env(), "Unknown value").ThrowAsJavaScriptException();        
 		return;
 	}
-	NC_CALL_VOID(nc_def_var_endian(this->parent_id,this->id,v))
+	NC_CALL_VOID(nc_def_var_endian(this->parent_id,this->id,v));
 }
 
 Napi::Value Variable::GetChecksumMode(const Napi::CallbackInfo &info) {
