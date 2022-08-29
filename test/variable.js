@@ -1,4 +1,10 @@
-const expect = require("chai").expect;
+const chai = require("chai");
+const expect = chai.expect;
+const chaiAlmost = require('chai-almost');
+
+chai.use(chaiAlmost(0.001));
+
+
 const netcdf4 = require("..");
 const { tmpdir } = require("os");
 const { join } = require("path");
@@ -113,4 +119,62 @@ describe("Variable", function () {
     results = Array.from(res);
     expect(results).to.deep.equal([30,197,20.5,399]);
   });
+
+  const arrTypes={
+    "byte":[Int8Array,Number],
+    "short":[Int16Array,Number],
+    "int":[Int32Array,Number],
+    "float":[Float32Array,Number],
+    "double":[Float64Array,Number],
+    "ubyte":[Uint8Array,Number],
+    "ushort":[Uint16Array,Number],
+    "uint":[Uint32Array,Number]
+  };
+  if (process.versions.node.split(".")[0]>=10) {
+    arrTypes["uint64"]=[BigUint64Array,BigInt];
+    arrTypes["int64"]=[BigInt64Array,BigInt];
+  };
+
+  const testFunc=(file,type,value,values)=>{
+    const methods=arrTypes[type];
+
+    it(`should create/read/write ${type} variable (${file})`,
+      function(){
+        const [fd,path]=file==='netcdf3'?[fileold,tempFileOldName]:[filenew,tempFileNewName];
+        const dim=file==='netcdf3'?"dim1":"recNum"
+        expect(methods).to.be.not.empty;
+        expect(fd.root.variables).to.not.have.property("test_variable");
+        newVar=fd.root.addVariable('test_variable',type,[dim]);
+        expect(newVar.name).to.be.equal('test_variable')
+        expect(newVar.type).to.be.equal(type)
+        expect(newVar.read(0)).to.be.equal(newVar.fillvalue);
+        newVar.write(0,methods[1](value));
+        expect(newVar.read(0)).to.be.almost.eql(methods[1](value));
+        const fd2=new netcdf4.File(path,'r');
+        expect(fd2.root.variables).to.have.property("test_variable");
+        expect(fd2.root.variables.test_variable.read(0)).to.almost.eql(methods[1](value));
+        fd2.close();
+      }
+    )
+  }
+
+  const testSuiteOld=[
+    ['byte',10,[10,20,30]],
+    ['short',1024,[20,512,333]],
+    ['int',100000,[0,-200,3000,555666]],
+    ['float',153.2,[-12,33,55.5,106.2]],
+    ['double',153.2,[-12,33,55.5,106.2]],,
+    ['ubyte',10,[10,20,30]],
+    ['ushort',1024,[20,512,333]],
+    ['uint',100000,[0,200,3000,555666]]
+  ];
+  if (process.versions.node.split(".")[0]>=10) {
+    testSuiteOld.push(['uint64',1024,[20,512,333]]);
+    testSuiteOld.push(['int64',100000,[0,200,3000,555666]]);
+  };
+  testSuiteOld.forEach(v=>testFunc('hdf5',v[0],v[1],v[2]));
+
+
+  
+
 });
