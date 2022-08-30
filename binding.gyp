@@ -13,7 +13,8 @@
                 '-Wunreachable-code',
                 '-Wold-style-cast',
                 '-Werror',
-                '-fexceptions'
+                '-fexceptions',
+                '-std=c++14'
             ],
             "sources": [
                 "src/Group.cpp",
