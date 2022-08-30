@@ -989,6 +989,40 @@ void Variable::SetFillValue(const Napi::CallbackInfo &info, const Napi::Value &v
 		uint32_t v = value.ToNumber().Uint32Value(); 
 		NC_CALL_VOID(nc_def_var_fill(this->parent_id, this->id, mode, &v)); 
 	} break; 
+#if NODE_MAJOR_VERSION >= 10
+	case NC_UINT64: {
+		if (value.IsNumber()) {
+			uint64_t v = value.As<Napi::Number>().Uint32Value();
+			NC_CALL_VOID(nc_def_var_fill(this->parent_id, this->id, mode, &v));
+		} else if (value.IsBigInt()) {
+			bool lossless=0;		
+			uint64_t v = value.As<Napi::BigInt>().Uint64Value(&lossless);
+			NC_CALL_VOID(nc_def_var_fill(this->parent_id, this->id, mode, &v));
+		} else {
+			auto array = value.As<Napi::BigUint64Array>();
+			void *v = array.ArrayBuffer().Data();
+//			size_t l = array.ElementLength();
+			NC_CALL_VOID(nc_def_var_fill(this->parent_id, this->id, mode, &v));
+		}
+	} 
+	break;
+	case NC_INT64: {
+		if (value.IsNumber()) {
+			int64_t v = value.As<Napi::Number>().Uint32Value();
+			NC_CALL_VOID(nc_def_var_fill(this->parent_id, this->id, mode, &v));
+		} else if (value.IsBigInt()) {
+			bool lossless=0;		
+			int64_t v = value.As<Napi::BigInt>().Int64Value(&lossless);
+			NC_CALL_VOID(nc_def_var_fill(this->parent_id, this->id, mode, &v));
+		} else {
+			auto array = value.As<Napi::BigInt64Array>();
+			void *v = array.ArrayBuffer().Data();
+//			size_t l = array.ElementLength();
+			NC_CALL_VOID(nc_def_var_fill(this->parent_id, this->id, mode, &v));
+		}
+	} 
+	break;
+#endif
 	default:
 		Napi::Error::New(info.Env(), "Variable type not supported yet").ThrowAsJavaScriptException();
 		return;

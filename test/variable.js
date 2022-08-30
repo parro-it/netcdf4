@@ -61,12 +61,12 @@ describe("Variable", function () {
     expect(res).to.be.equal(420);
   });
 
-  it.only("should read an existing (hdf5)", function () {
+  it("should read an existing (hdf5)", function () {
     expect(filenew.root.variables.UTC_time.read(0)).to.be.equal('2012-03-04 03:54:19');
     expect(filenew.root.variables.UTC_time.read(1)).to.be.equal('2012-03-04 03:54:42');
   });
 
-  it.only("should write an existing (hdf5)", function () {
+  it("should write an existing (hdf5)", function () {
     expect(filenew.root.variables.UTC_time.read(0)).to.be.equal('2012-03-04 03:54:19');
     filenew.root.variables.UTC_time.write(0,'2012-03-04 03:54:29');
     expect(filenew.root.variables.UTC_time.read(0)).to.be.equal('2012-03-04 03:54:29');
@@ -196,7 +196,7 @@ describe("Variable", function () {
     arrTypes["int64"]=[BigInt64Array,BigInt];
   };
 
-  const testFunc=(file,type,value,values)=>{
+  const testFunc=(file,type,value,values,defaultValue)=>{
     const methods=arrTypes[type];
 
     it(`should create/read/write ${type} variable (${file})`,
@@ -208,12 +208,15 @@ describe("Variable", function () {
         newVar=fd.root.addVariable('test_variable',type,[dim]);
         expect(newVar.name).to.be.equal('test_variable')
         expect(newVar.type).to.be.equal(type)
+        newVar.fillvalue=methods[1](defaultValue);
+        expect(newVar.fillvalue).to.be.almost.eql(methods[1](defaultValue));
         expect(newVar.read(0)).to.be.equal(newVar.fillvalue);
         newVar.write(0,methods[1](value));
         expect(newVar.read(0)).to.be.almost.eql(methods[1](value));
         const fd2=new netcdf4.File(path,'r');
         expect(fd2.root.variables).to.have.property("test_variable");
         expect(fd2.root.variables.test_variable.read(0)).to.almost.eql(methods[1](value));
+        expect(fd2.root.variables.test_variable.fillvalue).to.be.almost.eql(methods[1](defaultValue));
         fd2.close();
       }
     )
@@ -248,20 +251,20 @@ describe("Variable", function () {
   }
 
   const testSuiteOld=[
-    ['byte',10,[10,20,30,40]],
-    ['short',1024,[20,512,333,1024]],
-    ['int',100000,[0,-200,3000,555666]],
-    ['float',153.2,[-12,33,55.5,106.2]],
-    ['double',153.2,[-12,33,55.5,106.2]],
-    ['ubyte',10,[10,20,30,40]],
-    ['ushort',1024,[20,512,333,1024]],
-    ['uint',100000,[0,200,3000,555666]]
+    ['byte',10,[10,20,30,40],127],
+    ['short',1024,[20,512,333,1024],32767],
+    ['int',100000,[0,-200,3000,555666],32767],
+    ['float',153.2,[-12,33,55.5,106.2],-555.555],
+    ['double',153.2,[-12,33,55.5,106.2],-555.555],
+    ['ubyte',10,[10,20,30,40],127],
+    ['ushort',1024,[20,512,333,1024],127],
+    ['uint',100000,[0,200,3000,555666],127]
   ];
   if (process.versions.node.split(".")[0]>=10) {
-    testSuiteOld.push(['uint64',1024,[20n,512555n,333n,77788889n]]);
-    testSuiteOld.push(['int64',100000,[0n,200n,3000n,555666n]]);
+    testSuiteOld.push(['uint64',1024,[20n,512555n,333n,77788889n],100n]);
+    testSuiteOld.push(['int64',100000,[0n,200n,3000n,555666n],100n]);
   };
-  testSuiteOld.forEach(v=>testFunc('hdf5',v[0],v[1],v[2]));
+  testSuiteOld.forEach(v=>testFunc('hdf5',v[0],v[1],v[2],v[3]));
 
 
 });
