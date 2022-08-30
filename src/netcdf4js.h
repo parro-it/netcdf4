@@ -198,6 +198,7 @@ class Variable : public Napi::ObjectWrap<Variable> {
 	Napi::Value ReadStridedSlice(const Napi::CallbackInfo &info);
 	Napi::Value Write(const Napi::CallbackInfo &info);
 	Napi::Value WriteSlice(const Napi::CallbackInfo &info);
+	Napi::Value WriteSliceStringArray(const Napi::CallbackInfo &info, Napi::Array array);
 	Napi::Value WriteStridedSlice(const Napi::CallbackInfo &info);
 	Napi::Value AddAttribute(const Napi::CallbackInfo &info);
 	Napi::Value GetId(const Napi::CallbackInfo &info);
