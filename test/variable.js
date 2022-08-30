@@ -66,6 +66,15 @@ describe("Variable", function () {
     expect(filenew.root.variables.UTC_time.read(1)).to.be.equal('2012-03-04 03:54:42');
   });
 
+  it.only("should write an existing (hdf5)", function () {
+    expect(filenew.root.variables.UTC_time.read(0)).to.be.equal('2012-03-04 03:54:19');
+    filenew.root.variables.UTC_time.write(0,'2012-03-04 03:54:29');
+    expect(filenew.root.variables.UTC_time.read(0)).to.be.equal('2012-03-04 03:54:29');
+    filenew.close();
+      
+    filenew = new netcdf4.File(tempFileNewName, "r");
+    expect(filenew.root.variables.UTC_time.read(0)).to.be.equal('2012-03-04 03:54:29');
+});
 
   it("should rename an existing", function(){
     fileold.root.variables.var1.name = "var2";

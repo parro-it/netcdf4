@@ -159,6 +159,11 @@ Napi::Value Variable::Write(const Napi::CallbackInfo &info) {
 	} 
 	break;
 #endif
+	case NC_STRING: {
+		std::string string_value = info[this->ndims].As<Napi::String>().ToString();
+		const char *v=string_value.c_str();
+		NC_CALL(nc_put_vara(this->parent_id, this->id, pos, size, &v));
+	} break;
 	default: {
 		Napi::TypeError::New(info.Env(), "Variable type not supported yet").ThrowAsJavaScriptException();
 		
@@ -407,11 +412,10 @@ Napi::Value Variable::Read(const Napi::CallbackInfo &info) {
 	break;
 #endif
 	case NC_STRING: {
-		char *strings_in[1];
-		NC_CALL(nc_get_vara(this->parent_id, this->id, pos, size, strings_in));
-		printf("Readed %s \n",strings_in[0]);
-		result = Napi::String::New(info.Env(), std::string(strings_in[0]));
-		nc_free_string(1,strings_in);
+		char *v[1];
+		NC_CALL(nc_get_vara(this->parent_id, this->id, pos, size, v));
+		result = Napi::String::New(info.Env(), std::string(v[0]));
+		nc_free_string(1,v);
 	} break;
 	default: {
 		Napi::TypeError::New(info.Env(), "Variable type not supported yet").ThrowAsJavaScriptException();
