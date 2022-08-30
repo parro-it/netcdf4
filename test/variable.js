@@ -34,10 +34,10 @@ describe("Variable", function () {
 
   it("should read variable params (hdf5)", function() {
     expect(filenew.root.variables).to.have.property("UTC_time");
-    expect(filenew.root.variables.UTC_time.inspect()).to.be.equal('[Variable UTC_time, type unsupported, 1 dimension(s)]')
+    expect(filenew.root.variables.UTC_time.inspect()).to.be.equal('[Variable UTC_time, type string, 1 dimension(s)]')
     expect(filenew.root.variables.UTC_time.id,0)
     expect(filenew.root.variables.UTC_time.name).to.be.equal('UTC_time')
-    expect(filenew.root.variables.UTC_time.type).to.be.equal('unsupported')
+    expect(filenew.root.variables.UTC_time.type).to.be.equal('string')
     expect(filenew.root.variables.UTC_time.endianness).to.be.equal('native')
     expect(filenew.root.variables.UTC_time.attributes).to.have.property('name')
     expect(filenew.root.variables.UTC_time.attributes).to.have.property('unit')
@@ -189,7 +189,8 @@ describe("Variable", function () {
     "double":[Float64Array,Number],
     "ubyte":[Uint8Array,Number],
     "ushort":[Uint16Array,Number],
-    "uint":[Uint32Array,Number]
+    "uint":[Uint32Array,Number],
+    "string":[Array,String]
   };
   if (process.versions.node.split(".")[0]>=10) {
     arrTypes["uint64"]=[BigUint64Array,BigInt];
@@ -258,7 +259,8 @@ describe("Variable", function () {
     ['double',153.2,[-12,33,55.5,106.2],-555.555],
     ['ubyte',10,[10,20,30,40],127],
     ['ushort',1024,[20,512,333,1024],127],
-    ['uint',100000,[0,200,3000,555666],127]
+    ['uint',100000,[0,200,3000,555666],127],
+    ['string',"Test value",["111","222","333","444"],"fill"]
   ];
   if (process.versions.node.split(".")[0]>=10) {
     testSuiteOld.push(['uint64',1024,[20n,512555n,333n,77788889n],100n]);

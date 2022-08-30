@@ -999,6 +999,13 @@ Napi::Value Variable::GetFillValue(const Napi::CallbackInfo &info) {
 	}
 	break;
 #endif
+	case NC_STRING:{
+		char *v[1];
+		NC_CALL(nc_inq_var_fill(this->parent_id, this->id, NULL, v));
+		result = Napi::String::New(info.Env(),std::string(v[0]));
+		NC_CALL(nc_free_string(1,v));
+	}
+	break;
 	default:
 		Napi::Error::New(info.Env(), "Variable type not supported yet").ThrowAsJavaScriptException(); 
 		return info.Env().Undefined(); 
@@ -1079,6 +1086,11 @@ void Variable::SetFillValue(const Napi::CallbackInfo &info, const Napi::Value &v
 	} 
 	break;
 #endif
+	case NC_STRING:{
+		const char *v=std::string(value.As<Napi::String>().ToString()).c_str();
+		NC_CALL_VOID(nc_def_var_fill(this->parent_id, this->id, mode, &v));
+	}
+	break;
 	default:
 		Napi::Error::New(info.Env(), "Variable type not supported yet").ThrowAsJavaScriptException();
 		return;

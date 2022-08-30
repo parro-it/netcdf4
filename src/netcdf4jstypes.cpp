@@ -14,6 +14,7 @@ namespace netcdf4js {
         "uint",	   // NC_UINT
         "int64",	   // NC_INT64
         "uint64",	   // NC_UINT64
+        "string"
     };
     const char *format_names[] = {
         "unknown", // NC_FORMATX_UNDEFINED
