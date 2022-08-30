@@ -94,12 +94,22 @@ Properties:
 Methods:
 * `addVariable(name, type, dimensions)` : Add a new variable in
   group. `type` is one of `"byte", "char", "short", "int", "ubyte", "ushort",
-  "uint", "float", "double"`. `dimensions` is an array of ids or names of dimensions
-  TODO: 
-  ```
-   Valid datatype specifiers include: 'f4' (32-bit floating point), 'f8' (64-bit floating point), 'i4' (32-bit signed integer), 'i2' (16-bit signed integer), 'i8' (64-bit signed integer), 'i1' (8-bit signed integer), 'u1' (8-bit unsigned integer), 'u2' (16-bit unsigned integer), 'u4' (32-bit unsigned integer), 'u8' (64-bit unsigned integer), or 'S1' (single-character string). The old Numeric single-character typecodes ('f','d','h', 's','b','B','c','i','l'), corresponding to ('f4','f8','i2','i2','i1','i1','S1','i4','i4'), will also work.
-   ```
-  for the new variable. Returns new variable.
+  "uint", "float", "double", "uint64", "int64", "string". `dimensions` is an array of ids or names of dimensions   for the new variable. Returns new variable. Also supports old python/unidata synonyms:
+  | type | two-char synonym | one-char synonym | Note |
+  | --- | --- | --- | --- |
+  | byte | i1 | b B | |
+  | char |  |  | |
+  | short | i2 | h s | |
+  | int | i4 | i l | |
+  | ubyte | u1 | | |
+  | ushort | u2 | | |
+  | uint | u4 | | | |
+  | float | f4 | f | |
+  | double | f8 | d | |
+  | uint64 | u8 | | |
+  | int64 | i8 | | |
+  | string | S1 | | Not fully supported yet |
+
 * `addDimension(name, length)` : Add new dimension of length `length`
   (can be `"unlimited"` for unlimited dimension). Returns new dimension.
 * `addSubgroup(name)` : Add subgroup. Returns new subgroup.

@@ -42,29 +42,29 @@ inline void throw_netcdf_error(v8::Isolate *isolate, int retval) {
 }
 */
 inline int get_type(const std::string &type_str) {
-	if (type_str == "byte") {
+	if (type_str == "byte" || type_str == "i1" || type_str == "b" || type_str == "B") {
 		return NC_BYTE;
 	} else if (type_str == "char") {
 		return NC_CHAR;
-	} else if (type_str == "short") {
+	} else if (type_str == "short" || type_str == "i2" || type_str == "h" || type_str == "s") {
 		return NC_SHORT;
-	} else if (type_str == "int") {
+	} else if (type_str == "int" || type_str == "i4" || type_str == "i" || type_str == "l") {
 		return NC_INT;
-	} else if (type_str == "float") {
+	} else if (type_str == "float" || type_str == "f4" || type_str == "f") {
 		return NC_FLOAT;
-	} else if (type_str == "double") {
+	} else if (type_str == "double" || type_str == "f8" || type_str == "d") {
 		return NC_DOUBLE;
-	} else if (type_str == "ubyte") {
+	} else if (type_str == "ubyte" || type_str == "u1") {
 		return NC_UBYTE;
-	} else if (type_str == "ushort") {
+	} else if (type_str == "ushort" || type_str == "u2") {
 		return NC_USHORT;
-	} else if (type_str == "uint") {
+	} else if (type_str == "uint" || type_str == "u4") {
 		return NC_UINT;
-	} else if (type_str == "uint64") {
+	} else if (type_str == "uint64" || type_str == "u8") {
 		return NC_UINT64;
-	} else if (type_str == "int64") {
+	} else if (type_str == "int64" || type_str == "i8") {
 		return NC_INT64;
-	} else if (type_str == "string") {
+	} else if (type_str == "string" || type_str == "S1") {
 		return NC_STRING;
 	} else {
 		return NC2_ERR;
