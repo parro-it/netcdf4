@@ -100,6 +100,7 @@ class File : public Napi::ObjectWrap<File> {
 	// Napi::Value New(const Napi::CallbackInfo &info);
 	Napi::Value Close(const Napi::CallbackInfo &info);
 	Napi::Value Sync(const Napi::CallbackInfo &info);
+	Napi::Value DataMode(const Napi::CallbackInfo &info);
 	Napi::Value GetId(const Napi::CallbackInfo &info);
 	Napi::Value GetName(const Napi::CallbackInfo &info);
 	Napi::Value IsClosed(const Napi::CallbackInfo &info);

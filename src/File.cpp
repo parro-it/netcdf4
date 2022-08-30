@@ -22,6 +22,7 @@ Napi::Object File::Init(Napi::Env env, Napi::Object exports) {
 			{
 				InstanceMethod("sync", &File::Sync), 
 				InstanceMethod("close", &File::Close),
+				InstanceMethod("dataMode", &File::DataMode),
 				InstanceAccessor<&File::GetId>("id"),
 				InstanceAccessor<&File::GetName>("name"),
 				InstanceAccessor<&File::IsClosed>("closed"),
@@ -86,24 +87,28 @@ File::File(const Napi::CallbackInfo &info) : Napi::ObjectWrap<File>(info) {
 }
 
 Napi::Value File::Sync(const Napi::CallbackInfo &info) {
-	Napi::Env env = info.Env();
+	if (!this->closed) {
+		Napi::Env env = info.Env();
 
-	int retval = nc_sync(this->id);
-	if (retval != NC_NOERR) {
-		Napi::Error::New(env, nc_strerror(retval)).ThrowAsJavaScriptException();
+		int retval = nc_sync(this->id);
+		if (retval != NC_NOERR) {
+			Napi::Error::New(env, nc_strerror(retval)).ThrowAsJavaScriptException();
+		}
 	}
 
 	return info.Env().Undefined();
 }
 
 Napi::Value File::Close(const Napi::CallbackInfo &info) {
-	int retval = nc_close(this->id);
-	if (retval != NC_NOERR) {
-		Napi::Error::New(info.Env(), nc_strerror(retval)).ThrowAsJavaScriptException();
-	}
-	this->closed = true;
-	if (this->Value().Has("root")) {
-		this->Value().Delete("root");
+	if (!this->closed) {
+		int retval = nc_close(this->id);
+		if (retval != NC_NOERR) {
+			Napi::Error::New(info.Env(), nc_strerror(retval)).ThrowAsJavaScriptException();
+		}
+		this->closed = true;
+		if (this->Value().Has("root")) {
+			this->Value().Delete("root");
+		}		
 	}
 	return info.Env().Undefined();
 }
@@ -122,6 +127,15 @@ Napi::Value File::IsClosed(const Napi::CallbackInfo &info) {
 
 Napi::Value File::GetFormat(const Napi::CallbackInfo &info) {
 	return Napi::String::New(info.Env(), format);
+}
+
+Napi::Value File::DataMode(const Napi::CallbackInfo &info) {
+	int retval = nc_enddef(this->id);
+	if (retval != NC_NOERR) {
+		Napi::Error::New(info.Env(), nc_strerror(retval)).ThrowAsJavaScriptException();
+	}
+	return info.Env().Undefined();
+
 }
 
 Napi::Value File::Inspect(const Napi::CallbackInfo &info) {

@@ -26,9 +26,17 @@ describe("Variable", function () {
   });
 
   afterEach(function () {
-    fileold.close();
+    try{
+      fileold.close();
+    } catch (ignore) {
+      console.error(`Got ${ignore.message} during closing ${fixture}, ignore`);
+    }
     unlinkSync(tempFileOldName);
-    filenew.close();
+    try{
+      filenew.close();
+    } catch (ignore) {
+      console.error(`Got ${ignore.message} during closing ${fixture1}, ignore`);
+    }
     unlinkSync(tempFileNewName);
   });
 
@@ -202,7 +210,17 @@ describe("Variable", function () {
 
     it(`should create/read/write ${type} variable (${file})`,
       function(){
-        const [fd,path]=file==='netcdf3'?[fileold,tempFileOldName]:[filenew,tempFileNewName];
+        let [fd,path]=file==='netcdf3'?[fileold,tempFileOldName]:[filenew,tempFileNewName];
+        if (file==='netcdf3') {
+            try{
+              fd.close();
+            } catch (ignore) {
+              console.log(`Got ${ignore.message} during file closing, ingored`)
+            }
+            fd=new netcdf4.File(path,'c!','classic')
+          fd.root.addDimension("dim1",75)
+        }
+
         const dim=file==='netcdf3'?"dim1":"recNum"
         expect(methods).to.be.not.empty;
         expect(fd.root.variables).to.not.have.property("test_variable");
@@ -211,41 +229,76 @@ describe("Variable", function () {
         expect(newVar.type).to.be.equal(type)
         newVar.fillvalue=methods[1](defaultValue);
         expect(newVar.fillvalue).to.be.almost.eql(methods[1](defaultValue));
+        fd.dataMode();
         expect(newVar.read(0)).to.be.equal(newVar.fillvalue);
         newVar.write(0,methods[1](value));
         expect(newVar.read(0)).to.be.almost.eql(methods[1](value));
-        const fd2=new netcdf4.File(path,'r');
-        expect(fd2.root.variables).to.have.property("test_variable");
-        expect(fd2.root.variables.test_variable.read(0)).to.almost.eql(methods[1](value));
-        expect(fd2.root.variables.test_variable.fillvalue).to.be.almost.eql(methods[1](defaultValue));
-        fd2.close();
+        try{
+          fd.close();
+        } catch (ignore) {
+          console.log(`Got ${ignore.message} during file closing, ingored`)
+        }
+        fd=new netcdf4.File(path,'r');
+        expect(fd.root.variables).to.have.property("test_variable");
+        expect(fd.root.variables.test_variable.read(0)).to.almost.eql(methods[1](value));
+        expect(fd.root.variables.test_variable.fillvalue).to.be.almost.eql(methods[1](defaultValue));
       }
     )
     it(`should read/write slice ${type} variable (${file}) `,
       function() {
-        const [fd,path]=file==='netcdf3'?[fileold,tempFileOldName]:[filenew,tempFileNewName];
+        let [fd,path]=file==='netcdf3'?[fileold,tempFileOldName]:[filenew,tempFileNewName];
+        if (file==='netcdf3') {
+          try{
+            fd.close();
+          } catch (ignore) {
+            console.log(`Got ${ignore.message} during file closing, ingored`)
+          }
+          fd=new netcdf4.File(path,'c!','classic')
+          fd.root.addDimension("dim1",75)
+        }
         const dim=file==='netcdf3'?"dim1":"recNum"
         expect(methods).to.be.not.empty;
         expect(fd.root.variables).to.not.have.property("test_variable");
         newVar=fd.root.addVariable('test_variable',type,[dim]);
+        fd.dataMode();
         newVar.writeSlice(0, 4,new methods[0](values))
         expect(Array.from(fd.root.variables.test_variable.readSlice(0,4))).to.deep.almost.equal(values);
-        const fd2=new netcdf4.File(path,'r');
-        expect(fd2.root.variables).to.have.property("test_variable");
+        try{
+          fd.close();
+        } catch (ignore) {
+          console.log(`Got ${ignore.message} during file closing, ingored`)
+        }
+        fd=new netcdf4.File(path,'r');
+        expect(fd.root.variables).to.have.property("test_variable");
         expect(Array.from(fd.root.variables.test_variable.readSlice(0,4))).to.deep.almost.equal(values);
       }
     )
     it(`should read/write strided slice ${type} variable (${file}) `,
       function() {
-        const [fd,path]=file==='netcdf3'?[fileold,tempFileOldName]:[filenew,tempFileNewName];
+        let [fd,path]=file==='netcdf3'?[fileold,tempFileOldName]:[filenew,tempFileNewName];
+        if (file==='netcdf3') {
+          try{
+            fd.close();
+          } catch (ignore) {
+            console.log(`Got ${ignore.message} during file closing, ingored`)
+          }
+          fd=new netcdf4.File(path,'c!','classic')
+          fd.root.addDimension("dim1",75)
+        }
         const dim=file==='netcdf3'?"dim1":"recNum"
         expect(methods).to.be.not.empty;
         expect(fd.root.variables).to.not.have.property("test_variable");
         newVar=fd.root.addVariable('test_variable',type,[dim]);
+        fd.dataMode();
         newVar.writeStridedSlice(0, 2,2,new methods[0]([values[0],values[2]]))
         expect(Array.from(fd.root.variables.test_variable.readStridedSlice(0,2,2))).to.deep.almost.equal([values[0],values[2]]);
-        const fd2=new netcdf4.File(path,'r');
-        expect(fd2.root.variables).to.have.property("test_variable");
+        try{
+          fd.close();
+        } catch (ignore) {
+          console.log(`Got ${ignore.message} during file closing, ingored`)
+        }
+        fd=new netcdf4.File(path,'r');
+        expect(fd.root.variables).to.have.property("test_variable");
         expect(Array.from(fd.root.variables.test_variable.readStridedSlice(0,2,2))).to.deep.almost.equal([values[0],values[2]]);
       }
     )    
@@ -267,6 +320,7 @@ describe("Variable", function () {
     testSuiteOld.push(['int64',100000,[0n,200n,3000n,555666n],100n]);
   };
   testSuiteOld.forEach(v=>testFunc('hdf5',v[0],v[1],v[2],v[3]));
+  testSuiteOld.filter(v=>['ubyte','ushort','uint','string','int64','uint64'].indexOf(v[0])===-1).forEach(v=>testFunc('netcdf3',v[0],v[1],v[2],v[3]));
 
 
 });
