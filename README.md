@@ -9,6 +9,7 @@ NodeJS addon for reading and writing the files in the
 version <= 4,
 built upon the C-library for netcdf.
 
+
 ## Installation
 
 `netcdf4-js` is built with `nodejs` >= 8.x
@@ -186,3 +187,8 @@ Methods:
   with stride 1 (i.e. with no dropping) along the second dimension.
 * `addAttribute(name, type, value)` : Adds and sets new attribute. Returns
   new attribute.
+
+
+## Known flaws
+
+* Reading `variable.fillvalue` for string type variables causes segfault on ubuntu 18.04 due to knowing issue [nc_inq_var_fill() doesn't work for NC_STRING if a fill value is set - segfault results](https://github.com/Unidata/netcdf-c/issues/732). Workaround - find and install netcdf version > 4.6.0;
