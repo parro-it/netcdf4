@@ -526,8 +526,11 @@ Napi::Value Variable::ReadSlice(const Napi::CallbackInfo &info) {
         for (int i = 0; i < static_cast<int>(total_size); i++){
 			std::string *res_str=new std::string(str[i]);
             result_array[i] = Napi::String::New(info.Env(), res_str->c_str());
+			delete res_str;
         }
         NC_CALL(nc_free_string(total_size, str));
+		delete[] pos;
+		delete[] size;
         return result_array;
 	}
 
@@ -636,8 +639,11 @@ Napi::Value Variable::ReadStridedSlice(const Napi::CallbackInfo &info) {
         for (int i = 0; i < static_cast<int>(total_size); i++){
 			std::string *res_str=new std::string(str[i]);
             result_array[i] = Napi::String::New(info.Env(), res_str->c_str());
+			delete res_str;			
         }
         NC_CALL(nc_free_string(total_size, str));
+		delete[] pos;
+		delete[] size;
         return result_array;
 	}
 
