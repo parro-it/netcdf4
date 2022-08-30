@@ -168,17 +168,14 @@ class Attribute : public Napi::ObjectWrap<Attribute> {
 	static Napi::Object Build(Napi::Env env, std::string name, int var_id, int parent_id, int type);
 	static Napi::Object Build(Napi::Env env, std::string name, int var_id, int parent_id);
 	Attribute(const Napi::CallbackInfo &info);
-//	void set_value(Napi::Value &val);
-	Napi::Value GetValue(const Napi::CallbackInfo &info);
-	void SetValue(const Napi::CallbackInfo &info, const Napi::Value &value);
 
   private:
 	static Napi::FunctionReference constructor;
 	Napi::Value Delete(const Napi::CallbackInfo &info);
 	Napi::Value GetName(const Napi::CallbackInfo &info);
 	void SetName(const Napi::CallbackInfo &info, const Napi::Value &value);
-//	Napi::Value GetValue(const Napi::CallbackInfo &info);
-//	void SetValue(const Napi::CallbackInfo &info, const Napi::Value &value);
+	Napi::Value GetValue(const Napi::CallbackInfo &info);
+	void SetValue(const Napi::CallbackInfo &info, const Napi::Value &value);
 	Napi::Value Inspect(const Napi::CallbackInfo &info);
 	std::string name;
 	int id;
