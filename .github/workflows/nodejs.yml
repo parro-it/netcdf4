@@ -19,10 +19,19 @@ jobs:
       matrix:
         # node-version: [8.x, 10.x, 12.x, 14.x, 16.x, 18.x]
         node-version: [10.x, 16.x, 18.x]
-        os: [ubuntu-18.04, ubuntnu-20.04, ubuntu-22.04]
+        os: [ubuntnu-20.04, ubuntu-22.04,macos-10.15, windows-2019]
         # os: [ubuntu-18.04, ubuntnu-20.04, ubuntu-22.04, macos-10.15, windows-2019]
         # node-version: [14.x]
         # os: [windows-2019]
+      exclude:
+        - os: macos-10.15
+          node-version: 10.x
+        - os: macos-10.15
+          node-version: 18.x
+        - os: windows-2019
+          node-version: 10.x
+        - os: windows-2019
+          node-version: 18.x
 
     steps:
       - uses: actions/checkout@v2
