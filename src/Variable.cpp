@@ -223,10 +223,10 @@ Napi::Value Variable::WriteSlice(const Napi::CallbackInfo &info) {
 		break;
 #if NODE_MAJOR_VERSION >= 10
 	case NC_UINT64:
-		val = info[3 * this->ndims].As<Napi::BigUint64Array>();
+		val = info[2 * this->ndims].As<Napi::BigUint64Array>();
 		break;
 	case NC_INT64:
-		val = info[3 * this->ndims].As<Napi::BigInt64Array>();
+		val = info[2 * this->ndims].As<Napi::BigInt64Array>();
 		break;
 #endif
 	default:
@@ -270,6 +270,7 @@ Napi::Value Variable::WriteStridedSlice(const Napi::CallbackInfo &info) {
 	}
 
 	Napi::TypedArray val;
+
 	switch (this->type) {
 	case NC_BYTE:
 	case NC_CHAR:
@@ -432,7 +433,7 @@ Napi::Value Variable::ReadSlice(const Napi::CallbackInfo &info) {
 	}
 
 #if NODE_MAJOR_VERSION >= 10
-	if (this->type < NC_BYTE || this->type > NC_INT64) {
+	if (this->type < NC_BYTE || this->type > NC_UINT64) {
 #else
 	if (this->type < NC_BYTE || this->type > NC_UINT) {
 #endif		
@@ -525,7 +526,7 @@ Napi::Value Variable::ReadStridedSlice(const Napi::CallbackInfo &info) {
 	}
 
 #if NODE_MAJOR_VERSION >= 10
-	if (this->type < NC_BYTE || this->type > NC_INT64) {
+	if (this->type < NC_BYTE || this->type > NC_UINT64) {
 #else
 	if (this->type < NC_BYTE || this->type > NC_UINT) {
 #endif		

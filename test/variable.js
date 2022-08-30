@@ -243,7 +243,7 @@ describe("Variable", function () {
     ['uint',100000,[0,200,3000,555666]]
   ];
   if (process.versions.node.split(".")[0]>=10) {
-    testSuiteOld.push(['uint64',1024,[20n,512n,333n,77788889n]]);
+    testSuiteOld.push(['uint64',1024,[20n,512555n,333n,77788889n]]);
     testSuiteOld.push(['int64',100000,[0n,200n,3000n,555666n]]);
   };
   testSuiteOld.forEach(v=>testFunc('hdf5',v[0],v[1],v[2]));
