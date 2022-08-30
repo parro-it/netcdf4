@@ -198,7 +198,7 @@ describe("Variable", function () {
     "ubyte":[Uint8Array,Number],
     "ushort":[Uint16Array,Number],
     "uint":[Uint32Array,Number],
-    "string":[Array,String]
+    "string":[Array.from,String]
   };
   if (process.versions.node.split(".")[0]>=10) {
     arrTypes["uint64"]=[BigUint64Array,BigInt];
@@ -261,7 +261,8 @@ describe("Variable", function () {
         expect(fd.root.variables).to.not.have.property("test_variable");
         newVar=fd.root.addVariable('test_variable',type,[dim]);
         fd.dataMode();
-        newVar.writeSlice(0, 4,new methods[0](values))
+        newVar.writeSlice(0, 4,methods[0].prototype?new methods[0](values):methods[0](values))
+        const result=fd.root.variables.test_variable.readSlice(0,4);
         expect(Array.from(fd.root.variables.test_variable.readSlice(0,4))).to.deep.almost.equal(values);
         try{
           fd.close();
@@ -290,7 +291,7 @@ describe("Variable", function () {
         expect(fd.root.variables).to.not.have.property("test_variable");
         newVar=fd.root.addVariable('test_variable',type,[dim]);
         fd.dataMode();
-        newVar.writeStridedSlice(0, 2,2,new methods[0]([values[0],values[2]]))
+        newVar.writeStridedSlice(0, 2,2,methods[0].prototype?new methods[0]([values[0],values[2]]):methods[0]([values[0],values[2]]))
         expect(Array.from(fd.root.variables.test_variable.readStridedSlice(0,2,2))).to.deep.almost.equal([values[0],values[2]]);
         try{
           fd.close();

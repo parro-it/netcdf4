@@ -3,6 +3,7 @@
 #include "netcdf4jstypes.h"
 #include <node_version.h>
 
+
 namespace netcdf4js {
 
 const unsigned char Variable::type_sizes[] = {
@@ -78,6 +79,7 @@ Napi::Object Variable::Init(Napi::Env env, Napi::Object exports) {
 	exports.Set("Variable", func);
 	return exports;
 }
+
 Napi::Value Variable::Write(const Napi::CallbackInfo &info) {
 	if (info.Length() != static_cast<size_t>(this->ndims + 1)) {
 		Napi::TypeError::New(info.Env(), "Wrong number of arguments").ThrowAsJavaScriptException();
@@ -178,30 +180,16 @@ Napi::Value Variable::Write(const Napi::CallbackInfo &info) {
 	return info.Env().Undefined();
 }
 
-Napi::Value Variable::WriteStringSlice(const Napi::CallbackInfo &info) {
-	if (info.Length() != static_cast<size_t>(2 * this->ndims + 1)) {
-		Napi::TypeError::New(info.Env(), "Wrong number of arguments").ThrowAsJavaScriptException();
-		return info.Env().Undefined();
-	}
-
-	if (!info[2 * this->ndims].IsArray()) {
-		Napi::TypeError::New(info.Env(), "Expecting an array").ThrowAsJavaScriptException();
-		return info.Env().Undefined();
-	}
-	return info.Env().Undefined();
-
-}
 
 Napi::Value Variable::WriteSlice(const Napi::CallbackInfo &info) {
-	
-	if (this->type == NC_STRING) {
-		return this->WriteStringSlice(info);
-	}
+
 	if (info.Length() != static_cast<size_t>(2 * this->ndims + 1)) {
 		Napi::TypeError::New(info.Env(), "Wrong number of arguments").ThrowAsJavaScriptException();
 		return info.Env().Undefined();
 	}
-	if (!info[2 * this->ndims].IsTypedArray()) {
+
+
+	if (!(info[2 * this->ndims].IsTypedArray() || (this->type==NC_STRING && info[2 * this->ndims].IsArray()))) {
 		Napi::TypeError::New(info.Env(), "Expecting a typed array").ThrowAsJavaScriptException();
 		return info.Env().Undefined();
 	}
@@ -214,6 +202,32 @@ Napi::Value Variable::WriteSlice(const Napi::CallbackInfo &info) {
 		size[i] = s;
 		total_size *= s;
 	}
+
+	if (this->type==NC_STRING) {
+		auto val=info[2 * this->ndims].As<Napi::Array>();
+		auto val_size=val.Length();
+		if (val_size != total_size) {
+			Napi::TypeError::New(info.Env(), "Wrong size of array").ThrowAsJavaScriptException();
+			delete[] pos;
+			delete[] size;
+			return info.Env().Undefined();
+		}
+
+		std::vector<std::unique_ptr<const std::string > > string{};
+		std::vector<const char*> cstrings{};
+		for(auto i=0u;i<val_size;i++) {
+			Napi::Value v=val[i];
+			string.push_back(std::make_unique<std::string>(std::string(v.ToString())));
+			cstrings.push_back(string.at(i)->c_str());
+		}
+		NC_CALL(nc_put_vara(this->parent_id, this->id, pos, size,  cstrings.data()));
+		delete[] pos;
+		delete[] size;
+
+		return info.Env().Undefined();
+
+	}
+
 
 	Napi::TypedArray val;
 
@@ -275,18 +289,12 @@ Napi::Value Variable::WriteStridedSlice(const Napi::CallbackInfo &info) {
 		Napi::TypeError::New(info.Env(), "Wrong number of arguments").ThrowAsJavaScriptException();
 		return info.Env().Undefined();
 	}
-	if (this->type != NC_STRING) {
-		if (!info[3 * this->ndims].IsTypedArray()) {
-			Napi::TypeError::New(info.Env(), "Expecting a typed array").ThrowAsJavaScriptException();
-			return info.Env().Undefined();
-		}
+
+	if (!(info[3 * this->ndims].IsTypedArray() || (this->type==NC_STRING && info[3 * this->ndims].IsArray()))) {
+		Napi::TypeError::New(info.Env(), this->type==NC_STRING?"Expecting array":"Expecting a typed array").ThrowAsJavaScriptException();
+		return info.Env().Undefined();
 	}
-	else {
-		if (!info[3 * this->ndims].IsArray()) {
-			Napi::TypeError::New(info.Env(), "Expecting an array").ThrowAsJavaScriptException();
-			return info.Env().Undefined();
-		}
-	}
+
 	size_t *pos = new size_t[this->ndims];
 	size_t *size = new size_t[this->ndims];
 	ptrdiff_t *stride = new ptrdiff_t[this->ndims];
@@ -297,6 +305,32 @@ Napi::Value Variable::WriteStridedSlice(const Napi::CallbackInfo &info) {
 		size[i] = s;
 		total_size *= s;
 		stride[i] = info[3 * i + 2].As<Napi::Number>().Int32Value();
+	}
+
+
+	if (this->type==NC_STRING) {
+		auto val=info[3 * this->ndims].As<Napi::Array>();
+		auto val_size=val.Length();
+		if (val_size != total_size) {
+			Napi::TypeError::New(info.Env(), "Wrong size of array").ThrowAsJavaScriptException();
+			delete[] pos;
+			delete[] size;
+			return info.Env().Undefined();
+		}
+
+		std::vector<std::unique_ptr<const std::string > > string{};
+		std::vector<const char*> cstrings{};
+		for(auto i=0u;i<val_size;i++) {
+			Napi::Value v=val[i];
+			string.push_back(std::make_unique<std::string>(std::string(v.ToString().Utf8Value())));
+			cstrings.push_back(string.at(i)->c_str());
+		}
+		NC_CALL(nc_put_vars(this->parent_id, this->id, pos, size, stride, cstrings.data()));
+		delete[] pos;
+		delete[] size;
+
+		return info.Env().Undefined();
+
 	}
 
 	Napi::TypedArray val;
@@ -359,7 +393,6 @@ Napi::Value Variable::WriteStridedSlice(const Napi::CallbackInfo &info) {
 }
 
 Napi::Value Variable::Read(const Napi::CallbackInfo &info) {
-	
 	
 	if (info.Length() != static_cast<size_t>(this->ndims)) {
 		Napi::TypeError::New(info.Env(), "Wrong number of arguments").ThrowAsJavaScriptException();
@@ -458,20 +491,23 @@ Napi::Value Variable::Read(const Napi::CallbackInfo &info) {
 }
 
 Napi::Value Variable::ReadSlice(const Napi::CallbackInfo &info) {
+
 	if (info.Length() != static_cast<size_t>(2 * this->ndims)) {
 		Napi::TypeError::New(info.Env(), "Wrong number of arguments").ThrowAsJavaScriptException();
 		return info.Env().Undefined();
 	}
 
 #if NODE_MAJOR_VERSION >= 10
-	if (this->type < NC_BYTE || this->type > NC_UINT64) {
+	if (this->type < NC_BYTE || (this->type > NC_UINT64 && this->type != NC_STRING)) {
 #else
-	if (this->type < NC_BYTE || this->type > NC_UINT) {
+	if (this->type < NC_BYTE || (this->type > NC_UINT && this->type != NC_STRING)) {
 #endif		
+
 		Napi::TypeError::New(info.Env(), "Variable type not supported yet")
 			.ThrowAsJavaScriptException();
 		return info.Env().Undefined();
 	}
+
 
 	size_t *pos = new size_t[this->ndims];
 	size_t *size = new size_t[this->ndims];
@@ -481,6 +517,18 @@ Napi::Value Variable::ReadSlice(const Napi::CallbackInfo &info) {
 		pos[i] = info[2 * i].As<Napi::Number>().Int64Value();
 		size[i] = info[2 * i + 1].As<Napi::Number>().Int64Value();
 		total_size *= size[i];
+	}
+
+	if (this->type == NC_STRING) {
+        char** str  = new char*[total_size];
+        NC_CALL(nc_get_vara_string(this->parent_id, this->id, pos, size, str));
+        Napi::Array result_array = Napi::Array::New(info.Env(), total_size);
+        for (int i = 0; i < static_cast<int>(total_size); i++){
+			std::string *res_str=new std::string(str[i]);
+            result_array[i] = Napi::String::New(info.Env(), res_str->c_str());
+        }
+        NC_CALL(nc_free_string(total_size, str));
+        return result_array;
 	}
 
 	Napi::ArrayBuffer buffer;
@@ -550,6 +598,7 @@ Napi::Value Variable::ReadSlice(const Napi::CallbackInfo &info) {
 	delete[] size;
 	return result;
 }
+
 Napi::Value Variable::ReadStridedSlice(const Napi::CallbackInfo &info) {
 	if (info.Length() != static_cast<size_t>(3 * this->ndims)) {
 		Napi::TypeError::New(info.Env(), "Wrong number of arguments").ThrowAsJavaScriptException();
@@ -557,9 +606,9 @@ Napi::Value Variable::ReadStridedSlice(const Napi::CallbackInfo &info) {
 	}
 
 #if NODE_MAJOR_VERSION >= 10
-	if (this->type < NC_BYTE || this->type > NC_UINT64) {
+	if (this->type < NC_BYTE || (this->type > NC_UINT64 && this->type != NC_STRING)) {
 #else
-	if (this->type < NC_BYTE || this->type > NC_UINT) {
+	if (this->type < NC_BYTE || (this->type > NC_UINT && this->type != NC_STRING)) {
 #endif		
 		Napi::TypeError::New(info.Env(), "Variable type not supported yet")
 			.ThrowAsJavaScriptException();
@@ -579,6 +628,19 @@ Napi::Value Variable::ReadStridedSlice(const Napi::CallbackInfo &info) {
 			info[3 * i + 2].As<Napi::Number>().Int64Value()
 		);
 	}
+
+	if (this->type == NC_STRING) {
+        char** str  = new char*[total_size];
+        NC_CALL(nc_get_vars_string(this->parent_id, this->id, pos, size, stride, str));
+        Napi::Array result_array = Napi::Array::New(info.Env(), total_size);
+        for (int i = 0; i < static_cast<int>(total_size); i++){
+			std::string *res_str=new std::string(str[i]);
+            result_array[i] = Napi::String::New(info.Env(), res_str->c_str());
+        }
+        NC_CALL(nc_free_string(total_size, str));
+        return result_array;
+	}
+
 
 	Napi::ArrayBuffer buffer;
 	Napi::Value result;
