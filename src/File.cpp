@@ -139,7 +139,6 @@ Napi::Value File::DataMode(const Napi::CallbackInfo &info) {
 }
 
 Napi::Value File::Inspect(const Napi::CallbackInfo &info) {
-//	return Napi::String::New(info.Env(), "[object File]");
 	return Napi::String::New(info.Env(), 
 		string_format(
 			"[%s%s file %s]",

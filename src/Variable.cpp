@@ -138,7 +138,6 @@ Napi::Value Variable::Write(const Napi::CallbackInfo &info) {
 		} else {
 			auto array = value.As<Napi::BigUint64Array>();
 			void *v = array.ArrayBuffer().Data();
-//			size_t l = array.ElementLength();
 			NC_CALL(nc_put_vara(this->parent_id, this->id, pos, size, &v));
 		}
 	} 
@@ -155,7 +154,6 @@ Napi::Value Variable::Write(const Napi::CallbackInfo &info) {
 		} else {
 			auto array = value.As<Napi::BigInt64Array>();
 			void *v = array.ArrayBuffer().Data();
-//			size_t l = array.ElementLength();
 			NC_CALL(nc_put_vara(this->parent_id, this->id, pos, size, &v));
 		}
 	} 
@@ -734,12 +732,6 @@ Napi::Value Variable::AddAttribute(const Napi::CallbackInfo &info) {
 	Attribute::set_value(info,this->parent_id,this->id,attribute_name,type,info[2]);
 	return Attribute::Build(info.Env(),attribute_name,this->id, this->parent_id, type);
 
-	// Napi::Object object = Attribute::Build(info.Env(), name_, this->id, this->parent_id, type);
-	
-	// Attribute *attribute =  Napi::ObjectWrap<Attribute>::Unwrap(object);
-	// attribute->SetValue(info, info[2]);
-
-	// return attribute->GetValue(info);
 }
 
 Napi::Value Variable::GetId(const Napi::CallbackInfo &info) {
@@ -959,13 +951,6 @@ void Variable::SetFillMode(const Napi::CallbackInfo &info, const Napi::Value &va
 		return;
 	}
 	int v = value.As<Napi::Boolean>();
-	// if (obj->type < NC_BYTE || obj->type > NC_UINT) {
-	// 	isolate->ThrowException(v8::Exception::TypeError(
-	// 		v8::String::NewFromUtf8(isolate, "Variable type not supported yet",
-	// 								v8::NewStringType::kNormal)
-	// 			.ToLocalChecked()));
-	// 	return;
-	// }
 	uint8_t *_value = new uint8_t[type_sizes[this->type]];
 	NC_CALL_VOID(nc_inq_var_fill(this->parent_id, this->id, NULL, _value));
 	
@@ -1101,7 +1086,6 @@ void Variable::SetFillValue(const Napi::CallbackInfo &info, const Napi::Value &v
 		} else {
 			auto array = value.As<Napi::BigUint64Array>();
 			void *v = array.ArrayBuffer().Data();
-//			size_t l = array.ElementLength();
 			NC_CALL_VOID(nc_def_var_fill(this->parent_id, this->id, mode, &v));
 		}
 	} 
@@ -1117,7 +1101,6 @@ void Variable::SetFillValue(const Napi::CallbackInfo &info, const Napi::Value &v
 		} else {
 			auto array = value.As<Napi::BigInt64Array>();
 			void *v = array.ArrayBuffer().Data();
-//			size_t l = array.ElementLength();
 			NC_CALL_VOID(nc_def_var_fill(this->parent_id, this->id, mode, &v));
 		}
 	} 

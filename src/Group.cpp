@@ -120,12 +120,7 @@ Napi::Value Group::AddVariable(const Napi::CallbackInfo &info) {
 		Napi::TypeError::New(info.Env(),"Bad variable type").ThrowAsJavaScriptException();
 		return info.Env().Undefined();
 	}
-	/*
-	if (type==NC_STRING) {
-		Napi::TypeError::New(info.Env(),"String variable type not supported yet").ThrowAsJavaScriptException();
-		return info.Env().Undefined();
-	}
-	*/
+
 	std::string name=info[0].As<Napi::String>().ToString();
 	int *ndims = new int[dims_size];
 	for(auto i=0u;i<dims_size;i++) {
@@ -140,6 +135,7 @@ Napi::Value Group::AddVariable(const Napi::CallbackInfo &info) {
 	}
 	int new_id;
 	NC_CALL(nc_def_var(this->id,name.c_str(),type,dims_size,ndims,&new_id));
+	delete[] ndims;
 	return Variable::Build(info.Env(),new_id,this->id);	
 }
 
