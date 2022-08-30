@@ -184,9 +184,17 @@ Napi::Value Variable::WriteSlice(const Napi::CallbackInfo &info) {
 		Napi::TypeError::New(info.Env(), "Wrong number of arguments").ThrowAsJavaScriptException();
 		return info.Env().Undefined();
 	}
-	if (!info[2 * this->ndims].IsTypedArray()) {
-		Napi::TypeError::New(info.Env(), "Expecting a typed array").ThrowAsJavaScriptException();
-		return info.Env().Undefined();
+	if (this->type != NC_STRING) {
+		if (!info[2 * this->ndims].IsTypedArray()) {
+			Napi::TypeError::New(info.Env(), "Expecting a typed array").ThrowAsJavaScriptException();
+			return info.Env().Undefined();
+		}
+	}
+	else {
+		if (!info[2 * this->ndims].IsArray()) {
+			Napi::TypeError::New(info.Env(), "Expecting an array").ThrowAsJavaScriptException();
+			return info.Env().Undefined();
+		}
 	}
 	size_t *pos = new size_t[this->ndims];
 	size_t *size = new size_t[this->ndims];
@@ -258,9 +266,17 @@ Napi::Value Variable::WriteStridedSlice(const Napi::CallbackInfo &info) {
 		Napi::TypeError::New(info.Env(), "Wrong number of arguments").ThrowAsJavaScriptException();
 		return info.Env().Undefined();
 	}
-	if (!info[3 * this->ndims].IsTypedArray()) {
-		Napi::TypeError::New(info.Env(), "Expecting a typed array").ThrowAsJavaScriptException();
-		return info.Env().Undefined();
+	if (this->type != NC_STRING) {
+		if (!info[3 * this->ndims].IsTypedArray()) {
+			Napi::TypeError::New(info.Env(), "Expecting a typed array").ThrowAsJavaScriptException();
+			return info.Env().Undefined();
+		}
+	}
+	else {
+		if (!info[3 * this->ndims].IsArray()) {
+			Napi::TypeError::New(info.Env(), "Expecting an array").ThrowAsJavaScriptException();
+			return info.Env().Undefined();
+		}
 	}
 	size_t *pos = new size_t[this->ndims];
 	size_t *size = new size_t[this->ndims];
