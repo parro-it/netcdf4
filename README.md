@@ -11,7 +11,7 @@ built upon the C-library for netcdf.
 
 ## Installation
 
-`netcdf4-js` is built with `nodejs` >= 4.x
+`netcdf4-js` is built with `nodejs` >= 8.x
 
 Install using `npm`:
 
