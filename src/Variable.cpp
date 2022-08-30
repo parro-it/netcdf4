@@ -178,60 +178,15 @@ Napi::Value Variable::Write(const Napi::CallbackInfo &info) {
 	return info.Env().Undefined();
 }
 
-Napi::Value Variable::WriteSliceStringArray(const Napi::CallbackInfo &info, Napi::Array array){
-	size_t *pos = new size_t[this->ndims];
-	size_t *size = new size_t[this->ndims];
-	size_t total_size = 1;
-	for (int i = 0; i < this->ndims; i++) {
-		pos[i] = info[2 * i].As<Napi::Number>().Int32Value();
-		size_t s = info[2 * i + 1].As<Napi::Number>().Int32Value();
-		size[i] = s;
-		total_size *= s;
-	}
-	try {
-		int elementLength = 0;
-		elementLength = static_cast<size_t>(array.Length());
-		
-		std::vector<std::string> cstrings;
-		std::vector<const char*> charVec(elementLength, nullptr);
-		
-		if (static_cast<size_t>(elementLength) != total_size) {
-			Napi::TypeError::New(info.Env(), "Wrong size of array").ThrowAsJavaScriptException();
-			delete[] pos;
-			delete[] size;
-			return info.Env().Undefined();
-		}
-		for (int i = 0; i < elementLength ; i++) {
-			cstrings.emplace_back(static_cast<Napi::Value>(array[i]).ToString().Utf8Value());
-		}
-		for (int i=0; i<static_cast<int>(cstrings.size());i++) {
-    		charVec[i]= cstrings[i].c_str();
-		}
-		
-		NC_CALL(nc_put_vara_string(this->parent_id, this->id, pos, size, charVec.data()));
-		delete[] pos;
-		delete[] size;
-		return info.Env().Undefined();
-
-	}
-	catch(const std::exception& e) {
-			Napi::TypeError::New(info.Env(), "Expecting a typed array").ThrowAsJavaScriptException();
-			return info.Env().Undefined();
-	}
-}
-
 Napi::Value Variable::WriteSlice(const Napi::CallbackInfo &info) {
 	
 	if (info.Length() != static_cast<size_t>(2 * this->ndims + 1)) {
 		Napi::TypeError::New(info.Env(), "Wrong number of arguments").ThrowAsJavaScriptException();
 		return info.Env().Undefined();
 	}
-	if (!info[2 * this->ndims].IsTypedArray()&&info[2 * this->ndims].Type()!=6) {
+	if (!info[2 * this->ndims].IsTypedArray()) {
 		Napi::TypeError::New(info.Env(), "Expecting a typed array").ThrowAsJavaScriptException();
 		return info.Env().Undefined();
-	}
-	if(info[2 * this->ndims].Type()==6) {
-		return WriteSliceStringArray(info, info[2 * this->ndims].As<Napi::Array>());
 	}
 	size_t *pos = new size_t[this->ndims];
 	size_t *size = new size_t[this->ndims];
@@ -460,7 +415,7 @@ Napi::Value Variable::Read(const Napi::CallbackInfo &info) {
 		char *v[1];
 		NC_CALL(nc_get_vara(this->parent_id, this->id, pos, size, v));
 		result = Napi::String::New(info.Env(), std::string(v[0]));
-		NC_CALL(nc_free_string(1,v));
+		nc_free_string(1,v);
 	} break;
 	default: {
 		Napi::TypeError::New(info.Env(), "Variable type not supported yet").ThrowAsJavaScriptException();
@@ -483,15 +438,15 @@ Napi::Value Variable::ReadSlice(const Napi::CallbackInfo &info) {
 		return info.Env().Undefined();
 	}
 
-//#if NODE_MAJOR_VERSION >= 10
-//	if (this->type < NC_BYTE || this->type > NC_UINT64) {
-//#else
-//	if (this->type < NC_BYTE || this->type > NC_UINT) {
-//#endif		
-//		Napi::TypeError::New(info.Env(), "Variable type not supported yet")
-//			.ThrowAsJavaScriptException();
-//		return info.Env().Undefined();
-//	}
+#if NODE_MAJOR_VERSION >= 10
+	if (this->type < NC_BYTE || this->type > NC_UINT64) {
+#else
+	if (this->type < NC_BYTE || this->type > NC_UINT) {
+#endif		
+		Napi::TypeError::New(info.Env(), "Variable type not supported yet")
+			.ThrowAsJavaScriptException();
+		return info.Env().Undefined();
+	}
 
 	size_t *pos = new size_t[this->ndims];
 	size_t *size = new size_t[this->ndims];
@@ -562,17 +517,6 @@ Napi::Value Variable::ReadSlice(const Napi::CallbackInfo &info) {
 	}
 	break;
 #endif
-	case NC_STRING: {
-		char ** strings_out  = new char*[size[0]];
-		NC_CALL(nc_get_vara_string(this->parent_id, this->id, pos, size, strings_out));
-		Napi::Array resultArray = Napi::Array::New(info.Env(),size[0]);
-		for (int i =0; i< static_cast<int>(size[0]); i++){
-			resultArray[i] = Napi::String::New(info.Env(), strings_out[i]);
-		}
-		NC_CALL(nc_free_string(size[0],strings_out));
-		return resultArray;
-	}
-
 	}
 
 	NC_CALL(nc_get_vara(this->parent_id, this->id, pos, size, buffer.Data()));

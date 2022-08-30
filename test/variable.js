@@ -323,36 +323,4 @@ describe("Variable", function () {
   testSuiteOld.filter(v=>['ubyte','ushort','uint','string','int64','uint64'].indexOf(v[0])===-1).forEach(v=>testFunc('netcdf3',v[0],v[1],v[2],v[3]));
 
 
-  it("String suport write/read", function(){
-    expect(filenew.root.variables).to.not.have.property("test_variable");
-    var newVar=filenew.root.addVariable('test_variable','string',[filenew.root.dimensions.recNum.id]);
-    expect(newVar.inspect(),'[Variable test_variable, type byte, 1 dimension(s)]');
-    expect(filenew.root.variables).to.have.property("test_variable");
-    expect(filenew.root.variables.test_variable.inspect(),'[Variable test_variable, type byte, 1 dimension(s)]');
-    newVar.write(0, "test");
-    filenew.close();
-    filenew = new netcdf4.File(tempFileNewName, "r");
-    expect(filenew.root.variables).to.have.property("test_variable");
-    console.log(filenew.root.variables.test_variable);
-    var res = filenew.root.variables.test_variable.read(0)
-    expect(res).to.be.equal("test");
-  });
-  it.only("String suport write/read a slice ", function(){
-    expect(filenew.root.variables).to.not.have.property("test_variable");
-    var newVar=filenew.root.addVariable('test_variable','string',[filenew.root.dimensions.recNum.id]);
-    expect(newVar.inspect(),'[Variable test_variable, type byte, 1 dimension(s)]');
-    expect(filenew.root.variables).to.have.property("test_variable");
-    expect(filenew.root.variables.test_variable.inspect(),'[Variable test_variable, type byte, 1 dimension(s)]');
-    var arrayValues1 = ["test1", "test2", "test3", "test4"];
-    console.log(arrayValues1);
-    newVar.writeSlice(0, 4, arrayValues1);
-    filenew.close();
-    filenew = new netcdf4.File(tempFileNewName, "r");
-    expect(filenew.root.variables).to.have.property("test_variable");
-    console.log(filenew.root.variables.test_variable);
-    var res = filenew.root.variables.test_variable.readSlice(0,4)
-    console.log(res);
-    expect(res).to.deep.equal(arrayValues1);
-  })
-
 });
