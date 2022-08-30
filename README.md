@@ -15,7 +15,7 @@ built upon the C-library for netcdf.
 
 Install using `npm`:
 
-```
+```bash
 $ npm install netcdf4
 ```
 
@@ -26,7 +26,7 @@ You will need `libnetcdf` >= 4.x installed.
 ### On Linux/Unix/OSX
 
 * Install NetCDF4 using your package manager, e.g., on Ubuntu/Debian:
-```
+```bash
 $ sudo apt-get install libnetcdf-dev
 ```
 or download it [here](https://www.unidata.ucar.edu/downloads/netcdf/index.jsp)
@@ -38,17 +38,16 @@ or download it [here](https://www.unidata.ucar.edu/downloads/netcdf/index.jsp)
 * Make sure to select at least "dependencies", "headers" and "libraries" to install in the NetCDF installation wizard
 * Install the build tools as described [here](https://github.com/nodejs/node-gyp#on-windows)
 * Set the environment variable `NETCDF_DIR` to your NetCDF installation, e.g.,
-``` bash
+```bash
 C:\> set NETCDF_DIR=C:\Program Files\netCDF 4.6.1
 ```
 
 
 ## Usage
 
-**NB!** For now library did not support string types in netCDF
-
 Open files with
-```
+
+```javascript
 var netcdf4 = require("netcdf4");
 
 var file = new netcdf4.File("test/testrh.nc", "r");
@@ -57,7 +56,7 @@ File modes are `"r"` for "reading", `"w"` for "writing", `"c"` for
 "creation", and `"c!"` for "overwriting".
 
 Then you can read variables using `read` or `readSlice`. The following example reads values at positions 5 to 15:
-```
+```javascript
 console.log(file.root.variables['var1'].readSlice(5, 10));
 ```
 
@@ -78,6 +77,7 @@ Properties:
 Methods:
 * `close()` : Close file, remove main `Group` form file
 * `sync()` : Sync (or "flush") file to disk
+* `dataMode()` : Perform `nc_enddef` on file
 
 #### Group
 
@@ -93,8 +93,9 @@ Properties:
 
 Methods:
 * `addVariable(name, type, dimensions)` : Add a new variable in
-  group. `type` is one of `"byte", "char", "short", "int", "ubyte", "ushort",
-  "uint", "float", "double", "uint64", "int64", "string". `dimensions` is an array of ids or names of dimensions   for the new variable. Returns new variable. Also supports old python/unidata synonyms:
+  group. `type` is one of `"byte", "char", "short", "int", "ubyte", "ushort", "uint", "float", "double", "uint64", "int64", "string". 
+  `dimensions` is an array of ids or names of dimensions   for the new variable. Returns new variable. 
+  Also supports old python/unidata synonyms:
   | type | two-char synonym | one-char synonym | Note |
   | --- | --- | --- | --- |
   | byte | i1 | b B | |
@@ -108,7 +109,7 @@ Methods:
   | double | f8 | d | |
   | uint64 | u8 | | |
   | int64 | i8 | | |
-  | string | S1 | | Not fully supported yet |
+  | string | S1 | | |
 
 * `addDimension(name, length)` : Add new dimension of length `length`
   (can be `"unlimited"` for unlimited dimension). Returns new dimension.

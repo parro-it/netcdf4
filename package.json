@@ -1,6 +1,6 @@
 {
   "name": "netcdf4",
-  "version": "0.4.1",
+  "version": "0.4.2-0",
   "description": "Read and write NetCDF4 files",
   "main": "./build/Release/netcdf4.node",
   "scripts": {
@@ -15,7 +15,9 @@
     "url": "http://svenwillner.net"
   },
   "contributors": [
-    "Andrea Parodi <andrea@parro.it> (http://www.parro.it/)"
+    "Andrea Parodi <andrea@parro.it> (http://www.parro.it/)",
+    "Vasyl Moskalov <mvtm.dn@gmail.com>",
+    "Kostiantyn Zemskyy <zyama.zemskyy@gmail.com>"
   ],
   "repository": "parro-it/netcdf4",
   "engines": {
