@@ -106,8 +106,8 @@ Methods:
   | uint | u4 | | | |
   | float | f4 | f | |
   | double | f8 | d | |
-  | uint64 | u8 | | |
-  | int64 | i8 | | |
+  | uint64 | u8 | | NodeJS v>=10 |
+  | int64 | i8 | | NodeJS v>=10 |
   | string | S1 | | |
   
   `dimensions` is an array of ids or names of dimensions for the new variable. Returns new variable.

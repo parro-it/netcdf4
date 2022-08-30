@@ -316,9 +316,10 @@ describe("Variable", function () {
     ['uint',100000,[0,200,3000,555666],127],
     ['string',"Test value",["111","222","333","444"],"fill"]
   ];
+  console.log(process.versions.node.split(".")[0])
   if (process.versions.node.split(".")[0]>=10) {
-    testSuiteOld.push(['uint64',1024,[20n,512555n,333n,77788889n],100n]);
-    testSuiteOld.push(['int64',100000,[0n,200n,3000n,555666n],100n]);
+    testSuiteOld.push(['uint64',1024,[20,512555,333,77788889].map(v=>BigInt(v)),BigInt(100)]);
+    testSuiteOld.push(['int64',100000,[0,200,3000,555666].map(v=>BigInt(v)),BigInt(100)]);
   };
   testSuiteOld.forEach(v=>testFunc('hdf5',v[0],v[1],v[2],v[3]));
   testSuiteOld.filter(v=>['ubyte','ushort','uint','string','int64','uint64'].indexOf(v[0])===-1).forEach(v=>testFunc('netcdf3',v[0],v[1],v[2],v[3]));
