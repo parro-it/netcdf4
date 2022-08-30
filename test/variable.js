@@ -56,10 +56,16 @@ describe("Variable", function () {
     expect(fileold.root.variables.var1.dimensions[0].inspect()).to.be.equal('[Dimension dim1, length 10000]');
   });
 
-  it("should read an existing", function () {
+  it("should read an existing (netCDF3)", function () {
     var res = fileold.root.variables.var1.read(0)
     expect(res).to.be.equal(420);
   });
+
+  it.only("should read an existing (hdf5)", function () {
+    expect(filenew.root.variables.UTC_time.read(0)).to.be.equal('2012-03-04 03:54:19');
+    expect(filenew.root.variables.UTC_time.read(1)).to.be.equal('2012-03-04 03:54:42');
+  });
+
 
   it("should rename an existing", function(){
     fileold.root.variables.var1.name = "var2";

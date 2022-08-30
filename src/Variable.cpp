@@ -407,9 +407,11 @@ Napi::Value Variable::Read(const Napi::CallbackInfo &info) {
 	break;
 #endif
 	case NC_STRING: {
-		std::string v;
-		NC_CALL(nc_get_vara(this->parent_id, this->id, pos, size, &v));
-		result = Napi::String::New(info.Env(), v);
+		char *strings_in[1];
+		NC_CALL(nc_get_vara(this->parent_id, this->id, pos, size, strings_in));
+		printf("Readed %s \n",strings_in[0]);
+		result = Napi::String::New(info.Env(), std::string(strings_in[0]));
+		nc_free_string(1,strings_in);
 	} break;
 	default: {
 		Napi::TypeError::New(info.Env(), "Variable type not supported yet").ThrowAsJavaScriptException();
@@ -684,9 +686,9 @@ Napi::Value Variable::GetType(const Napi::CallbackInfo &info) {
 }
 
 Napi::Value Variable::GetName(const Napi::CallbackInfo &info) {
-	char name_[NC_MAX_NAME + 1];
-	NC_CALL(nc_inq_varname(this->parent_id, this->id, name_));
-	name = std::string(name_);
+	char var_name[NC_MAX_NAME + 1];
+	NC_CALL(nc_inq_varname(this->parent_id, this->id, var_name));
+	name = std::string(var_name);
 	return Napi::String::New(info.Env(), name);
 }
 
