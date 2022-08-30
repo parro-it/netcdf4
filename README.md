@@ -93,8 +93,7 @@ Properties:
 
 Methods:
 * `addVariable(name, type, dimensions)` : Add a new variable in
-  group. `type` is one of `"byte", "char", "short", "int", "ubyte", "ushort", "uint", "float", "double", "uint64", "int64", "string". 
-  `dimensions` is an array of ids or names of dimensions   for the new variable. Returns new variable. 
+  group. `type` is one of `"byte", "char", "short", "int", "ubyte", "ushort", "uint", "float", "double", "uint64", "int64", "string".  
   Also supports old python/unidata synonyms:
   | type | two-char synonym | one-char synonym | Note |
   | --- | --- | --- | --- |
@@ -110,7 +109,8 @@ Methods:
   | uint64 | u8 | | |
   | int64 | i8 | | |
   | string | S1 | | |
-
+  
+  `dimensions` is an array of ids or names of dimensions for the new variable. Returns new variable.
 * `addDimension(name, length)` : Add new dimension of length `length`
   (can be `"unlimited"` for unlimited dimension). Returns new dimension.
 * `addSubgroup(name)` : Add subgroup. Returns new subgroup.
