@@ -61,6 +61,23 @@ Then you can read variables using `read` or `readSlice`. The following example r
 console.log(file.root.variables['var1'].readSlice(5, 10));
 ```
 
+### Properties
+
+* `version` : Contains netcdf4 library version. Properties are:
+  * `major` : Major version (i.e. 4)
+  * `minor` : Minor version (i.e. 8)
+  * `patch` : Patch version (i.e. 1)
+  * `version` : Version string (i.e. "4.8.1")
+
+Example:  
+```json
+{
+  "major" : 4,
+  "minor" : 8,
+  "patch" : 1,
+  "version" : '4.8.1'
+}
+```
 ### Classes
 
 Properties marked *(r/w)* can be read and will be written to the file
@@ -191,4 +208,5 @@ Methods:
 
 ## Known flaws
 
-* Reading `variable.fillvalue` for string type variables causes segfault on ubuntu 18.04 due to knowing issue [nc_inq_var_fill() doesn't work for NC_STRING if a fill value is set - segfault results](https://github.com/Unidata/netcdf-c/issues/732). Workaround - find and install netcdf version > 4.6.0;
+
+* Reading `variable.fillvalue` for string type variables causes segfault with netcdf4 version prior to 4.6.1 due to knowing issue [nc_inq_var_fill() doesn't work for NC_STRING if a fill value is set - segfault results](https://github.com/Unidata/netcdf-c/issues/732). So, ubuntu<=18.04 is affected. 

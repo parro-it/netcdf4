@@ -227,10 +227,16 @@ describe("Variable", function () {
         newVar=fd.root.addVariable('test_variable',type,[dim]);
         expect(newVar.name).to.be.equal('test_variable')
         expect(newVar.type).to.be.equal(type)
-        newVar.fillvalue=methods[1](defaultValue);
-        expect(newVar.fillvalue).to.be.almost.eql(methods[1](defaultValue));
-        fd.dataMode();
-        expect(newVar.read(0)).to.be.equal(newVar.fillvalue);
+        if (type==='string' && (netcdf4.version.minor<6 || (netcdf4.version.minor===6 && netcdf4.version.patch===0))) {
+          // In netcdf4 library before 5.6.1 set default fill value for string leading to segfault
+          fd.dataMode();
+        }
+        else {
+          newVar.fillvalue=methods[1](defaultValue);
+          expect(newVar.fillvalue).to.be.almost.eql(methods[1](defaultValue));  
+          fd.dataMode();
+          expect(newVar.read(0)).to.be.equal(newVar.fillvalue);
+        }
         newVar.write(0,methods[1](value));
         expect(newVar.read(0)).to.be.almost.eql(methods[1](value));
         try{
@@ -241,7 +247,9 @@ describe("Variable", function () {
         fd=new netcdf4.File(path,'r');
         expect(fd.root.variables).to.have.property("test_variable");
         expect(fd.root.variables.test_variable.read(0)).to.almost.eql(methods[1](value));
-        expect(fd.root.variables.test_variable.fillvalue).to.be.almost.eql(methods[1](defaultValue));
+        if (!(type==='string' && (netcdf4.version.minor<6 || (netcdf4.version.minor===6 && netcdf4.version.patch===0)))) {
+          expect(fd.root.variables.test_variable.fillvalue).to.be.almost.eql(methods[1](defaultValue));
+        }
       }
     )
     it(`should read/write slice ${type} variable (${file}) `,
