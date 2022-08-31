@@ -1,11 +1,13 @@
 {
   "name": "netcdf4",
-  "version": "0.4.1",
+  "version": "0.4.2-0",
   "description": "Read and write NetCDF4 files",
   "main": "./build/Release/netcdf4.node",
   "scripts": {
     "install": "node-gyp rebuild",
-    "test": "mocha"
+    "build": "node-gyp build",
+    "clean": "rm -rf build node_modules",
+    "test": "node-gyp build && mocha"
   },
   "author": {
     "name": "Sven Willner",
@@ -13,16 +15,23 @@
     "url": "http://svenwillner.net"
   },
   "contributors": [
-    "Andrea Parodi <andrea@parro.it> (http://www.parro.it/)"
+    "Andrea Parodi <andrea@parro.it> (http://www.parro.it/)",
+    "Vasyl Moskalov <mvtm.dn@gmail.com>",
+    "Kostiantyn Zemskyy <zyama.zemskyy@gmail.com>"
   ],
   "repository": "parro-it/netcdf4",
   "engines": {
-    "node": ">=4.0"
+    "node": ">8"
   },
   "license": "ISC",
-  "gypfile": true,
+  "dependencies": {
+    "node-addon-api": "^3.0.0",
+    "node-gyp": "^9.1.0",
+    "unique-filename": "^2.0.1"
+  },
   "devDependencies": {
     "chai": "^4.2.0",
-    "mocha": "^7.1.1"
+    "chai-almost": "^1.0.1",
+    "mocha": "^7.1.2"
   }
 }

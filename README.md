@@ -1,6 +1,6 @@
 # netcdf4-js
 
-![Build status](https://github.com/parro-it/netcdf4/workflows/Node.js%20CI/badge.svg?branch=master)
+[![Node.js CI](https://github.com/mvtm-dn/netcdf4/actions/workflows/nodejs.yml/badge.svg)](https://github.com/mvtm-dn/netcdf4/actions/workflows/nodejs.yml)
 [![NPM Version](https://img.shields.io/npm/v/netcdf4.svg)](https://npmjs.org/package/netcdf4)
 
 
@@ -9,13 +9,14 @@ NodeJS addon for reading and writing the files in the
 version <= 4,
 built upon the C-library for netcdf.
 
+
 ## Installation
 
-`netcdf4-js` is built with `nodejs` >= 4.x
+`netcdf4-js` is built with `nodejs` >= 8.x
 
 Install using `npm`:
 
-```
+```bash
 $ npm install netcdf4
 ```
 
@@ -26,7 +27,7 @@ You will need `libnetcdf` >= 4.x installed.
 ### On Linux/Unix/OSX
 
 * Install NetCDF4 using your package manager, e.g., on Ubuntu/Debian:
-```
+```bash
 $ sudo apt-get install libnetcdf-dev
 ```
 or download it [here](https://www.unidata.ucar.edu/downloads/netcdf/index.jsp)
@@ -38,7 +39,7 @@ or download it [here](https://www.unidata.ucar.edu/downloads/netcdf/index.jsp)
 * Make sure to select at least "dependencies", "headers" and "libraries" to install in the NetCDF installation wizard
 * Install the build tools as described [here](https://github.com/nodejs/node-gyp#on-windows)
 * Set the environment variable `NETCDF_DIR` to your NetCDF installation, e.g.,
-``` bash
+```bash
 C:\> set NETCDF_DIR=C:\Program Files\netCDF 4.6.1
 ```
 
@@ -46,7 +47,8 @@ C:\> set NETCDF_DIR=C:\Program Files\netCDF 4.6.1
 ## Usage
 
 Open files with
-```
+
+```javascript
 var netcdf4 = require("netcdf4");
 
 var file = new netcdf4.File("test/testrh.nc", "r");
@@ -55,10 +57,27 @@ File modes are `"r"` for "reading", `"w"` for "writing", `"c"` for
 "creation", and `"c!"` for "overwriting".
 
 Then you can read variables using `read` or `readSlice`. The following example reads values at positions 5 to 15:
-```
+```javascript
 console.log(file.root.variables['var1'].readSlice(5, 10));
 ```
 
+### Properties
+
+* `version` : Contains netcdf4 library version. Properties are:
+  * `major` : Major version (i.e. 4)
+  * `minor` : Minor version (i.e. 8)
+  * `patch` : Patch version (i.e. 1)
+  * `version` : Version string (i.e. "4.8.1")
+
+Example:  
+```json
+{
+  "major" : 4,
+  "minor" : 8,
+  "patch" : 1,
+  "version" : '4.8.1'
+}
+```
 ### Classes
 
 Properties marked *(r/w)* can be read and will be written to the file
@@ -67,11 +86,16 @@ when set.
 #### File
 
 Properties:
-* `root` : Main `Group`-object in file
+* `root` : Main `Group`-object in file if `open`===true
+* `id` : Internal file id
+* `name` : File path
+* `type` : String representation of file type
+* `open` : =true if file is open, false otherwise
 
 Methods:
-* `close()` : Close file
+* `close()` : Close file, remove main `Group` form file
 * `sync()` : Sync (or "flush") file to disk
+* `dataMode()` : Perform `nc_enddef` on file
 
 #### Group
 
@@ -87,9 +111,24 @@ Properties:
 
 Methods:
 * `addVariable(name, type, dimensions)` : Add a new variable in
-  group. `type` is one of `"byte", "char", "short", "int", "ubyte", "ushort",
-  "uint", "float", "double"`. `dimensions` is an array of ids of dimensions
-  for the new variable. Returns new variable.
+  group. `type` is one of `"byte", "char", "short", "int", "ubyte", "ushort", "uint", "float", "double", "uint64", "int64", "string".  
+  Also supports old python/unidata synonyms:
+  | type | two-char synonym | one-char synonym | Note |
+  | --- | --- | --- | --- |
+  | byte | i1 | b B | |
+  | char |  |  | |
+  | short | i2 | h s | |
+  | int | i4 | i l | |
+  | ubyte | u1 | | |
+  | ushort | u2 | | |
+  | uint | u4 | | | |
+  | float | f4 | f | |
+  | double | f8 | d | |
+  | uint64 | u8 | | NodeJS v>=10 |
+  | int64 | i8 | | NodeJS v>=10 |
+  | string | S1 | | |
+  
+  `dimensions` is an array of ids or names of dimensions for the new variable. Returns new variable.
 * `addDimension(name, length)` : Add new dimension of length `length`
   (can be `"unlimited"` for unlimited dimension). Returns new dimension.
 * `addSubgroup(name)` : Add subgroup. Returns new subgroup.
@@ -165,3 +204,9 @@ Methods:
   with stride 1 (i.e. with no dropping) along the second dimension.
 * `addAttribute(name, type, value)` : Adds and sets new attribute. Returns
   new attribute.
+
+
+## Known flaws
+
+
+* Reading `variable.fillvalue` for string type variables causes segfault with netcdf4 version prior to 4.6.1 due to knowing issue [nc_inq_var_fill() doesn't work for NC_STRING if a fill value is set - segfault results](https://github.com/Unidata/netcdf-c/issues/732). So, ubuntu<=18.04 is affected. 

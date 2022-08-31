@@ -5,29 +5,89 @@ name: Node.js CI
 
 on:
   push:
-    branches: [ master ]
+    branches: [master,naode-addon-api]
+    paths-ignore:
+      - README.md
+      - LICENSE
+
   pull_request:
-    branches: [ master ]
+    branches: [master]
+    paths-ignore:
+      - README.md
+      - LICENSE
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 
 jobs:
   build:
-
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
 
     strategy:
-      max-parallel: 2
+      fail-fast: false
+      # max-parallel: 2
       matrix:
-        node-version: [8.x, 10.x, 12.x, 13.x]
+        # node-version: [8.x, 10.x, 12.x, 14.x, 16.x, 18.x]
+        node-version: [8.x, 10.x, 16.x, 18.x]
+        os: [ubuntu-18.04,ubuntu-20.04, ubuntu-22.04,macos-10.15, macos-11, macos-12, windows-2019, windows-2022]
+        # os: [ubuntu-18.04, ubuntnu-20.04, ubuntu-22.04, macos-10.15, windows-2019]
+        # node-version: [14.x]
+        # os: [windows-2019]
+        exclude:
+          - os: ubuntu-22.04
+            node-version: 8.x
+          - os: ubuntu-18.04
+            node-version: 18.x
+          - os: macos-10.15
+            node-version: 8.x
+          - os: macos-10.15
+            node-version: 18.x
+          - os: windows-2019
+            node-version: 8.x
+          - os: windows-2022
+            node-version: 8.x
+          - os: windows-2022
+            node-version: 10.x
+          - os: macos-11
+            node-version: 8.x
+          - os: macos-11
+            node-version: 10.x
+          - os: macos-12
+            node-version: 10.x
+          - os: macos-12
+            node-version: 8.x
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
-      with:
-        node-version: ${{ matrix.node-version }}
-    - run: sudo apt update
-    - run: sudo apt install -y libnetcdf-dev 
-    - run: npm install
-    - run: npm test
-      env:
-        CI: true
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Ubuntu netcdf install
+        run: |
+          sudo apt update
+          sudo apt install -y libnetcdf-dev
+          npm install
+          npm test
+        if: ${{ matrix.os == 'ubuntu-18.04' || matrix.os == 'ubuntu-20.04' || matrix.os == 'ubuntu-22.04'  }}
+
+      - name: MacOs netcdf install
+        run: |
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+          brew install netcdf
+          npm install
+          npm test
+        if: ${{ matrix.os == 'macos-10.15' || matrix.os == 'macos-11' || matrix.os == 'macos-12'}}
+
+      - name: Windows netcdf install
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/parro-it/netcdf4/releases/download/prebuilt-netcdf/netCDF.4.7.4.zip" -OutFile .\netCDF.4.7.4.zip
+          Expand-Archive -Path netCDF.4.7.4.zip -DestinationPath .
+          Set-Item -Path Env:NETCDF_DIR -Value ("$(Get-Location)" + "\netCDF 4.7.4")
+          npm install
+          $env:Path += ";D:\a\netcdf4\netcdf4\netCDF 4.7.4\bin;D:\a\netcdf4\netcdf4\netCDF 4.7.4\lib"
+          npm test
+        if: ${{ matrix.os == 'windows-2019' || matrix.os == 'windows-2022' }}
