@@ -10,6 +10,7 @@ on:
       - README.md
       - LICENSE
       - .github/**
+      - !'.github/nodejs.yml'
 
   pull_request:
     branches: [master]
@@ -17,6 +18,7 @@ on:
       - README.md
       - LICENSE
       - .github/**
+      - !'.github/nodejs.yml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
