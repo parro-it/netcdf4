@@ -101,11 +101,11 @@ Napi::Value File::Sync(const Napi::CallbackInfo &info) {
 
 Napi::Value File::Close(const Napi::CallbackInfo &info) {
 	if (!this->closed) {
+		this->closed = true;
 		int retval = nc_close(this->id);
 		if (retval != NC_NOERR && retval != NC_EBADID) {
 			Napi::Error::New(info.Env(), nc_strerror(retval)).ThrowAsJavaScriptException();
 		}
-		this->closed = true;
 		if (this->Value().Has("root")) {
 			this->Value().Delete("root");
 		}		

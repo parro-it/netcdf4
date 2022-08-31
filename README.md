@@ -1,6 +1,6 @@
 # netcdf4-js
 
-![Build status](https://github.com/parro-it/netcdf4/workflows/Node.js%20CI/badge.svg?branch=master)
+[![Node.js CI](https://github.com/mvtm-dn/netcdf4/actions/workflows/nodejs.yml/badge.svg)](https://github.com/mvtm-dn/netcdf4/actions/workflows/nodejs.yml)
 [![NPM Version](https://img.shields.io/npm/v/netcdf4.svg)](https://npmjs.org/package/netcdf4)
 
 
