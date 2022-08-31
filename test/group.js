@@ -16,8 +16,12 @@ describe("Group", function () {
   });
 
   afterEach(function () {
+  try{
     file.close();
     unlinkSync(tempFileName);
+  } catch (ignore) {
+    console.log(`Got ${ignore.message} during file closing, ingored`)
+  }
   });
 
   it("should read name", function () {
