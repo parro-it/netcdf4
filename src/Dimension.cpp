@@ -1,82 +1,79 @@
-#include "Dimension.h"
 #include <netcdf.h>
 #include "netcdf4js.h"
+#include "stdio.h"
 
 namespace netcdf4js {
 
-v8::Persistent<v8::Function> Dimension::constructor;
+Napi::FunctionReference Dimension::constructor;
 
-Dimension::Dimension(const int& id_, const int& parent_id_) : id(id_), parent_id(parent_id_) {
-    v8::Isolate* isolate = v8::Isolate::GetCurrent();
-    v8::Local<v8::Object> obj = v8::Local<v8::Function>::New(isolate, constructor)->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
-    Wrap(obj);
+Napi::Object Dimension::Build(Napi::Env env, int parent_id, int id) {
+	return constructor.New({Napi::Number::New(env, parent_id), Napi::Number::New(env, id)});
 }
 
-void Dimension::Init(v8::Local<v8::Object> exports) {
-    v8::Isolate* isolate = exports->GetIsolate();
-    v8::Local<v8::FunctionTemplate> tpl = v8::FunctionTemplate::New(isolate);
-    tpl->SetClassName(v8::String::NewFromUtf8(isolate, "Dimension", v8::NewStringType::kNormal).ToLocalChecked());
-    tpl->InstanceTemplate()->SetInternalFieldCount(1);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "inspect", Dimension::Inspect);
-    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "id", v8::NewStringType::kNormal).ToLocalChecked(), Dimension::GetId);
-    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "length", v8::NewStringType::kNormal).ToLocalChecked(), Dimension::GetLength);
-    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "name", v8::NewStringType::kNormal).ToLocalChecked(), Dimension::GetName, Dimension::SetName);
-    constructor.Reset(isolate, tpl->GetFunction(isolate->GetCurrentContext()).ToLocalChecked());
+Dimension::Dimension(const Napi::CallbackInfo &info) : Napi::ObjectWrap<Dimension>(info) {
+	if (info.Length() < 2) {
+		Napi::TypeError::New(info.Env(), "Wrong number of arguments").ThrowAsJavaScriptException();
+		return;
+	}
+
+	parent_id = info[0].As<Napi::Number>().Int32Value();
+	id = info[1].As<Napi::Number>().Int32Value();
+	char varName[NC_MAX_NAME + 1];
+	NC_CALL_VOID(nc_inq_dim(parent_id, id, varName, &length));
+	name= std::string(varName);
+
 }
 
-bool Dimension::get_name(char* name) const {
-    int retval = nc_inq_dimname(parent_id, id, name);
-    if (retval != NC_NOERR) {
-        throw_netcdf_error(v8::Isolate::GetCurrent(), retval);
-        return false;
-    }
-    return true;
+Napi::Object Dimension::Init(Napi::Env env, Napi::Object exports) {
+
+	Napi::HandleScope scope(env);
+
+	auto properties = {
+		InstanceMethod("inspect", &Dimension::Inspect),
+		InstanceAccessor<&Dimension::GetId>("id"),
+		InstanceAccessor<&Dimension::GetLength>("length"),
+		InstanceAccessor<&Dimension::GetName, &Dimension::SetName>("name"),
+	};
+
+	Napi::Function func = DefineClass(env, "Dimension", properties);
+	constructor = Napi::Persistent(func);
+	constructor.SuppressDestruct();
+
+	exports.Set("Dimension", func);
+	return exports;
 }
 
-void Dimension::GetId(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
-    v8::Isolate* isolate = info.GetIsolate();
-    Dimension* obj = node::ObjectWrap::Unwrap<Dimension>(info.Holder());
-    info.GetReturnValue().Set(v8::Integer::New(isolate, obj->id));
+Napi::Value Dimension::GetId(const Napi::CallbackInfo &info) {
+	return Napi::Number::New(info.Env(), id);
 }
 
-void Dimension::GetLength(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
-    v8::Isolate* isolate = info.GetIsolate();
-    Dimension* obj = node::ObjectWrap::Unwrap<Dimension>(info.Holder());
-    size_t len;
-    int retval = nc_inq_dimlen(obj->parent_id, obj->id, &len);
-    if (retval != NC_NOERR) {
-        throw_netcdf_error(isolate, retval);
-        return;
-    }
-    info.GetReturnValue().Set(v8::Integer::New(isolate, len));
+Napi::Value Dimension::GetLength(const Napi::CallbackInfo &info) {
+	size_t len;
+	NC_CALL(nc_inq_dimlen(this->parent_id, this->id, &len));
+	this->length=len;
+	return Napi::Number::From(info.Env(), len);
 }
 
-void Dimension::GetName(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
-    v8::Isolate* isolate = info.GetIsolate();
-    Dimension* obj = node::ObjectWrap::Unwrap<Dimension>(info.Holder());
-    char name[NC_MAX_NAME + 1];
-    if (obj->get_name(name)) {
-        info.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, name, v8::NewStringType::kNormal).ToLocalChecked());
-    }
+Napi::Value Dimension::GetName(const Napi::CallbackInfo &info) {
+	char new_name[NC_MAX_NAME + 1];
+	NC_CALL(nc_inq_dimname(parent_id, id, new_name));
+	this->name=std::string(new_name);
+	return Napi::String::New(info.Env(), this->name);
 }
 
-void Dimension::SetName(v8::Local<v8::String> property, v8::Local<v8::Value> val, const v8::PropertyCallbackInfo<void>& info) {
-    v8::Isolate* isolate = info.GetIsolate();
-    Dimension* obj = node::ObjectWrap::Unwrap<Dimension>(info.Holder());
-    v8::String::Utf8Value new_name_(
-#if NODE_MAJOR_VERSION >= 8
-        isolate,
-#endif
-        val->ToString(isolate->GetCurrentContext()).ToLocalChecked());
-    int retval = nc_rename_dim(obj->parent_id, obj->id, *new_name_);
-    if (retval != NC_NOERR) {
-        throw_netcdf_error(isolate, retval);
-        return;
-    }
+void Dimension::SetName(const Napi::CallbackInfo &info, const Napi::Value &value) {
+	std::string new_name = value.As<Napi::String>().ToString();
+	NC_CALL_VOID(nc_rename_dim(this->parent_id, this->id, new_name.c_str()));
+	this->name = new_name;
 }
 
-void Dimension::Inspect(const v8::FunctionCallbackInfo<v8::Value>& args) {
-    v8::Isolate* isolate = args.GetIsolate();
-    args.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, "[object Dimension]", v8::NewStringType::kNormal).ToLocalChecked());
+Napi::Value Dimension::Inspect(const Napi::CallbackInfo &info) {
+	return Napi::String::New(info.Env(), 
+		string_format(
+			"[Dimension %s, length %lu]",
+			this->name.c_str(),
+			this->length
+		)
+	);
 }
-}  // namespace netcdf4js
+} // namespace netcdf4js

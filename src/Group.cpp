@@ -1,372 +1,278 @@
-#include "Group.h"
 #include <netcdf.h>
-#include "Attribute.h"
-#include "Dimension.h"
-#include "Variable.h"
 #include "netcdf4js.h"
+#include "stdio.h"
 
 namespace netcdf4js {
 
-v8::Persistent<v8::Function> Group::constructor;
+Napi::FunctionReference Group::constructor;
 
-Group::Group(const int& id_) : id(id_) {
-    v8::Isolate* isolate = v8::Isolate::GetCurrent();
-    v8::Local<v8::Object> obj = v8::Local<v8::Function>::New(isolate, constructor)->NewInstance(isolate->GetCurrentContext()).ToLocalChecked();
-    Wrap(obj);
+Napi::Object Group::Build(Napi::Env env, int id) {
+	return constructor.New({Napi::Number::New(env, id)});
 }
 
-void Group::Init(v8::Local<v8::Object> exports) {
-    v8::Isolate* isolate = exports->GetIsolate();
-    v8::Local<v8::FunctionTemplate> tpl = v8::FunctionTemplate::New(isolate);
-    tpl->SetClassName(v8::String::NewFromUtf8(isolate, "Group", v8::NewStringType::kNormal).ToLocalChecked());
-    tpl->InstanceTemplate()->SetInternalFieldCount(1);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "addVariable", Group::AddVariable);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "addDimension", Group::AddDimension);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "addSubgroup", Group::AddSubgroup);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "addAttribute", Group::AddAttribute);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "inspect", Group::Inspect);
-    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "id", v8::NewStringType::kNormal).ToLocalChecked(), Group::GetId);
-    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "variables", v8::NewStringType::kNormal).ToLocalChecked(), Group::GetVariables);
-    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "dimensions", v8::NewStringType::kNormal).ToLocalChecked(), Group::GetDimensions);
-    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "unlimited", v8::NewStringType::kNormal).ToLocalChecked(), Group::GetUnlimited);
-    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "attributes", v8::NewStringType::kNormal).ToLocalChecked(), Group::GetAttributes);
-    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "subgroups", v8::NewStringType::kNormal).ToLocalChecked(), Group::GetSubgroups);
-    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "name", v8::NewStringType::kNormal).ToLocalChecked(), Group::GetName);
-    tpl->InstanceTemplate()->SetAccessor(v8::String::NewFromUtf8(isolate, "fullname", v8::NewStringType::kNormal).ToLocalChecked(), Group::GetFullname);
-    constructor.Reset(isolate, tpl->GetFunction(isolate->GetCurrentContext()).ToLocalChecked());
+Group::Group(const Napi::CallbackInfo &info) : Napi::ObjectWrap<Group>(info) {
+	if (info.Length() < 1) {
+		Napi::TypeError::New(info.Env(), "Wrong number of arguments").ThrowAsJavaScriptException();
+		return;
+	}
+
+	id = info[0].As<Napi::Number>().Int32Value();
+	char varName[NC_MAX_NAME + 1];
+	NC_CALL_VOID(nc_inq_grpname(id, varName));
+	name= std::string(varName);
 }
 
-bool Group::get_name(char* name) const {
-    int retval = nc_inq_grpname(id, name);
-    if (retval != NC_NOERR) {
-        throw_netcdf_error(v8::Isolate::GetCurrent(), retval);
-        return false;
-    }
-    return true;
+Napi::Object Group::Init(Napi::Env env, Napi::Object exports) {
+
+	Napi::HandleScope scope(env);
+
+	auto properties = {
+		InstanceMethod("addVariable", &Group::AddVariable),
+		InstanceMethod("addDimension", &Group::AddDimension),
+		InstanceMethod("addSubgroup", &Group::AddSubgroup),
+		InstanceMethod("addAttribute", &Group::AddAttribute),
+		InstanceMethod("inspect", &Group::Inspect),
+		InstanceAccessor<&Group::GetId>("id"),
+		InstanceAccessor<&Group::GetVariables>("variables"),
+		InstanceAccessor<&Group::GetDimensions>("dimensions"),
+		InstanceAccessor<&Group::GetUnlimited>("unlimited"),
+		InstanceAccessor<&Group::GetAttributes>("attributes"),
+		InstanceAccessor<&Group::GetSubgroups>("subgroups"),
+		InstanceAccessor<&Group::GetName,&Group::SetName>("name"),
+		InstanceAccessor<&Group::GetFullname>("fullname"),
+
+	};
+
+	Napi::Function func = DefineClass(env, "Group", properties);
+	constructor = Napi::Persistent(func);
+	constructor.SuppressDestruct();
+
+	exports.Set("Group", func);
+	return exports;
 }
 
-void Group::AddAttribute(const v8::FunctionCallbackInfo<v8::Value>& args) {
-    v8::Isolate* isolate = args.GetIsolate();
-    Group* obj = node::ObjectWrap::Unwrap<Group>(args.Holder());
-    if (args.Length() < 3) {
-        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Wrong number of arguments", v8::NewStringType::kNormal).ToLocalChecked()));
-        return;
-    }
-    std::string type_str = *v8::String::Utf8Value(
-#if NODE_MAJOR_VERSION >= 8
-        isolate,
-#endif
-        args[1]);
-    int type = get_type(type_str);
-    if (type == NC2_ERR) {
-        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Unknown variable type", v8::NewStringType::kNormal).ToLocalChecked()));
-        return;
-    }
-    Attribute* res = new Attribute(*v8::String::Utf8Value(
-#if NODE_MAJOR_VERSION >= 8
-                                       isolate,
-#endif
-                                       args[0]),
-                                   NC_GLOBAL, obj->id, type);
-    res->set_value(args[2]);
-    args.GetReturnValue().Set(res->handle());
+Napi::Value Group::AddAttribute(const Napi::CallbackInfo &info) {
+	if (info.Length() != static_cast<size_t>(3)) {
+		Napi::TypeError::New(info.Env(), "Not all parameters from name,type,value bound").ThrowAsJavaScriptException();
+		return info.Env().Undefined();
+	}
+	std::string type_str=info[1].As<Napi::String>().ToString();
+	int type=get_type(type_str);
+	std::string name=info[0].As<Napi::String>().ToString();
+	Attribute::set_value(info,this->id,NC_GLOBAL,name,type,info[2]);
+	return Attribute::Build(info.Env(),name,NC_GLOBAL,this->id,type);
 }
 
-void Group::AddSubgroup(const v8::FunctionCallbackInfo<v8::Value>& args) {
-    v8::Isolate* isolate = args.GetIsolate();
-    Group* obj = node::ObjectWrap::Unwrap<Group>(args.Holder());
-    if (args.Length() < 1) {
-        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Wrong number of arguments", v8::NewStringType::kNormal).ToLocalChecked()));
-        return;
-    }
-    int new_id;
-    int retval = nc_def_grp(obj->id,
-                            *v8::String::Utf8Value(
-#if NODE_MAJOR_VERSION >= 8
-                                isolate,
-#endif
-                                args[0]),
-                            &new_id);
-    if (retval != NC_NOERR) {
-        throw_netcdf_error(isolate, retval);
-        return;
-    }
-    Group* res = new Group(new_id);
-    args.GetReturnValue().Set(res->handle());
+Napi::Value Group::AddSubgroup(const Napi::CallbackInfo &info) {
+	if (info.Length() != static_cast<size_t>(1)) {
+		Napi::TypeError::New(info.Env(), "Missing subgroup name").ThrowAsJavaScriptException();
+		return info.Env().Undefined();
+	}
+	std::string new_name = info[0].As<Napi::String>().ToString();
+	int new_id;
+	NC_CALL(nc_def_grp(id, new_name.c_str(),&new_id));
+	Napi::Object group = Group::Build(info.Env(), new_id);
+	return group;
 }
 
-void Group::AddDimension(const v8::FunctionCallbackInfo<v8::Value>& args) {
-    v8::Isolate* isolate = args.GetIsolate();
-    Group* obj = node::ObjectWrap::Unwrap<Group>(args.Holder());
-    if (args.Length() < 2) {
-        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Wrong number of arguments", v8::NewStringType::kNormal).ToLocalChecked()));
-        return;
-    }
-    int len;
-    if (std::string(*v8::String::Utf8Value(
-#if NODE_MAJOR_VERSION >= 8
-            isolate,
-#endif
-            args[1]))
-        == "unlimited") {
-        len = NC_UNLIMITED;
-    } else {
-        if (!args[1]->IsUint32()) {
-            isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Expecting a positive integer", v8::NewStringType::kNormal).ToLocalChecked()));
-            return;
-        }
-        len = args[1]->Uint32Value(isolate->GetCurrentContext()).ToChecked();
-    }
-    int new_id;
-    int retval = nc_def_dim(obj->id,
-                            *v8::String::Utf8Value(
-#if NODE_MAJOR_VERSION >= 8
-                                isolate,
-#endif
-                                args[0]),
-                            len, &new_id);
-    if (retval != NC_NOERR) {
-        throw_netcdf_error(isolate, retval);
-        return;
-    }
-    Dimension* res = new Dimension(new_id, obj->id);
-    args.GetReturnValue().Set(res->handle());
+Napi::Value Group::AddDimension(const Napi::CallbackInfo &info) {
+	if (info.Length() != static_cast<size_t>(2)) {
+		Napi::TypeError::New(info.Env(), "Wrong number of arguments. Need dimension name and length").ThrowAsJavaScriptException();
+		return info.Env().Undefined();
+	}
+	int len;
+	const std::string len_symbol=info[1].As<Napi::String>().ToString();
+	if (len_symbol=="unlimited") {
+		len=NC_UNLIMITED;
+	}
+	else {
+		len=info[1].As<Napi::Number>().Int32Value();
+		if (len<=0) {
+			Napi::TypeError::New(info.Env(), "Expected positive integer as dimension length").ThrowAsJavaScriptException();
+			return info.Env().Undefined();
+		}
+	}
+	const std::string new_name = info[0].As<Napi::String>().ToString();
+	int new_id;
+	NC_CALL(nc_def_dim(id,new_name.c_str(),len,&new_id))
+	Napi::Object dimension = Dimension::Build(info.Env(),id,new_id);
+	return dimension;
 }
 
-void Group::AddVariable(const v8::FunctionCallbackInfo<v8::Value>& args) {
-    v8::Isolate* isolate = args.GetIsolate();
-    Group* obj = node::ObjectWrap::Unwrap<Group>(args.Holder());
-    if (args.Length() < 3) {
-        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Wrong number of arguments", v8::NewStringType::kNormal).ToLocalChecked()));
-        return;
-    }
-    std::string type_str = *v8::String::Utf8Value(
-#if NODE_MAJOR_VERSION >= 8
-        isolate,
-#endif
-        args[1]);
-    int type = get_type(type_str);
-    if (type == NC2_ERR) {
-        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Unknown variable type", v8::NewStringType::kNormal).ToLocalChecked()));
-        return;
-    }
-    if (type == NC_STRING) {
-        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Unsupported variable type", v8::NewStringType::kNormal).ToLocalChecked()));
-        return;
-    }
-    if (!args[2]->IsArray()) {
-        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Expecting an array", v8::NewStringType::kNormal).ToLocalChecked()));
-        return;
-    }
-    v8::Local<v8::Object> array = args[2]->ToObject(isolate->GetCurrentContext()).ToLocalChecked();
-    size_t ndims = array->Get(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "length", v8::NewStringType::kNormal).ToLocalChecked()).ToLocalChecked()->Uint32Value(isolate->GetCurrentContext()).ToChecked();
-    int* dimids = new int[ndims];
-    for (size_t i = 0; i < ndims; i++) {
-        dimids[i] = array->Get(isolate->GetCurrentContext(), i).ToLocalChecked()->Int32Value(isolate->GetCurrentContext()).ToChecked();
-    }
-    int new_id;
-    int retval = nc_def_var(obj->id,
-                            *v8::String::Utf8Value(
-#if NODE_MAJOR_VERSION >= 8
-                                isolate,
-#endif
-                                args[0]),
-                            type, ndims, dimids, &new_id);
-    if (retval != NC_NOERR) {
-        throw_netcdf_error(isolate, retval);
-        delete[] dimids;
-        return;
-    }
-    Variable* res = new Variable(new_id, obj->id);
-    args.GetReturnValue().Set(res->handle());
-    delete[] dimids;
+Napi::Value Group::AddVariable(const Napi::CallbackInfo &info) {
+	if (info.Length() != static_cast<size_t>(3)) {
+		Napi::TypeError::New(info.Env(), "Wrong number of arguments. Need variable name, type and dimenisons").ThrowAsJavaScriptException();
+		return info.Env().Undefined();
+	}
+	if (!info[2].IsArray()) {
+		Napi::TypeError::New(info.Env(),"Dimensions must be an array").ThrowAsJavaScriptException();
+		return info.Env().Undefined();
+	}
+	auto dims=info[2].As<Napi::Array>();
+	auto dims_size=dims.Length();
+	if (dims_size==0u) {
+		Napi::TypeError::New(info.Env(),"Dimensions must be a non-empty array").ThrowAsJavaScriptException();
+		return info.Env().Undefined();
+	}
+	std::string type_str=info[1].As<Napi::String>().ToString();
+	int type=get_type(type_str);
+	if (type==NC2_ERR) {
+		Napi::TypeError::New(info.Env(),"Bad variable type").ThrowAsJavaScriptException();
+		return info.Env().Undefined();
+	}
+
+	std::string name=info[0].As<Napi::String>().ToString();
+	int *ndims = new int[dims_size];
+	for(auto i=0u;i<dims_size;i++) {
+		Napi::Value v=dims[i];
+		if (v.IsNumber()) {
+			ndims[i]=v.As<Napi::Number>().Int32Value();
+		}
+		else {
+			std::string dim_name=v.ToString();
+			NC_CALL(nc_inq_dimid(this->id,dim_name.c_str(),&ndims[i]));
+		}
+	}
+	int new_id;
+	NC_CALL(nc_def_var(this->id,name.c_str(),type,dims_size,ndims,&new_id));
+	delete[] ndims;
+	return Variable::Build(info.Env(),new_id,this->id);	
 }
 
-void Group::GetId(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
-    v8::Isolate* isolate = info.GetIsolate();
-    Group* obj = node::ObjectWrap::Unwrap<Group>(info.Holder());
-    info.GetReturnValue().Set(v8::Integer::New(isolate, obj->id));
+Napi::Value Group::GetId(const Napi::CallbackInfo &info) {
+	return Napi::Number::New(info.Env(), id);
 }
 
-void Group::GetVariables(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
-    v8::Isolate* isolate = info.GetIsolate();
-    Group* obj = node::ObjectWrap::Unwrap<Group>(info.Holder());
-    int nvars;
-    int retval = nc_inq_varids(obj->id, &nvars, NULL);
-    if (retval != NC_NOERR) {
-        throw_netcdf_error(isolate, retval);
-        return;
-    }
-    int* var_ids = new int[nvars];
-    retval = nc_inq_varids(obj->id, NULL, var_ids);
-    if (retval != NC_NOERR) {
-        throw_netcdf_error(isolate, retval);
-        delete[] var_ids;
-        return;
-    }
-    v8::Local<v8::Object> result = v8::Object::New(isolate);
+Napi::Value Group::GetVariables(const Napi::CallbackInfo &info) {
+	int nvars;
+	NC_CALL(nc_inq_varids(this->id, &nvars, NULL));
+	int *var_ids = new int[nvars];
+	NC_CALL(nc_inq_varids(this->id, NULL, var_ids));
+
+	Napi::Object vars = Napi::Object::New(info.Env());
+
+	char name[NC_MAX_NAME + 1];
+	for (int i = 0; i < nvars; ++i) {
+		Napi::Object var = Variable::Build(info.Env(), var_ids[i], this->id);
+
+		int retval = nc_inq_varname(this->id, var_ids[i], name);
+		if (retval == NC_NOERR) {
+			vars.Set(name, var);
+		}
+	}
+	delete[] var_ids;
+	return vars;
+}
+
+Napi::Value Group::GetDimensions(const Napi::CallbackInfo &info) {
+	int ndims;
+	NC_CALL(nc_inq_dimids(this->id, &ndims, NULL, 0));
+	int *dim_ids = new int[ndims];
+	NC_CALL(nc_inq_dimids(this->id, NULL, dim_ids, 0));
+
+	Napi::Object dims = Napi::Object::New(info.Env());
+
+	char name[NC_MAX_NAME + 1];
+	for (int i = 0; i < ndims; ++i) {
+		Napi::Object dim = Dimension::Build(info.Env(), this->id, dim_ids[i]);
+
+		int retval = nc_inq_dimname(this->id, dim_ids[i], name);
+		if (retval == NC_NOERR) {
+			dims.Set(name, dim);
+		}
+	}
+	delete[] dim_ids;
+	return dims;
+}
+
+Napi::Value Group::GetUnlimited(const Napi::CallbackInfo &info) {
+	
+	int ndims;
+	NC_CALL(nc_inq_unlimdims(this->id, &ndims, NULL));
+	
+	int *dim_ids = new int[ndims];
+	NC_CALL(nc_inq_unlimdims(this->id, NULL, dim_ids));
+	
+	Napi::Object dims = Napi::Object::New(info.Env());
     char name[NC_MAX_NAME + 1];
-    for (int i = 0; i < nvars; ++i) {
-        Variable* v = new Variable(var_ids[i], obj->id);
-        if (v->get_name(name)) {
-            result->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, name, v8::NewStringType::kNormal).ToLocalChecked(), v->handle());
-        } else {
-            delete[] var_ids;
-            return;
-        }
-    }
-    info.GetReturnValue().Set(result);
-    delete[] var_ids;
+	for (int i = 0; i < ndims; ++i) {
+		Napi::Object dim = Dimension::Build(info.Env(), this->id, dim_ids[i]);
+		NC_CALL(nc_inq_dimname(this->id, dim_ids[i], name));
+		dims.Set(name, dim);
+	}
+	
+	delete[] dim_ids;
+	return dims;
 }
 
-void Group::GetDimensions(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
-    v8::Isolate* isolate = info.GetIsolate();
-    Group* obj = node::ObjectWrap::Unwrap<Group>(info.Holder());
-    int ndims;
-    int retval = nc_inq_dimids(obj->id, &ndims, NULL, 0);
-    if (retval != NC_NOERR) {
-        throw_netcdf_error(isolate, retval);
-        return;
-    }
-    int* dim_ids = new int[ndims];
-    retval = nc_inq_dimids(obj->id, NULL, dim_ids, 0);
-    if (retval != NC_NOERR) {
-        throw_netcdf_error(isolate, retval);
-        delete[] dim_ids;
-        return;
-    }
-    v8::Local<v8::Object> result = v8::Object::New(isolate);
-    char name[NC_MAX_NAME + 1];
-    for (int i = 0; i < ndims; ++i) {
-        Dimension* d = new Dimension(dim_ids[i], obj->id);
-        if (d->get_name(name)) {
-            result->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, name, v8::NewStringType::kNormal).ToLocalChecked(), d->handle());
-        } else {
-            delete[] dim_ids;
-            return;
-        }
-    }
-    info.GetReturnValue().Set(result);
-    delete[] dim_ids;
+Napi::Value Group::GetAttributes(const Napi::CallbackInfo &info) {
+	int natts;
+	NC_CALL(nc_inq_natts(this->id, &natts));
+
+	Napi::Object attrs = Napi::Object::New(info.Env());
+	char name[NC_MAX_NAME + 1];
+	for (int i = 0; i < natts; ++i) {
+		NC_CALL(nc_inq_attname(this->id, NC_GLOBAL, i, name));
+		Napi::Object attr = Attribute::Build(info.Env(), name, NC_GLOBAL, this->id);
+		attrs.Set(name, attr);
+	}
+	return attrs;
 }
 
-void Group::GetUnlimited(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
-    v8::Isolate* isolate = info.GetIsolate();
-    Group* obj = node::ObjectWrap::Unwrap<Group>(info.Holder());
-    int ndims;
-    int retval = nc_inq_unlimdims(obj->id, &ndims, NULL);
-    if (retval != NC_NOERR) {
-        throw_netcdf_error(isolate, retval);
-        return;
-    }
-    int* dim_ids = new int[ndims];
-    retval = nc_inq_unlimdims(obj->id, NULL, dim_ids);
-    if (retval != NC_NOERR) {
-        throw_netcdf_error(isolate, retval);
-        delete[] dim_ids;
-        return;
-    }
-    v8::Local<v8::Object> result = v8::Object::New(isolate);
-    char name[NC_MAX_NAME + 1];
-    for (int i = 0; i < ndims; ++i) {
-        Dimension* d = new Dimension(dim_ids[i], obj->id);
-        if (d->get_name(name)) {
-            result->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, name, v8::NewStringType::kNormal).ToLocalChecked(), d->handle());
-        } else {
-            delete[] dim_ids;
-            return;
-        }
-    }
-    info.GetReturnValue().Set(result);
-    delete[] dim_ids;
+Napi::Value Group::GetSubgroups(const Napi::CallbackInfo &info) {
+	int ngrps;
+	NC_CALL(nc_inq_grps(this->id, &ngrps, NULL));
+	int *grp_ids = new int[ngrps];
+
+	NC_CALL(nc_inq_grps(this->id, NULL, grp_ids));
+
+	Napi::Object subgroups = Napi::Object::New(info.Env());
+
+	char name[NC_MAX_NAME + 1];
+	for (int i = 0; i < ngrps; ++i) {
+		Napi::Object subgroup = Group::Build(info.Env(), grp_ids[i]);
+		int retval = nc_inq_grpname(grp_ids[i], name);
+		if (retval == NC_NOERR) {
+			subgroups.Set(name, subgroup);
+		}
+	}
+
+	delete[] grp_ids;
+	return subgroups;
 }
 
-void Group::GetAttributes(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
-    v8::Isolate* isolate = info.GetIsolate();
-    Group* obj = node::ObjectWrap::Unwrap<Group>(info.Holder());
-    int natts;
-    int retval = nc_inq_natts(obj->id, &natts);
-    if (retval != NC_NOERR) {
-        throw_netcdf_error(isolate, retval);
-        return;
-    }
-    v8::Local<v8::Object> result = v8::Object::New(isolate);
-    char name[NC_MAX_NAME + 1];
-    for (int i = 0; i < natts; i++) {
-        retval = nc_inq_attname(obj->id, NC_GLOBAL, i, name);
-        if (retval != NC_NOERR) {
-            throw_netcdf_error(isolate, retval);
-            return;
-        }
-        Attribute* a = new Attribute(name, NC_GLOBAL, obj->id);
-        result->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, name, v8::NewStringType::kNormal).ToLocalChecked(), a->handle());
-    }
-    info.GetReturnValue().Set(result);
+Napi::Value Group::GetName(const Napi::CallbackInfo &info) {
+	char name[NC_MAX_NAME + 1];
+	NC_CALL(nc_inq_grpname(id, name));
+	this->name=std::string(name);
+	return Napi::String::New(info.Env(), name);
 }
 
-void Group::GetSubgroups(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
-    v8::Isolate* isolate = info.GetIsolate();
-    Group* obj = node::ObjectWrap::Unwrap<Group>(info.Holder());
-    int ngrps;
-    int retval = nc_inq_grps(obj->id, &ngrps, NULL);
-    if (retval != NC_NOERR) {
-        throw_netcdf_error(isolate, retval);
-        return;
-    }
-    int* grp_ids = new int[ngrps];
-    retval = nc_inq_grps(obj->id, NULL, grp_ids);
-    if (retval != NC_NOERR) {
-        throw_netcdf_error(isolate, retval);
-        delete[] grp_ids;
-        return;
-    }
-    v8::Local<v8::Object> result = v8::Object::New(isolate);
-    char name[NC_MAX_NAME + 1];
-    for (int i = 0; i < ngrps; ++i) {
-        Group* g = new Group(grp_ids[i]);
-        if (g->get_name(name)) {
-            result->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, name, v8::NewStringType::kNormal).ToLocalChecked(), g->handle());
-        } else {
-            delete[] grp_ids;
-            return;
-        }
-    }
-    info.GetReturnValue().Set(result);
-    delete[] grp_ids;
+void Group::SetName(const Napi::CallbackInfo &info, const Napi::Value &value) {
+	std::string new_name = value.As<Napi::String>().ToString();
+	NC_CALL_VOID(nc_rename_grp(id, new_name.c_str()));
+	this->name=new_name;
 }
 
-void Group::GetName(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
-    v8::Isolate* isolate = info.GetIsolate();
-    Group* obj = node::ObjectWrap::Unwrap<Group>(info.Holder());
-    char name[NC_MAX_NAME + 1];
-    if (obj->get_name(name)) {
-        info.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, name, v8::NewStringType::kNormal).ToLocalChecked());
-    }
+
+Napi::Value Group::GetFullname(const Napi::CallbackInfo &info) {
+	size_t len;
+	NC_CALL(nc_inq_grpname_len(this->id, &len));
+	char *name = new char[len + 1];
+
+	name[len] = 0;
+	NC_CALL(nc_inq_grpname_full(this->id, NULL, name));
+	auto ret = Napi::String::New(info.Env(), name);
+	delete[] name;
+	return ret;
 }
 
-void Group::GetFullname(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info) {
-    v8::Isolate* isolate = info.GetIsolate();
-    Group* obj = node::ObjectWrap::Unwrap<Group>(info.Holder());
-    size_t len;
-    int retval = nc_inq_grpname_len(obj->id, &len);
-    if (retval != NC_NOERR) {
-        throw_netcdf_error(isolate, retval);
-        return;
-    }
-    char* name = new char[len + 1];
-    name[len] = 0;
-    retval = nc_inq_grpname_full(obj->id, NULL, name);
-    if (retval != NC_NOERR) {
-        throw_netcdf_error(isolate, retval);
-        delete[] name;
-        return;
-    }
-    info.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, name, v8::NewStringType::kNormal).ToLocalChecked());
-    delete[] name;
+Napi::Value Group::Inspect(const Napi::CallbackInfo &info) {
+	return Napi::String::New(info.Env(), 
+		string_format(
+			"[Group %s]",
+			this->name.c_str()
+		)
+	);
 }
-
-void Group::Inspect(const v8::FunctionCallbackInfo<v8::Value>& args) {
-    v8::Isolate* isolate = args.GetIsolate();
-    args.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, "[object Group]", v8::NewStringType::kNormal).ToLocalChecked());
-}
-}  // namespace netcdf4js
+} // namespace netcdf4js

@@ -1,125 +1,152 @@
-#include "File.h"
+#include <iostream>
 #include <netcdf.h>
 #include <string>
-#include "Group.h"
-#include "Variable.h"
 #include "netcdf4js.h"
+#include "netcdf4jstypes.h"
 
 namespace netcdf4js {
 
-v8::Persistent<v8::Function> File::constructor;
-
-File::File(const int& id_) : id(id_), closed(false) {}
+Napi::FunctionReference File::constructor;
 
 File::~File() {
-    if (!closed) {
-        int retval = nc_close(id);
-        if (retval != NC_NOERR) {
-            throw_netcdf_error(v8::Isolate::GetCurrent(), retval);
-        }
-    }
+	if (!closed) {
+		NC_CALL_ENV(this->Env(), nc_close(id));
+	}
 }
 
-void File::Init(v8::Local<v8::Object> exports) {
-    v8::Isolate* isolate = exports->GetIsolate();
-    v8::Local<v8::FunctionTemplate> tpl = v8::FunctionTemplate::New(isolate, New);
-    tpl->SetClassName(v8::String::NewFromUtf8(isolate, "File", v8::NewStringType::kNormal).ToLocalChecked());
-    tpl->InstanceTemplate()->SetInternalFieldCount(1);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "sync", File::Sync);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "close", File::Close);
-    NODE_SET_PROTOTYPE_METHOD(tpl, "inspect", File::Inspect);
-    constructor.Reset(isolate, tpl->GetFunction(isolate->GetCurrentContext()).ToLocalChecked());
-    exports->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "File", v8::NewStringType::kNormal).ToLocalChecked(), tpl->GetFunction(isolate->GetCurrentContext()).ToLocalChecked());
+Napi::Object File::Init(Napi::Env env, Napi::Object exports) {
+	Napi::HandleScope scope(env);
+
+	Napi::Function func =
+		DefineClass(env, "File",
+			{
+				InstanceMethod("sync", &File::Sync), 
+				InstanceMethod("close", &File::Close),
+				InstanceMethod("dataMode", &File::DataMode),
+				InstanceAccessor<&File::GetId>("id"),
+				InstanceAccessor<&File::GetName>("name"),
+				InstanceAccessor<&File::IsClosed>("closed"),
+				InstanceAccessor<&File::GetFormat>("format"),
+				InstanceMethod("inspect", &File::Inspect)
+			}
+		);
+
+	constructor = Napi::Persistent(func);
+	constructor.SuppressDestruct();
+
+	exports.Set("File", func);
+	return exports;
 }
 
-void File::New(const v8::FunctionCallbackInfo<v8::Value>& args) {
-    v8::Isolate* isolate = args.GetIsolate();
+File::File(const Napi::CallbackInfo &info) : Napi::ObjectWrap<File>(info) {
 
-    if (args.Length() < 2) {
-        isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Wrong number of arguments", v8::NewStringType::kNormal).ToLocalChecked()));
-        return;
-    }
+	if (info.Length() < 2) {
+		Napi::TypeError::New(info.Env(), "Wrong number of arguments").ThrowAsJavaScriptException();
+		return;
+	}
 
-    if (args.IsConstructCall()) {
-        std::string filename = *v8::String::Utf8Value(
-#if NODE_MAJOR_VERSION >= 8
-            isolate,
-#endif
-            args[0]->ToString(isolate->GetCurrentContext()).ToLocalChecked());
-        std::string mode_arg = *v8::String::Utf8Value(
-#if NODE_MAJOR_VERSION >= 8
-            isolate,
-#endif
-            args[1]->ToString(isolate->GetCurrentContext()).ToLocalChecked());
-        int format = NC_NETCDF4;
-        int id;
-        if (args.Length() > 2) {
-            std::string format_arg = *v8::String::Utf8Value(
-#if NODE_MAJOR_VERSION >= 8
-                isolate,
-#endif
-                args[2]->ToString(isolate->GetCurrentContext()).ToLocalChecked());
-            if (format_arg == "classic") {
-                format = 0;
-            } else if (format_arg == "classic64") {
-                format = NC_64BIT_OFFSET;
-            } else if (format_arg == "netcdf4") {
-                format = NC_NETCDF4;
-            } else if (format_arg == "netcdf4classic") {
-                format = NC_NETCDF4 | NC_CLASSIC_MODEL;
-            } else {
-                isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Unknown file format", v8::NewStringType::kNormal).ToLocalChecked()));
-                return;
-            }
-        }
-        int retval;
-        if (mode_arg == "r") {
-            retval = nc_open(filename.c_str(), NC_NOWRITE, &id);
-        } else if (mode_arg == "w") {
-            retval = nc_open(filename.c_str(), NC_WRITE, &id);
-        } else if (mode_arg == "c") {
-            retval = nc_create(filename.c_str(), format | NC_NOCLOBBER, &id);
-        } else if (mode_arg == "c!") {
-            retval = nc_create(filename.c_str(), format | NC_CLOBBER, &id);
-        } else {
-            isolate->ThrowException(v8::Exception::TypeError(v8::String::NewFromUtf8(isolate, "Unknown file mode", v8::NewStringType::kNormal).ToLocalChecked()));
-            return;
-        }
-        if (retval != NC_NOERR) {
-            throw_netcdf_error(isolate, retval);
-            return;
-        }
-        File* obj = new File(id);
-        obj->Wrap(args.This());
-        args.This()->Set(isolate->GetCurrentContext(), v8::String::NewFromUtf8(isolate, "root", v8::NewStringType::kNormal).ToLocalChecked(), (new Group(id))->handle());
-        args.GetReturnValue().Set(args.This());
-    } else {
-        const int argc = 1;
-        v8::Local<v8::Value> argv[argc] = {args[0]};
-        v8::Local<v8::Function> cons = v8::Local<v8::Function>::New(isolate, constructor);
-        args.GetReturnValue().Set(cons->NewInstance(isolate->GetCurrentContext(), argc, argv).ToLocalChecked());
-    }
+	name = info[0].As<Napi::String>().Utf8Value();
+
+	std::string mode_arg = info[1].As<Napi::String>().Utf8Value();
+
+	int open_format = NC_NETCDF4;
+	if (info.Length() > 2) {
+		std::string format_arg = info[2].As<Napi::String>().Utf8Value();
+
+		if (format_arg == "classic") {
+			open_format = 0;
+		} else if (format_arg == "classic64") {
+			open_format = NC_64BIT_OFFSET;
+		} else if (format_arg == "netcdf4") {
+			open_format = NC_NETCDF4;
+		} else if (format_arg == "netcdf4classic") {
+			open_format = NC_NETCDF4 | NC_CLASSIC_MODEL;
+		} else {
+			Napi::TypeError::New(info.Env(), "Unknown file format").ThrowAsJavaScriptException();
+			return;
+		}
+	}
+	if (mode_arg == "r") {
+		NC_CALL_VOID(nc_open(name.c_str(), NC_NOWRITE, &id));
+	} else if (mode_arg == "w") {
+		NC_CALL_VOID(nc_open(name.c_str(), NC_WRITE, &id));
+	} else if (mode_arg == "c") {
+		NC_CALL_VOID(nc_create(name.c_str(), open_format | NC_NOCLOBBER, &id));
+	} else if (mode_arg == "c!") {
+		NC_CALL_VOID(nc_create(name.c_str(), open_format | NC_CLOBBER, &id));
+	} else {
+		Napi::TypeError::New(info.Env(), "Unknown file mode").ThrowAsJavaScriptException();
+		return;
+	}
+	NC_CALL_VOID(nc_inq_format_extended(id,&open_format,NULL))
+
+	auto group = Group::Build(info.Env(), id);
+	this->Value().Set("root", group);
+	format=NC_FORMATS(open_format);
+	closed=false;
 }
 
-void File::Sync(const v8::FunctionCallbackInfo<v8::Value>& args) {
-    File* obj = node::ObjectWrap::Unwrap<File>(args.Holder());
-    int retval = nc_sync(obj->id);
-    if (retval != NC_NOERR) {
-        throw_netcdf_error(args.GetIsolate(), retval);
-    }
+Napi::Value File::Sync(const Napi::CallbackInfo &info) {
+	if (!this->closed) {
+		Napi::Env env = info.Env();
+
+		int retval = nc_sync(this->id);
+		if (retval != NC_NOERR) {
+			Napi::Error::New(env, nc_strerror(retval)).ThrowAsJavaScriptException();
+		}
+	}
+
+	return info.Env().Undefined();
 }
 
-void File::Close(const v8::FunctionCallbackInfo<v8::Value>& args) {
-    File* obj = node::ObjectWrap::Unwrap<File>(args.Holder());
-    int retval = nc_close(obj->id);
-    if (retval != NC_NOERR) {
-        throw_netcdf_error(args.GetIsolate(), retval);
-    }
-    obj->closed = true;
+Napi::Value File::Close(const Napi::CallbackInfo &info) {
+	if (!this->closed) {
+		this->closed = true;
+		int retval = nc_close(this->id);
+		if (retval != NC_NOERR && retval != NC_EBADID) {
+			Napi::Error::New(info.Env(), nc_strerror(retval)).ThrowAsJavaScriptException();
+		}
+		if (this->Value().Has("root")) {
+			this->Value().Delete("root");
+		}		
+	}
+	return info.Env().Undefined();
 }
 
-void File::Inspect(const v8::FunctionCallbackInfo<v8::Value>& args) {
-    v8::Isolate* isolate = args.GetIsolate();
-    args.GetReturnValue().Set(v8::String::NewFromUtf8(isolate, "[object File]", v8::NewStringType::kNormal).ToLocalChecked());
+Napi::Value File::GetId(const Napi::CallbackInfo &info) {
+	return Napi::Number::New(info.Env(), id);
 }
-}  // namespace netcdf4js
+
+Napi::Value File::GetName(const Napi::CallbackInfo &info) {
+	return Napi::String::New(info.Env(), name);
+}
+
+Napi::Value File::IsClosed(const Napi::CallbackInfo &info) {
+	return Napi::Boolean::New(info.Env(), closed);
+}
+
+Napi::Value File::GetFormat(const Napi::CallbackInfo &info) {
+	return Napi::String::New(info.Env(), format);
+}
+
+Napi::Value File::DataMode(const Napi::CallbackInfo &info) {
+	int retval = nc_enddef(this->id);
+	if (retval != NC_NOERR) {
+		Napi::Error::New(info.Env(), nc_strerror(retval)).ThrowAsJavaScriptException();
+	}
+	return info.Env().Undefined();
+
+}
+
+Napi::Value File::Inspect(const Napi::CallbackInfo &info) {
+	return Napi::String::New(info.Env(), 
+		string_format(
+			"[%s%s file %s]",
+			this->closed?"Closed ":"",
+			this->format.c_str(),
+			this->name.c_str()
+		)
+	);
+
+}
+} // namespace netcdf4js
