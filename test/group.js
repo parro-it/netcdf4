@@ -7,10 +7,10 @@ const { join } = require("path");
 const fixture = join(__dirname, "test_hgroups.nc");
 
 describe("Group", function () {
-  let file;
-  const tempFileName = join(tmpdir(), `${Date.now()}.rc`);
+  let file,tempFileName;
 
   beforeEach(function () {
+    tempFileName = join(tmpdir(), `${Date.now()}.rc`)
     copyFileSync(fixture, tempFileName);
     file = new netcdf4.File(tempFileName, "w");
   });

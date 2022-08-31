@@ -31,14 +31,14 @@
             'defines': ['NAPI_CPP_EXCEPTIONS'],
             "conditions": [
                 ['OS=="mac"', {
-                    'cflags+': ['-fvisibility=hidden'],
+                    'cflags+': ['-fvisibility=hidden','-std=c++14'],
                     'xcode_settings': {
                         'WARNING_CFLAGS!': ['-Wall', '-Wextra'],
                         'GCC_SYMBOLS_PRIVATE_EXTERN': 'YES',  # -fvisibility=hidden
                         'GCC_ENABLE_CPP_EXCEPTIONS': 'YES',
                         'CLANG_CXX_LIBRARY': 'libc++',
                         'MACOSX_DEPLOYMENT_TARGET': '10.7',
-                        'OTHER_CPLUSPLUSFLAGS' : ['-std=c++11']                        
+                        'OTHER_CPLUSPLUSFLAGS' : ['-std=c++14']                        
                     }
                 }],
                 ['OS=="win"', {

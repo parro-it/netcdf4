@@ -14,11 +14,11 @@ const fixture = join(__dirname, "testrh.nc");
 const fixture1 = join(__dirname, "test_hgroups.nc");
 
 describe("Variable", function () {
-  let fileold,filenew;
-  const tempFileOldName = join(tmpdir(), `${Date.now()}.orc`);
-  const tempFileNewName = join(tmpdir(), `${Date.now()}.nrc`);
+  let fileold,filenew,tempFileOldName,tempFileNewName;
 
   beforeEach(function () {
+    tempFileOldName = join(tmpdir(), `${Date.now()}.orc`);
+    tempFileNewName = join(tmpdir(), `${Date.now()}.nrc`);
     copyFileSync(fixture, tempFileOldName);
     fileold = new netcdf4.File(tempFileOldName, "w");
     copyFileSync(fixture1, tempFileNewName);
