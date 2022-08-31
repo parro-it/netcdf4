@@ -26,7 +26,8 @@
   "license": "ISC",
   "dependencies": {
     "node-addon-api": "^3.0.0",
-    "node-gyp": "^9.1.0"
+    "node-gyp": "^9.1.0",
+    "unique-filename": "^2.0.1"
   },
   "devDependencies": {
     "chai": "^4.2.0",

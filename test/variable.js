@@ -1,6 +1,7 @@
 const chai = require("chai");
 const expect = chai.expect;
 const chaiAlmost = require('chai-almost');
+const uniqueFilename = require('unique-filename');
 
 chai.use(chaiAlmost(0.001));
 
@@ -17,8 +18,8 @@ describe("Variable", function () {
   let fileold,filenew,tempFileOldName,tempFileNewName;
 
   beforeEach(function () {
-    tempFileOldName = join(tmpdir(), `${Date.now()}.orc`);
-    tempFileNewName = join(tmpdir(), `${Date.now()}.nrc`);
+    tempFileOldName = uniqueFilename(tmpdir(), `orc`);
+    tempFileNewName = uniqueFilename(tmpdir(), `nrc`);
     copyFileSync(fixture, tempFileOldName);
     fileold = new netcdf4.File(tempFileOldName, "w");
     copyFileSync(fixture1, tempFileNewName);

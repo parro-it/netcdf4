@@ -3,14 +3,17 @@ const netcdf4 = require("..");
 const { copyFileSync, unlinkSync } = require("fs");
 const { tmpdir } = require("os");
 const { join } = require("path");
+const uniqueFilename = require('unique-filename');
+
 
 const fixture = join(__dirname, "test_hgroups.nc");
 
 describe("Dimension", function () {
   let file;
-  const tempFileName = join(tmpdir(), `${Date.now()}.rc`);
+  let tempFileName;
 
   beforeEach(function () {
+    tempFileName = uniqueFilename(tmpdir(), `rc`);
     copyFileSync(fixture, tempFileName);
     file = new netcdf4.File(tempFileName, "w");
   });
